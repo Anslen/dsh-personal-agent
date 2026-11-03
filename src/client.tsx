@@ -49,8 +49,11 @@ function Panel({ ctx, t }: any) {
           t={t}
           deploymentForm={undefined}
           openSession={async (id) => {
-            await openKnownSession(ctx.sessions, id as any, (target) =>
-              ctx.uiWorkspace.openSession(target),
+            await openKnownSession(
+              ctx.sessions,
+              id as any,
+              (target) => ctx.uiWorkspace.openSession(target),
+              new AbortController().signal,
             );
           }}
         />

@@ -36,9 +36,9 @@ export class Stickers {
     this.key = readFileSync(token, "utf8").trim();
     const config = {
       port: 0,
-      intervalHours: 24,
-      maxCandidates: 6,
-      maxAttempts: 3,
+      intervalHours: this.bot.stickers.intervalHours ?? 24,
+      maxCandidates: this.bot.stickers.maxCandidates ?? 6,
+      maxAttempts: this.bot.stickers.maxAttempts ?? 3,
       roles: {
         [this.bot.id]: {
           name: this.bot.id,

@@ -46,6 +46,9 @@ export const Config = s.object({
         }),
         stickers: s
           .object({
+            intervalHours: s.number().min(1).default(24),
+            maxCandidates: s.number().min(1).max(20).default(6),
+            maxAttempts: s.number().min(1).max(10).default(3),
             queries: s.array(s.string()).required(),
             sources: s.array(s.string()).default([]),
             referenceImage: s.string().required(),
@@ -182,8 +185,8 @@ export async function apply(ctx: Context, config: any) {
         "deployment",
       );
     stickers = new Stickers(runtime, bot, stateDir);
-    await stickers.start();
     ctx.effect(() => () => stickers.stop());
+    await stickers.start();
     await runtime.ready;
     ctx.logger.info(`个人助手 ${bot.id} 已加载，人设长度 ${persona.length}`);
   }
