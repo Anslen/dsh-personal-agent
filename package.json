@@ -1,0 +1,79 @@
+{
+  "name": "dsh-personal-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "test:core": "pnpm --dir modules/superagent test",
+    "test": "node --import tsx --test tests/*.test.mjs",
+    "format": "prettier --write src tests examples docs package.json pnpm-workspace.yaml",
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "@tencent-connect/qqbot-nodejs": "1.0.4",
+    "zod": "4.4.3",
+    "proper-lockfile": "4.1.2",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-agent": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-api-session-controller": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-permission-presets": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-session": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-session-persistence": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-workspace": "0.2.1-rc.5",
+    "@deepseek-ai/schemastery": "3.18.5",
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-attachment": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-subprocess": "0.2.1-rc.5",
+    "@tencent-connect/qqbot-connector": "1.2.0",
+    "js-yaml": "^4.1.0",
+    "lamejs-fixed": "^1.2.2",
+    "silk-wasm": "^3.7.1",
+    "sharp": "0.34.5",
+    "cheerio": "1.1.2"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "typescript": "6.0.3",
+    "tsx": "4.21.0",
+    "tsdown": "0.22.14"
+  },
+  "main": "lib/index.mjs",
+  "exports": {
+    ".": "./lib/index.mjs",
+    "./qq-transport": "./src/qq-transport.mjs",
+    "./client": "./lib/client.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    },
+    "manifestVersion": 1
+  }
+}

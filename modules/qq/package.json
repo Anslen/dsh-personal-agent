@@ -1,0 +1,89 @@
+{
+  "name": "dsh-qqbot-muu",
+  "version": "0.1.5",
+  "description": "独立的 DSH QQ 桌宠助手插件：统一记忆库/印象卡、人格注入、表情包视觉打标、三形态桌宠+公网受限链接、逐帧视频流水线、B站运营（自持底盘，零 @zaofan 依赖）",
+  "type": "module",
+  "main": "./entry.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./entry.js"
+    },
+    "./channel-tools": {
+      "types": "./dist/channel-tools.d.ts",
+      "import": "./dist/channel-tools.js"
+    },
+    "./sticker-store": {
+      "types": "./dist/features/sticker-store.d.ts",
+      "import": "./dist/features/sticker-store.js"
+    },
+    "./schedule-store": {
+      "types": "./dist/features/schedule-store.d.ts",
+      "import": "./dist/features/schedule-store.js"
+    },
+    "./client": "./client/qqbot-settings.js"
+  },
+  "bin": {
+    "dsh-qqbot-muu-install": "./install.mjs"
+  },
+  "files": [
+    "index.js",
+    "entry.js",
+    "cordis.patch.yml",
+    "install.mjs",
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "settings-host.js",
+    "voice-convert.mjs",
+    "dist/**",
+    "client/**",
+    "scripts/**",
+    "dshqqbot/.qqbot-extensions/**"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "immediately": true
+    },
+    "engines": {
+      "dsh": ">=0.1.5-rc.2"
+    },
+    "manifestVersion": 1
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-client-ui-settings": "0.1.7-rc.1",
+    "@deepseek-ai/dsh-client-ui-slots": "0.1.7-rc.1",
+    "@deepseek-ai/schemastery": "3.18.4",
+    "@tencent-connect/qqbot-connector": "1.2.0",
+    "@tencent-connect/qqbot-nodejs": "^1.0.4",
+    "js-yaml": "^4.1.0",
+    "lamejs-fixed": "^1.2.2",
+    "silk-wasm": "^3.7.1"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "keywords": [
+    "qqbot",
+    "dsh",
+    "memory",
+    "sticker",
+    "bilibili",
+    "pet"
+  ],
+  "license": "MIT",
+  "author": "wuwo1979",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wuwo1979/dsh-qqbot-muu"
+  },
+  "private": true
+}

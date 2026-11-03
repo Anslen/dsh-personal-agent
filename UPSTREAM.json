@@ -1,0 +1,12 @@
+{
+  "superagent": {
+    "url": "https://github.com/deepseek-ai/dsh-superagent-prototype",
+    "commit": "8c32a9dc5d72c033816c6a8110b37f40cf94fba4",
+    "license": "MIT"
+  },
+  "qq": {
+    "url": "https://github.com/wuwo1979/dsh-qqbot-muu",
+    "commit": "b9522e5f99160fbd2d21f7f975824940a0854172",
+    "license": "MIT"
+  }
+}

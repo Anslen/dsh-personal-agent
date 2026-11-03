@@ -1,0 +1,33 @@
+- id: personal-agent
+  disabled: false
+  config:
+    stateDir: /absolute/path/to/private/state
+    bots:
+      - id: assistant-a
+        connect: true
+        appId: YOUR_APP_ID_A
+        secretEnv: QQ_ASSISTANT_A_SECRET
+        personaFile: /absolute/path/to/private/persona-a.md
+        repository: owner/workspace-repository
+        allowedUsers: []
+        allowedGroups: []
+        stickers:
+          queries: [可爱 开心 表情包, 晚安 表情包]
+          sources: []
+          referenceImage: /absolute/path/to/private/reference-a.png
+          preferred: [温和, 活泼]
+          avoid: [广告]
+      - id: assistant-b
+        connect: true
+        appId: YOUR_APP_ID_B
+        secretEnv: QQ_ASSISTANT_B_SECRET
+        personaFile: /absolute/path/to/private/persona-b.md
+        repository: owner/workspace-repository
+        allowedUsers: []
+        allowedGroups: []
+        stickers:
+          queries: [游戏 吐槽 表情包]
+          sources: []
+          referenceImage: /absolute/path/to/private/reference-b.png
+          preferred: [冷静]
+          avoid: [广告]

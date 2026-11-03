@@ -1,0 +1,14 @@
+node_modules/
+lib/
+.env*
+!.env.example
+.local/
+state/
+*.db
+*.db-*
+*.sqlite*
+*.log
+credentials*
+config.local.*
+
+/dist/

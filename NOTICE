@@ -1,0 +1,10 @@
+本项目新增及整合代码采用 GNU GPL version 3 or later。
+
+modules/superagent 源自 deepseek-ai/dsh-superagent-prototype。
+Copyright (c) 2026 DeepSeek Harness Team. 原始代码采用 MIT；参见 LICENSES/superagent-MIT.txt。
+
+modules/qq 源自 wuwo1979/dsh-qqbot-muu。
+Copyright (c) 2026 wuwo1979. 原始代码采用 MIT；参见 LICENSES/qq-MIT.txt。
+
+各上游模块保留其原始许可证。依赖包按各自许可证使用。
+UPSTREAM.json 记录复制时的上游提交，后续变更应单独记录。
