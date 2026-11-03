@@ -47,6 +47,8 @@
                 disabled: !!js process.platform !== 'win32'
           - id: tool-fs
             name: "@deepseek-ai/dsh-tool-fs"
+            config:
+              readImage: true
           - id: tool-fs-search
             name: "@deepseek-ai/dsh-tool-fs-search"
             config:
@@ -148,6 +150,7 @@
           - id: tool-fs
             name: "@deepseek-ai/dsh-tool-fs"
             config:
+              readImage: true
               write: false
               edit: false
           - id: tool-jobs

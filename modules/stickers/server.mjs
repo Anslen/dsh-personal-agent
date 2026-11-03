@@ -74,13 +74,11 @@ export function handle(role, action, args, db = libs.get(role)) {
     };
   }
   if (action === "authorize" || action === "inspect") {
-    if (args.viewed !== true)
-      throw new Error("发送前需要使用read_image查看候选图片");
     const row = authorizeSend(
       db,
       role,
       String(args.id || ""),
-      String(args.ticket || ""),
+      args.ticket ? String(args.ticket) : undefined,
       peer,
     );
     if (
@@ -91,7 +89,7 @@ export function handle(role, action, args, db = libs.get(role)) {
     if (action === "inspect")
       return { ok: true, id: row.id, path: row.path, preview: row.preview };
     // 授权凭据一次性使用；发送失败可以重新检索领取，避免重复并发发送。
-    db.prepare("DELETE FROM tickets WHERE token=?").run(args.ticket);
+    db.prepare("DELETE FROM tickets WHERE token=?").run(row.selectionToken);
     return { ok: true, id: row.id, path: row.path };
   }
   if (action === "sent") {

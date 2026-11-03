@@ -12,11 +12,12 @@
         allowedUsers: []
         allowedGroups: []
         stickers:
-          queries: [可爱 开心 表情包, 晚安 表情包]
+          queries: [开心 表情包, 晚安 表情包]
           sources: []
-          referenceImage: /absolute/path/to/private/reference-a.png
-          preferred: [温和, 活泼]
-          avoid: [广告]
+          referenceImages:
+            - /absolute/path/to/private/reference-a-front.png
+            - /absolute/path/to/private/reference-a-full-body.png
+          identityDescription: 描述角色的发型、服装和标志性配件
       - id: assistant-b
         connect: true
         appId: YOUR_APP_ID_B
@@ -28,6 +29,7 @@
         stickers:
           queries: [游戏 吐槽 表情包]
           sources: []
-          referenceImage: /absolute/path/to/private/reference-b.png
-          preferred: [冷静]
-          avoid: [广告]
+          referenceImages:
+            - /absolute/path/to/private/reference-b-front.png
+            - /absolute/path/to/private/reference-b-full-body.png
+          identityDescription: 描述角色的发型、服装和标志性配件

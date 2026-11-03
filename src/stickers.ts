@@ -43,11 +43,10 @@ export class Stickers {
         [this.bot.id]: {
           name: this.bot.id,
           queries: this.bot.stickers.queries,
-          preferred: this.bot.stickers.preferred || [],
-          avoid: this.bot.stickers.avoid || [],
           seedSources: this.bot.stickers.sources || [],
           personaFile: this.bot.personaFile,
-          referenceImage: this.bot.stickers.referenceImage,
+          referenceImages: this.bot.stickers.referenceImages,
+          identityDescription: this.bot.stickers.identityDescription,
         },
       },
     };
@@ -194,7 +193,7 @@ export class Stickers {
       tool({
         name: "sticker_search",
         description:
-          "检索当前Bot已审核的表情，使用read_image查看preview后再发送。",
+          "检索当前Bot已入库的表情，使用sticker_view查看选中的图片后再发送。",
         schema: z.object({
           query: z.string(),
           limit: z.number().int().min(1).max(5).default(3),
@@ -203,12 +202,29 @@ export class Stickers {
           this.request("search", { ...args, peer: agent.session.id }),
       }),
       tool({
+        name: "sticker_view",
+        description:
+          "查看已检索候选的实际图片。返回图片本身，确认合适后用sticker_send发送同一id。",
+        schema: z.object({ id: z.string() }),
+        execute: async (args: any) => {
+          const item = await this.request("inspect", {
+            id: args.id,
+            peer: agent.session.id,
+          });
+          const image = await agent.ctx.attachments.saveImage({
+            data: readFileSync(item.preview),
+            mediaType: "image/jpeg",
+            name: args.id + ".jpg",
+          });
+          return { id: args.id, image };
+        },
+      }),
+      tool({
         name: "sticker_send",
-        description: "将已经查看的表情发送至当前任务原QQ会话。",
+        description:
+          "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。",
         schema: z.object({
           id: z.string(),
-          ticket: z.string(),
-          viewed: z.literal(true),
           task_id: z.string().optional(),
           trigger_id: z.string().optional(),
         }),
@@ -221,7 +237,12 @@ export class Stickers {
           const { assertViewed } = await import(
             "../modules/stickers/evidence.mjs"
           );
-          assertViewed(agent.session.snapshotEvents(), picked.preview);
+          assertViewed(
+            agent.session.snapshotEvents(),
+            picked.preview,
+            Date.now(),
+            args.id,
+          );
           const approved = await this.request("authorize", {
             ...args,
             peer: agent.session.id,

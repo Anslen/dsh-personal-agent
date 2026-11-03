@@ -35,7 +35,10 @@ export function parseEvents(text, requiredTool, image) {
     (e) =>
       e.type === "tool_call" &&
       e.tool === requiredTool &&
-      (!image || e.input?.file_path === image),
+      (!image ||
+        (Array.isArray(image)
+          ? image.includes(e.input?.file_path)
+          : e.input?.file_path === image)),
   );
   const completed = calls.filter((call) =>
     events.some(
@@ -47,12 +50,22 @@ export function parseEvents(text, requiredTool, image) {
   );
   if (!completed.length)
     throw new Error("模型没有完成要求的实际工具调用：" + requiredTool);
+  const images = image ? (Array.isArray(image) ? image : [image]) : [];
+  for (const path of images)
+    if (!completed.some((call) => call.input?.file_path === path))
+      throw new Error("模型没有实际读取全部参考图：" + path);
   const final = events.findLast((e) => e.type === "final");
   if (!final) throw new Error("模型没有最终输出");
   const evidence = {
     session: events.find((e) => e.type === "session")?.sessionId,
     tool: requiredTool,
     callIds: completed.map((c) => c.callId),
+    images: images.map((path) => ({
+      path,
+      callIds: completed
+        .filter((c) => c.input?.file_path === path)
+        .map((c) => c.callId),
+    })),
   };
   if (requiredTool === "web_search") {
     // 来源直接提取实际搜索工具输出，避免把模型自行生成的链接当成检索结果。
@@ -94,7 +107,7 @@ export function parseEvents(text, requiredTool, image) {
 }
 export async function modelTask(
   prompt,
-  { search = false, image, timeout = 150000 } = {},
+  { search = false, image, images, timeout = 150000 } = {},
 ) {
   const patch = join(HERE, search ? "search.patch.yml" : "review.patch.yml");
   return new Promise((resolve, reject) => {
@@ -148,7 +161,11 @@ export async function modelTask(
       try {
         finish(
           null,
-          parseEvents(stdout, search ? "web_search" : "read_image", image),
+          parseEvents(
+            stdout,
+            search ? "web_search" : "read_image",
+            images || image,
+          ),
         );
       } catch (e) {
         finish(e);

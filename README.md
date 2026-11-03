@@ -33,6 +33,8 @@ dsh plugin --profile web add /absolute/path/to/dsh-personal-agent
 
 权限和验证边界见 [docs/VALIDATION.md](docs/VALIDATION.md)。
 
+表情审核配置使用 `referenceImages`（2–6 张），建议提供清晰全身、正面及多视角图片。`identityDescription` 描述正向视觉特征；脚本整理OCR、标签和视觉对比信息，模型读取一张对照图，简短复核是否采纳。macOS 使用系统 Vision；其他平台需安装 `tesseract` 及 `chi_sim`、`eng` 语言数据，或配置 `STICKER_OCR_COMMAND`。参考图内容改变会使旧审核结果失效，需复核后重新使用。
+
 ## 开发与上游
 
 新增代码中文注释；修改后执行格式化和相关测试。上游代码仅在所需接入点修改，提交时记录变更及对应测试。请勿修改 `node_modules` 作为长期维护方式。

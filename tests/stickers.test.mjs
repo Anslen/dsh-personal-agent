@@ -27,6 +27,7 @@ writeFileSync(
 );
 process.env.STICKER_CONFIG = configFile;
 const {
+  config,
   library,
   fingerprint,
   search,
@@ -83,26 +84,24 @@ test("短中文关键词与同义词检索", () => {
 });
 test("发送授权绑定角色和会话，并阻止重复发送", () => {
   const [hit] = search(dbs[0], "alpha", "无语", "peer");
+  assert.throws(() => authorizeSend(dbs[1], "beta", hit.id, undefined, "peer"));
   assert.throws(() =>
-    authorizeSend(dbs[1], "beta", hit.id, hit.ticket, "peer"),
-  );
-  assert.throws(() =>
-    authorizeSend(dbs[0], "alpha", hit.id, hit.ticket, "another"),
+    authorizeSend(dbs[0], "alpha", hit.id, undefined, "another"),
   );
   assert.equal(
-    authorizeSend(dbs[0], "alpha", hit.id, hit.ticket, "peer").id,
+    authorizeSend(dbs[0], "alpha", hit.id, undefined, "peer").id,
     hit.id,
   );
   dbs[0]
     .prepare("INSERT INTO uses VALUES(?,?,?)")
     .run(hit.id, "peer", Date.now());
   assert.throws(
-    () => authorizeSend(dbs[0], "alpha", hit.id, hit.ticket, "peer"),
+    () => authorizeSend(dbs[0], "alpha", hit.id, undefined, "peer"),
     /最近已发送/,
   );
 });
-test("人设版本变化立即撤销旧图库准入", () => {
-  writeFileSync(join(temp, "roles/alpha/AGENTS.md"), "新的人设");
+test("角色视觉身份配置变化立即撤销旧图库准入", () => {
+  config.roles.alpha.identityDescription = "新的视觉身份";
   assert.equal(search(dbs[0], "alpha", "无语", "peer").length, 0);
 });
 test("DNS及重定向下载防护拒绝本地和内网地址", () => {
@@ -225,9 +224,29 @@ test("同一轮可连续授权发送8张不同表情，不受原每小时6张限
   assert.equal(picks.length, 8);
   for (const item of picks) {
     assert.equal(
-      authorizeSend(db, "alpha", item.id, item.ticket, peer).id,
+      authorizeSend(db, "alpha", item.id, undefined, peer).id,
       item.id,
     );
     db.prepare("INSERT INTO uses VALUES(?,?,?)").run(item.id, peer, Date.now());
   }
+});
+
+test("后台自动取得检索授权，失效或未检索的图片不能发送", () => {
+  const peer = "automatic-authorization";
+  const [hit] = search(dbs[1], "beta", "无语", peer);
+  assert.equal(Object.hasOwn(hit, "ticket"), false);
+  assert.ok(
+    authorizeSend(dbs[1], "beta", hit.id, undefined, peer).selectionToken,
+  );
+  assert.throws(() =>
+    authorizeSend(
+      dbs[1],
+      "beta",
+      hit.id,
+      "task-id-is-not-a-selection-token",
+      peer,
+    ),
+  );
+  dbs[1].prepare("UPDATE tickets SET expires=0 WHERE peer=?").run(peer);
+  assert.throws(() => authorizeSend(dbs[1], "beta", hit.id, undefined, peer));
 });

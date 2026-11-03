@@ -17,6 +17,7 @@ import { channelTools } from "./channel-tools.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
   "agents",
+  "attachments",
   "sessionController",
   "sessionPersistence",
   "workspaceRegistry",
@@ -51,9 +52,8 @@ export const Config = s.object({
             maxAttempts: s.number().min(1).max(10).default(3),
             queries: s.array(s.string()).required(),
             sources: s.array(s.string()).default([]),
-            referenceImage: s.string().required(),
-            preferred: s.array(s.string()).default([]),
-            avoid: s.array(s.string()).default([]),
+            referenceImages: s.array(s.string()).min(2).max(6).required(),
+            identityDescription: s.string().default(""),
           })
           .required(),
         allowedUsers: s.array(s.string()).default([]),

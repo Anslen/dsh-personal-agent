@@ -18,12 +18,21 @@ export function roleDir(role) {
   return join(ROOT, "roles", assertRole(role), "stickers");
 }
 export function fingerprint(role) {
+  const identity = config.roles[assertRole(role)];
+  // 审核只依赖视觉身份和参考内容；聊天工具说明的修改不触发整库复核。
   return createHash("sha256")
-    .update(readFileSync(config.roles[role].personaFile))
-    .update(JSON.stringify(config.roles[role]))
-    .update("review-v2")
+    .update(
+      JSON.stringify({
+        identityDescription: identity.identityDescription || "",
+        references: (identity.referenceImages || []).map((path) =>
+          createHash("sha256").update(readFileSync(path)).digest("hex"),
+        ),
+      }),
+    )
+    .update("review-v4")
     .digest("hex");
 }
+
 export function openDB(path) {
   mkdirSync(resolve(path, ".."), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(path);
@@ -39,6 +48,7 @@ export function library(role) {
     id TEXT PRIMARY KEY, sha TEXT UNIQUE NOT NULL, dhash TEXT NOT NULL, source TEXT NOT NULL,
     image_url TEXT NOT NULL, path TEXT NOT NULL, preview TEXT NOT NULL, state TEXT NOT NULL,
     policy TEXT NOT NULL, meta TEXT NOT NULL, created INTEGER NOT NULL, used INTEGER DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS review_history(id TEXT,policy TEXT,meta TEXT,at INTEGER);
     CREATE TABLE IF NOT EXISTS uses(id TEXT, peer TEXT, at INTEGER);
     CREATE TABLE IF NOT EXISTS source_cursors(url TEXT PRIMARY KEY, cursor INTEGER DEFAULT 0);
     CREATE TABLE IF NOT EXISTS tickets(token TEXT PRIMARY KEY, id TEXT, peer TEXT, expires INTEGER);`);
@@ -156,17 +166,23 @@ export function search(db, role, query, peer, limit = 3) {
       tags: it.meta.tags,
       text: it.meta.text,
       description: it.meta.description,
-      ticket: token,
     };
   });
 }
 export function authorizeSend(db, role, id, ticket, peer) {
   const row = db
     .prepare(
-      "SELECT a.* FROM assets a JOIN tickets t ON a.id=t.id WHERE a.id=? AND t.token=? AND t.peer=? AND t.expires>? AND a.state='approved' AND a.policy=?",
+      "SELECT a.*,t.token AS selectionToken FROM assets a JOIN tickets t ON a.id=t.id WHERE a.id=? AND (? IS NULL OR t.token=?) AND t.peer=? AND t.expires>? AND a.state='approved' AND a.policy=? ORDER BY t.expires DESC LIMIT 1",
     )
-    .get(id, ticket, peer, Date.now(), fingerprint(role));
-  if (!row) throw new Error("图片未审核、角色不匹配、人设已变更或检索凭据过期");
+    .get(
+      id,
+      ticket ?? null,
+      ticket ?? null,
+      peer,
+      Date.now(),
+      fingerprint(role),
+    );
+  if (!row) throw new Error("请重新检索当前图库后再选择图片发送");
   if (
     db
       .prepare("SELECT 1 FROM uses WHERE id=? AND peer=? AND at>?")
