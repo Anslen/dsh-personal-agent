@@ -184,7 +184,7 @@ export async function apply(ctx: Context, config: any) {
         current.revision,
         "deployment",
       );
-    stickers = new Stickers(runtime, bot, stateDir);
+    stickers = new Stickers(runtime, bot, stateDir, ctx.attachments);
     ctx.effect(() => () => stickers.stop());
     await stickers.start();
     await runtime.ready;

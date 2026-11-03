@@ -23,6 +23,7 @@ export class Stickers {
     private runtime: any,
     private bot: any,
     private stateDir: string,
+    private attachments?: any,
   ) {}
   async start() {
     const root = join(this.stateDir, "media");
@@ -211,7 +212,7 @@ export class Stickers {
             id: args.id,
             peer: agent.session.id,
           });
-          const image = await agent.ctx.attachments.saveImage({
+          const image = await this.attachments.saveImage({
             data: readFileSync(item.preview),
             mediaType: "image/jpeg",
             name: args.id + ".jpg",
