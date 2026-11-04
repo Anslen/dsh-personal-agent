@@ -1,4 +1,5 @@
 import { observe as observeExternal } from "../../../../src/qq-transport.mjs";
+import { archiveAndMentionOnly } from "../../../../src/qq-inbound-policy.mjs";
 /** 从盘上直接读 autoRecall（settings 热更不落到闭包 config 时的兜底，2026-10-20） */
 function readAutoRecallFromDiskMw(cfg) {
   try {
@@ -200,6 +201,13 @@ export async function setupMiddlewares(
       },
     }),
   );
+  // 外部主控只接收明确 @ 的群消息；未 @ 的消息仅归档，不执行后续扩展和模型链。
+  if (config.externalDriver)
+    bot.use(
+      archiveAndMentionOnly((message) =>
+        observeExternal(config.settingsNs || config.appId, message),
+      ),
+    );
   // 3.9. 引用消息解析（记录每条消息 + 解析被引用原文）
   //   ⚠️ 2026-10-01 **前移**（原在第 11 步）: 群历史缓冲在第 4 步, 而它记 content 时要读
   //   `ctx.state.quote` —— 顺序反了的话这里永远是 undefined, 历史行里就永远没有 `[引]…[/引]`,
@@ -349,12 +357,6 @@ export async function setupMiddlewares(
   const ledgerDataDir = stickerDirOf(config);
   bot.use(chatLedgerRecorder(ledgerDataDir));
   // 5. 群聊 @bot 门控
-  // 已通过访问控制的消息先归档，不因未触发模型而丢失历史。
-  if (config.externalDriver)
-    bot.use(async (ctx, next) => {
-      await observeExternal(config.settingsNs || config.appId, ctx.message);
-      return next();
-    });
   bot.use(
     mentionGate({
       requireMentionInGroup: config.requireMention,

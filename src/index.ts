@@ -173,6 +173,7 @@ export async function apply(ctx: Context, config: any) {
         cwd: stateDir,
         dataRoot: stateDir,
         externalDriver: true,
+        requireMention: true,
         access: {
           c2cMode: "allowlist",
           c2cAllow: bot.allowedUsers,
