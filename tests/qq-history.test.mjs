@@ -288,3 +288,19 @@ test("相同时间的记录翻页不遗漏、不重复，重复消息去重", ()
   assert.equal(found.length, 6);
   assert.equal(new Set(found.map((r) => r.id)).size, 6);
 });
+
+test("历史查询输出符合宿主无损JSON契约，省略筛选条件与引用缺省字段", () => {
+  const { runtime, bot } = fixture();
+  recordHistory(runtime, bot, {
+    kind: "group",
+    groupOpenid: "group",
+    senderId: "member",
+    messageId: "reply-json",
+    refMsgIdx: "unknown",
+  });
+  const result = readHistory(runtime, bot, "group", "group", { limit: 5 });
+  assert.deepEqual(result, JSON.parse(JSON.stringify(result)));
+  assert.equal(Object.hasOwn(result.filters, "start_time"), false);
+  assert.equal(Object.hasOwn(result.filters, "end_time"), false);
+  assert.equal(result.messages[0].reply.available, false);
+});

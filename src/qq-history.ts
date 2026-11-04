@@ -159,7 +159,7 @@ export function readHistory(
         r.text.toLowerCase().includes(options.keyword.toLowerCase())),
   );
   const messages = rows.slice(0, options.limit || 50);
-  return {
+  const result = {
     messages,
     snapshot: {
       queried_at: new Date().toISOString(),
@@ -171,8 +171,8 @@ export function readHistory(
     },
     filters: {
       sender: options.sender || "*",
-      start_time: options.start_time,
-      end_time: options.end_time,
+      ...(options.start_time ? { start_time: options.start_time } : {}),
+      ...(options.end_time ? { end_time: options.end_time } : {}),
     },
     ...(rows.length > messages.length
       ? {
@@ -184,4 +184,6 @@ export function readHistory(
     coverage:
       "仅包含当前Bot实际收到并保存的消息，最多最近7天、每个会话2000条；不代表QQ群完整历史",
   };
+  // 可选引用字段同样省略缺省值，交给宿主前确保返回值符合JSON工具契约。
+  return JSON.parse(JSON.stringify(result));
 }
