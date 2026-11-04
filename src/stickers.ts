@@ -155,6 +155,14 @@ export class Stickers {
         continue;
       }
       const value = await this.request("status", { id: sub.jobId });
+      if (value.job?.state === "cancelled") {
+        this.runtime.store.set(key, {
+          ...sub,
+          delivered: true,
+          cancelled: true,
+        });
+        continue;
+      }
       if (!["done", "failed"].includes(value.job?.state)) continue;
       // 与原型Effects共用事务；relay会唤醒主控，notify仅注入，不能代替relay。
       this.runtime.store.atomic(() => {
@@ -166,7 +174,7 @@ export class Stickers {
             ticketId: sub.ticketId,
             triggerId: sub.triggerId,
             instruction:
-              "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。需要发图先使用sticker_search和sticker_view查看，然后sticker_send。",
+              "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。结果中的approved素材已入库；将其id列表传给sticker_search的ids参数，再sticker_view查看并sticker_send发送，避免关键词漏检。",
           }),
         );
         this.runtime.store.set(key, { ...sub, delivered: true });
@@ -175,6 +183,21 @@ export class Stickers {
   }
   tools(agent: any, ticket: any) {
     return [
+      tool({
+        name: "sticker_status",
+        description: "查询后台表情搜索的当前阶段、候选数量和重试原因。",
+        schema: z.object({ id: z.string() }),
+        execute: async (args: any) => this.request("status", args),
+      }),
+      tool({
+        name: "sticker_cancel_search",
+        description: "用户要求停止时取消后台表情搜索。",
+        schema: z.object({ id: z.string(), trigger_id: z.string().optional() }),
+        execute: async (args: any) => {
+          channelTarget(this.runtime, this.bot, args, ticket);
+          return this.request("cancel", args);
+        },
+      }),
       tool({
         name: "sticker_request_search",
         description:
@@ -208,7 +231,8 @@ export class Stickers {
         description:
           "检索当前Bot已入库的表情，使用sticker_view查看选中的图片后再发送。",
         schema: z.object({
-          query: z.string(),
+          query: z.string().default(""),
+          ids: z.array(z.string()).max(20).optional(),
           limit: z.number().int().min(1).max(5).default(3),
         }),
         execute: async (args: any) =>

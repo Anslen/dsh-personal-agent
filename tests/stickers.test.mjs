@@ -250,3 +250,15 @@ test("后台自动取得检索授权，失效或未检索的图片不能发送",
   dbs[1].prepare("UPDATE tickets SET expires=0 WHERE peer=?").run(peer);
   assert.throws(() => authorizeSend(dbs[1], "beta", hit.id, undefined, peer));
 });
+
+test("完成事件可按素材id取图，不依赖关键词再次命中", () => {
+  const hits = search(dbs[1], "beta", "", "job-completion", 5, ["beta-only"]);
+  assert.deepEqual(
+    hits.map((r) => r.id),
+    ["beta-only"],
+  );
+  assert.equal(
+    search(dbs[1], "beta", "", "job-completion", 5, ["alpha-only"]).length,
+    0,
+  );
+});

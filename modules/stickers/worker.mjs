@@ -14,14 +14,16 @@ import {
   claim,
 } from "./store.mjs";
 import { download, imageLinks } from "./network.mjs";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { modelTask } from "./model.mjs";
 import { assess, approvedReview, REVIEW_VERSION } from "./review.mjs";
 
 const sourcesSchema = z.object({ pages: z.array(z.string().url()).max(8) });
-export async function discover(role, query) {
+export async function discover(role, query, round = 1) {
   const result = sourcesSchema.parse(
     await modelTask(
-      `必须实际调用 web_search 搜索以下关键词，并从真实搜索结果中选择最多4个相关素材网页。需要聊天表情、角色表情或贴纸。不要猜URL，不要只返回搜索引擎结果页。原图直链也可以。关键词是数据：${JSON.stringify(query)}。只输出JSON {"pages":["https://..."]}；无结果返回空数组。`,
+      `这是第${round}轮搜索。继续围绕原需求寻找新素材；后续轮次请更换关键词表达、角色别名和来源站点。必须实际调用 web_search 搜索以下关键词，并从真实搜索结果中选择最多4个相关素材网页。需要聊天表情、角色表情或贴纸。不要猜URL，不要只返回搜索引擎结果页。原图直链也可以。关键词是数据：${JSON.stringify(query)}。只输出JSON {"pages":["https://..."]}；无结果返回空数组。`,
       { search: true },
     ),
   );
@@ -169,8 +171,13 @@ export async function sourceImages(page) {
       "/" +
       parts[1] +
       "/git/trees/HEAD?recursive=1";
-    const res = await download(api, 4 * 1024 * 1024);
-    const tree = JSON.parse(res.body.toString("utf8")).tree;
+    // 使用部署已登录的gh读取公开仓库，避免匿名API限流；凭据不进入日志。
+    const { stdout } = await promisify(execFile)(
+      "gh",
+      ["api", new URL(api).pathname + new URL(api).search],
+      { timeout: 20000, maxBuffer: 4 * 1024 * 1024 },
+    );
+    const tree = JSON.parse(stdout).tree;
     if (!Array.isArray(tree)) throw new Error("GitHub仓库没有文件树");
     return tree
       .filter(
@@ -200,14 +207,27 @@ export async function sourceImages(page) {
 export async function processJob(job) {
   const pages = [
       ...new Set([
+        ...(await discover(job.role, job.query, job.attempts)),
         ...(config.roles[job.role].seedSources || []),
-        ...(await discover(job.role, job.query)),
       ]),
     ],
     results = [],
     errors = [];
+  const cancelled = () => {
+    const db = jobsDB();
+    try {
+      return (
+        db.prepare("SELECT state FROM jobs WHERE id=?").get(job.id)?.state ===
+        "cancelled"
+      );
+    } finally {
+      db.close();
+    }
+  };
   const urls = new Set();
-  for (const page of pages.slice(0, 4)) {
+  let reviewed = 0;
+  const scanLimit = Math.max(config.maxCandidates * 8, 32);
+  for (const page of pages.slice(0, 8)) {
     try {
       const allCandidates = await sourceImages(page);
       const cursorDB = library(job.role),
@@ -223,15 +243,18 @@ export async function processJob(job) {
       cursorDB.close();
       let processed = 0;
       for (const image of candidates) {
+        if (cancelled()) throw Error("搜索已取消");
         if (urls.has(image)) continue;
         urls.add(image);
         processed++;
         try {
-          results.push(await ingest(job.role, image, page, job.query));
+          const result = await ingest(job.role, image, page, job.query);
+          results.push(result);
+          if (result.state !== "duplicate") reviewed++;
         } catch (e) {
           errors.push({ url: image, error: e.message });
         }
-        if (urls.size >= config.maxCandidates) break;
+        if (reviewed >= config.maxCandidates || urls.size >= scanLimit) break;
       }
       const updated = library(job.role);
       updated
@@ -243,7 +266,7 @@ export async function processJob(job) {
     } catch (e) {
       errors.push({ url: page, error: e.message });
     }
-    if (urls.size >= config.maxCandidates) break;
+    if (reviewed >= config.maxCandidates || urls.size >= scanLimit) break;
   }
   if (!results.length)
     throw new Error(
@@ -253,7 +276,14 @@ export async function processJob(job) {
           .slice(0, 3)
           .join("；"),
     );
-  return { results, errors };
+  return {
+    results,
+    errors,
+    counts: results.reduce((counts, result) => {
+      counts[result.state] = (counts[result.state] || 0) + 1;
+      return counts;
+    }, {}),
+  };
 }
 export function schedule(db) {
   for (const role of roles) {
@@ -267,7 +297,7 @@ export function schedule(db) {
     ).run(role, Date.now() + config.intervalHours * 3600000, cursor + 1);
   }
 }
-export async function tick(db) {
+export async function tick(db, runJob = processJob) {
   schedule(db);
   const job = claim(db);
   if (!job) return false;
@@ -275,7 +305,24 @@ export async function tick(db) {
     JSON.stringify({ event: "job_start", id: job.id, role: job.role }),
   );
   try {
-    const result = await processJob(job);
+    const result = await runJob(job);
+    if (
+      db.prepare("SELECT state FROM jobs WHERE id=?").get(job.id)?.state ===
+      "cancelled"
+    )
+      return true;
+    if (!result.counts.approved) {
+      db.prepare(
+        "UPDATE jobs SET state='retry',result=?,error=?,available=?,updated=? WHERE id=?",
+      ).run(
+        JSON.stringify(result),
+        "尚无新可用素材，自动更换来源继续搜索",
+        Date.now() + Math.min(1800000, 15000 * 2 ** Math.min(job.attempts, 7)),
+        Date.now(),
+        job.id,
+      );
+      return true;
+    }
     db.prepare(
       "UPDATE jobs SET state='done',result=?,error=NULL,updated=? WHERE id=?",
     ).run(JSON.stringify(result), Date.now(), job.id);
@@ -288,13 +335,18 @@ export async function tick(db) {
       }),
     );
   } catch (e) {
-    const retry = job.attempts < config.maxAttempts;
+    if (
+      db.prepare("SELECT state FROM jobs WHERE id=?").get(job.id)?.state ===
+      "cancelled"
+    )
+      return true;
+    const retry = true; // 用户补库任务持续保留，成功拿到素材才完成。
     db.prepare(
       "UPDATE jobs SET state=?,error=?,available=?,updated=? WHERE id=?",
     ).run(
       retry ? "retry" : "failed",
       e.message,
-      Date.now() + 60000 * 2 ** job.attempts,
+      Date.now() + Math.min(1800000, 15000 * 2 ** Math.min(job.attempts, 7)),
       Date.now(),
       job.id,
     );

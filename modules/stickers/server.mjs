@@ -44,10 +44,25 @@ export function handle(role, action, args, db = libs.get(role)) {
   if (action === "search")
     return {
       ok: true,
-      items: search(db, role, args.query, peer, Number(args.limit) || 3),
+      items: search(
+        db,
+        role,
+        args.query,
+        peer,
+        Number(args.limit) || 3,
+        Array.isArray(args.ids) ? args.ids.slice(0, 20) : [],
+      ),
     };
   if (action === "request")
     return { ok: true, job: enqueue(jobs, role, args.query) };
+  if (action === "cancel") {
+    jobs
+      .prepare(
+        "UPDATE jobs SET state='cancelled',updated=? WHERE id=? AND role=? AND state IN ('queued','running','retry')",
+      )
+      .run(Date.now(), String(args.id), role);
+    return { ok: true, cancelled: true };
+  }
   if (action === "status") {
     const job = args.id
       ? jobs

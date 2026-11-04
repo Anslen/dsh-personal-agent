@@ -79,7 +79,7 @@ export function enqueue(db, role, query) {
       .prepare(
         "SELECT * FROM jobs WHERE dedup=? AND (state IN ('queued','running','retry') OR (state='done' AND updated>?)) ORDER BY created DESC LIMIT 1",
       )
-      .get(dedup, Date.now() - 6 * 3600000);
+      .get(dedup, Date.now() - 60000);
     if (prior) {
       db.exec("COMMIT");
       return { id: prior.id, state: prior.state, deduplicated: true };
@@ -123,12 +123,12 @@ const synonyms = [
   ["安慰", "鼓励", "加油"],
   ["委屈", "难过", "伤心"],
 ];
-export function search(db, role, query, peer, limit = 3) {
+export function search(db, role, query, peer, limit = 3, ids = []) {
   const words = String(query || "")
     .trim()
     .split(/[\s,，、]+/)
     .filter(Boolean);
-  if (!words.length) throw new Error("需要搜索关键词");
+  if (!words.length && !ids.length) throw new Error("需要搜索关键词或素材id");
   const expanded = new Set(words);
   for (const group of synonyms)
     if (group.some((w) => words.some((q) => q.includes(w))))
@@ -137,11 +137,12 @@ export function search(db, role, query, peer, limit = 3) {
     .prepare("SELECT * FROM assets WHERE state='approved' AND policy=?")
     .all(fingerprint(role));
   const scored = items
+    .filter((it) => !ids.length || ids.includes(it.id))
     .map((it) => {
       const m = JSON.parse(it.meta);
       const tags = (m.tags || []).join(" "),
         txt = [tags, m.text, m.description, m.intent, m.emotion].join(" ");
-      let score = 0;
+      let score = ids.length ? 1 : 0;
       for (const w of expanded)
         if (txt.includes(w)) score += words.includes(w) ? 4 : 1;
       if (words.some((w) => tags.includes(w))) score += 2;
