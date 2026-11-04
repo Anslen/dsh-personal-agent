@@ -32,6 +32,19 @@ test("同一搜索任务的不同会话订阅分别唤醒主控，持久化去�
   assert.notEqual(relays[0][0], relays[1][0]);
   assert.equal(transactions, 2);
   assert.equal(values.get("personal:sticker:job:c").cancelled, true);
+  const prior = values.get("personal:sticker:job:a");
+  values.set("personal:sticker:job:a", { ...prior, delivered: false });
+  stickers.request = async () => ({
+    job: {
+      id: "job",
+      state: "done",
+      updated: 2,
+      result: { results: [{ id: "fresh", state: "approved" }] },
+    },
+  });
+  await stickers.relay();
+  assert.equal(relays.length, 3);
+  assert.notEqual(relays[0][0], relays[2][0]);
 });
 test("运行中的搜索保持等待，最终失败也通过工作流唤醒报告", async () => {
   const value = { jobId: "job", ticketId: "task" },
