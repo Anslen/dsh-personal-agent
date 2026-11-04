@@ -43,6 +43,7 @@ export class Stickers {
       roles: {
         [this.bot.id]: {
           name: this.bot.id,
+          mode: this.bot.stickers.mode,
           queries: this.bot.stickers.queries,
           seedSources: this.bot.stickers.sources || [],
           personaFile: this.bot.personaFile,
@@ -136,8 +137,16 @@ export class Stickers {
     for (const key of this.runtime.store.keys(subscriptions)) {
       const sub = this.runtime.store.get(key);
       if (sub.delivered) continue;
-      const ticket = this.runtime.store.tickets.get(sub.ticketId);
-      if (!ticket || ticket.ended?.by === "human") {
+      const ticket = sub.ticketId
+        ? this.runtime.store.tickets.get(sub.ticketId)
+        : undefined;
+      const trigger = sub.triggerId
+        ? this.runtime.store.triggers.get(sub.triggerId)
+        : undefined;
+      if (
+        (sub.ticketId && (!ticket || ticket.ended?.by === "human")) ||
+        (!sub.ticketId && !trigger)
+      ) {
         this.runtime.store.set(key, {
           ...sub,
           delivered: true,
@@ -150,13 +159,14 @@ export class Stickers {
       // 与原型Effects共用事务；relay会唤醒主控，notify仅注入，不能代替relay。
       this.runtime.store.atomic(() => {
         this.runtime.sessions.relay(
-          "sticker:" + sub.jobId + ":" + sub.ticketId,
+          "sticker:" + sub.jobId + ":" + (sub.ticketId || sub.triggerId),
           JSON.stringify({
             event: "sticker_search_finished",
             job: value.job,
             ticketId: sub.ticketId,
+            triggerId: sub.triggerId,
             instruction:
-              "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。需要发图先使用sticker_search和read_image查看，然后sticker_send。",
+              "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。需要发图先使用sticker_search和sticker_view查看，然后sticker_send。",
           }),
         );
         this.runtime.store.set(key, { ...sub, delivered: true });
@@ -168,19 +178,21 @@ export class Stickers {
       tool({
         name: "sticker_request_search",
         description:
-          "异步联网搜索当前Bot的表情包。立即返回started，完成后通过持久化事件唤醒主控；无需轮询。",
-        schema: z.object({ query: z.string().min(1).max(160) }),
+          "异步联网搜索当前Bot的表情包。立即返回started，完成后通过持久化事件唤醒主控。可主动补库，主控传当前人类消息trigger_id。",
+        schema: z.object({
+          query: z.string().min(1).max(160),
+          trigger_id: z.string().optional(),
+        }),
         execute: async (args: any) => {
-          if (!ticket)
-            throw new Error(
-              "请先将用户请求路由为授权任务，再由任务执行器发起搜索",
-            );
+          channelTarget(this.runtime, this.bot, args, ticket);
+          const triggerId = ticket?.origin.triggerId || args.trigger_id;
           const result = await this.request("request", { query: args.query });
           this.runtime.store.set(
-            subscriptions(result.job.id + ":" + ticket.id),
+            subscriptions(result.job.id + ":" + (ticket?.id || triggerId)),
             {
               jobId: result.job.id,
-              ticketId: ticket.id,
+              ticketId: ticket?.id,
+              triggerId,
               delivered: false,
             },
           );
@@ -201,6 +213,37 @@ export class Stickers {
         }),
         execute: async (args: any) =>
           this.request("search", { ...args, peer: agent.session.id }),
+      }),
+      tool({
+        name: "sticker_input_view",
+        description:
+          "查看用户消息中的参考图片，提炼视觉搜索词。传原trigger_id和图片序号index（从0开始）。",
+        schema: z.object({
+          trigger_id: z.string().optional(),
+          index: z.number().int().min(0).default(0),
+        }),
+        execute: async (args: any) => {
+          channelTarget(this.runtime, this.bot, args, ticket);
+          const trigger = this.runtime.store.triggers.get(
+            ticket?.origin.triggerId || args.trigger_id,
+          );
+          const input = trigger.meta.attachments?.[args.index];
+          if (!input || !/^https?:\/\//.test(input.url || ""))
+            throw Error("该消息没有可读取的参考图片");
+          const { download } = await import("../modules/stickers/network.mjs");
+          const { body } = await download(input.url);
+          const { default: sharp } = await import("sharp");
+          const data = await sharp(body, { limitInputPixels: 20000000 })
+            .resize(1280, 1280, { fit: "inside", withoutEnlargement: true })
+            .jpeg()
+            .toBuffer();
+          const image = await this.attachments.saveImage({
+            data,
+            mediaType: "image/jpeg",
+            name: "user-reference.jpg",
+          });
+          return { image };
+        },
       }),
       tool({
         name: "sticker_view",

@@ -23,6 +23,7 @@ export function fingerprint(role) {
   return createHash("sha256")
     .update(
       JSON.stringify({
+        ...(identity.mode === "search" ? { mode: "search" } : {}),
         identityDescription: identity.identityDescription || "",
         references: (identity.referenceImages || []).map((path) =>
           createHash("sha256").update(readFileSync(path)).digest("hex"),

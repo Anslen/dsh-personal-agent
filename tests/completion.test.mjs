@@ -58,3 +58,51 @@ test("运行中的搜索保持等待，最终失败也通过工作流唤醒报�
   assert.equal(relays.length, 1);
   assert.equal(JSON.parse(relays[0]).job.error, "network error");
 });
+
+test("主控能基于原消息自主搜索并由完成事件唤醒，无需创建执行任务", async () => {
+  const values = new Map(),
+    relays = [];
+  const trigger = {
+    human: true,
+    channel: {
+      address: {
+        botId: "auto",
+        scope: "c2c",
+        peerId: "user",
+        msgId: "message",
+      },
+    },
+  };
+  const runtime = {
+    store: {
+      get: (k) => values.get(k),
+      set: (k, v) => values.set(k, v),
+      keys: (f) => [...values.keys()].filter((k) => k.startsWith(f.prefix)),
+      atomic: (fn) => fn(),
+      triggers: { get: (id) => (id === "trigger" ? trigger : undefined) },
+      tickets: { get: () => undefined },
+    },
+    sessions: { relay: (id, body) => relays.push(JSON.parse(body)) },
+  };
+  const stickers = new Stickers(
+    runtime,
+    { id: "auto", allowedUsers: ["user"], allowedGroups: [] },
+    "/tmp/unused",
+  );
+  stickers.request = async (action) =>
+    action === "request"
+      ? { job: { id: "job" } }
+      : { job: { id: "job", state: "done" } };
+  const request = stickers
+    .tools({ session: { id: "master" } }, undefined)
+    .find((t) => t.name === "sticker_request_search");
+  await assert.rejects(() =>
+    request.execute({ query: "hi", trigger_id: "wrong" }),
+  );
+  const result = await request.execute({ query: "hi", trigger_id: "trigger" });
+  assert.equal(result.status, "started");
+  await stickers.relay();
+  await stickers.relay();
+  assert.equal(relays.length, 1);
+  assert.equal(relays[0].triggerId, "trigger");
+});

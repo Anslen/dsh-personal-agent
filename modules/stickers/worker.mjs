@@ -115,7 +115,11 @@ export async function ingest(role, imageURL, source, query) {
       "{}",
       Date.now(),
     );
-    const { result, evidence } = await assess(config.roles[role], preview);
+    const { result, evidence } = await assess(
+      config.roles[role],
+      preview,
+      query,
+    );
     // 人设在推理期间改变时保留待审，下一轮按最新版本重新复核。
     if (fingerprint(role) !== policy)
       throw new Error("审核期间人设发生变化，需要重新审核");

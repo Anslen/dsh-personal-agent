@@ -14,6 +14,7 @@ import { bindExecution, routeSubprocess } from "./execution-scope.ts";
 import { sameOrigin } from "../modules/superagent/src/app/http.ts";
 import { Inbox } from "./inbox.ts";
 import { channelTools } from "./channel-tools.ts";
+import { stickerPolicy } from "./sticker-policy.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
   "agents",
@@ -52,7 +53,8 @@ export const Config = s.object({
             maxAttempts: s.number().min(1).max(10).default(3),
             queries: s.array(s.string()).required(),
             sources: s.array(s.string()).default([]),
-            referenceImages: s.array(s.string()).min(2).max(6).required(),
+            mode: s.union(["character", "search"]).default("character"),
+            referenceImages: s.array(s.string()).max(6).default([]),
             identityDescription: s.string().default(""),
           })
           .required(),
@@ -94,6 +96,11 @@ export async function apply(ctx: Context, config: any) {
     apps.add(bot.appId);
   }
   for (const bot of config.bots) {
+    if (
+      bot.stickers.mode !== "search" &&
+      bot.stickers.referenceImages.length < 2
+    )
+      throw Error("角色模式需要至少两张参考图");
     const secret = process.env[bot.secretEnv];
     if (!secret) throw new Error(`缺少Bot凭据环境变量：${bot.secretEnv}`);
     const stateDir = resolve(config.stateDir, bot.id);
@@ -177,7 +184,12 @@ export async function apply(ctx: Context, config: any) {
     const base = current.config.communication.split(
       "\n\n<!-- deployment-persona -->",
     )[0];
-    const communication = base + "\n\n<!-- deployment-persona -->\n" + persona;
+    const communication =
+      base +
+      "\n\n<!-- deployment-persona -->\n" +
+      persona +
+      "\n" +
+      stickerPolicy;
     if (communication !== current.config.communication)
       runtime.prompts.save(
         { ...current.config, communication },

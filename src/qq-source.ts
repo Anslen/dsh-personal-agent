@@ -113,7 +113,13 @@ export function qqTrigger(botId: string, message: any, state?: any): Trigger {
         ? { addressed: "mention" as const }
         : {}),
     at: message.timestamp,
-    text: message.content,
+    text:
+      (message.content || "") +
+      ((message.attachments || []).length
+        ? "\n[用户附带" +
+          message.attachments.length +
+          "个附件，可用sticker_input_view查看图片参考]"
+        : ""),
     channel: {
       source: "qq",
       thread: `qq:${thread}`,
