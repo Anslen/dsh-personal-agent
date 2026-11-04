@@ -159,9 +159,11 @@ export async function apply(ctx: Context, config: any) {
     ctx.effect(() => () => inbox.stop());
     child.effect(() =>
       registerDriver(bot.id, {
-        observe: (message: any) => recordHistory(runtime, bot, message),
+        observe: (message: any, state: any) =>
+          recordHistory(runtime, bot, message, state),
         receive: async (message: any, state: any) => {
-          await inbox.receive(qqTrigger(bot.id, message, state));
+          const row = recordHistory(runtime, bot, message, state);
+          await inbox.receive(qqTrigger(bot.id, message, state, row?.reply));
         },
       }),
     );

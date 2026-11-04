@@ -8,7 +8,7 @@ export function archiveAndMentionOnly(observe) {
     resolveConfig: () => ({ requireMentionInGroup: true }),
   });
   return async (ctx, next) => {
-    await observe(ctx.message);
+    await observe(ctx.message, ctx.state);
     return gate(ctx, next);
   };
 }

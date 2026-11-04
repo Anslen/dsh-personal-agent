@@ -253,17 +253,22 @@ export class Stickers {
       tool({
         name: "sticker_input_view",
         description:
-          "查看用户消息中的参考图片，提炼视觉搜索词。传原trigger_id和图片序号index（从0开始）。",
+          "查看用户消息或其引用原消息中的图片。传原trigger_id和图片序号index（从0开始），source=reply查看引用图片，无需搜索历史。",
         schema: z.object({
           trigger_id: z.string().optional(),
           index: z.number().int().min(0).default(0),
+          source: z.enum(["message", "reply"]).default("message"),
         }),
         execute: async (args: any) => {
           channelTarget(this.runtime, this.bot, args, ticket);
           const trigger = this.runtime.store.triggers.get(
             ticket?.origin.triggerId || args.trigger_id,
           );
-          const input = trigger.meta.attachments?.[args.index];
+          const input = (
+            args.source === "reply"
+              ? trigger.meta.reply?.attachments
+              : trigger.meta.attachments
+          )?.[args.index];
           if (!input || !/^https?:\/\//.test(input.url || ""))
             throw Error("该消息没有可读取的参考图片");
           const { download } = await import("../modules/stickers/network.mjs");

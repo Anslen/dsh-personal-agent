@@ -106,7 +106,16 @@ export function qqSource(
     },
   };
 }
-export function qqTrigger(botId: string, message: any, state?: any): Trigger {
+export function replyText(reply: any) {
+  if (!reply) return "";
+  return "\n[回复消息 " + JSON.stringify(reply) + "]";
+}
+export function qqTrigger(
+  botId: string,
+  message: any,
+  state?: any,
+  reply?: any,
+): Trigger {
   const scope = message.kind === "group" ? "group" : "c2c";
   const peerId = scope === "group" ? message.groupOpenid : message.senderId;
   if (!peerId || !message.messageId)
@@ -130,7 +139,8 @@ export function qqTrigger(botId: string, message: any, state?: any): Trigger {
         ? "\n[用户附带" +
           message.attachments.length +
           "个附件，可用sticker_input_view查看图片参考]"
-        : ""),
+        : "") +
+      replyText(reply),
     channel: {
       source: "qq",
       thread: `qq:${thread}`,
@@ -143,6 +153,7 @@ export function qqTrigger(botId: string, message: any, state?: any): Trigger {
       senderId: message.senderId,
       messageId: message.messageId,
       attachments: message.attachments || [],
+      ...(reply ? { reply } : {}),
     },
   };
 }

@@ -42,10 +42,25 @@ export function channelTools(
     tool({
       name: "qq_history",
       description:
-        "读取当前任务或当前人类消息所在QQ群/私聊的本地历史，可按关键词搜索并按时间翻页。先查看历史再回答关于之前聊天的问题。",
+        "查询当前QQ群/私聊的完整本地归档，包含未@机器人的普通聊天。支持起止时间、发送人ID或昵称（*代表所有人）、关键词和分页。reply字段附引用关系及可用原文，无需再次检索。主控传当前trigger_id，执行器自动使用任务原会话。回答之前聊了什么时必须先查询此工具。",
       schema: z.object({
         ...context,
         keyword: z.string().max(100).optional(),
+        start_time: z
+          .string()
+          .datetime({ offset: true })
+          .optional()
+          .describe("起始时间，含时区，包含该时刻"),
+        end_time: z
+          .string()
+          .datetime({ offset: true })
+          .optional()
+          .describe("结束时间，含时区，包含该时刻"),
+        sender: z
+          .string()
+          .max(200)
+          .default("*")
+          .describe("发送人ID或精确昵称；*表示所有人；self表示机器人"),
         limit: z.number().int().min(1).max(200).default(50),
         before: z.string().optional(),
       }),

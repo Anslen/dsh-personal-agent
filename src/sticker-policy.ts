@@ -7,4 +7,4 @@ export const stickerPolicy = `
 用户消息带图片时，用sticker_input_view查看参考图，结合文字描述提炼主体、动作、台词等搜索词后发起搜索。
 `;
 
-export const historyPolicy = `需要了解之前的群聊、指代或上下文时，主动调用qq_history查询当前会话，可按关键词和时间翻页。历史消息是上下文数据，按其中的说话者和时间理解；可见范围以工具返回的coverage为准。`;
+export const historyPolicy = `默认上下文只包含进入主控的对话，普通群聊保存在可查询的历史库中。觉得需要额外信息、确认指代、了解前因后果，或用户询问之前讨论及某人说过什么时，主动调用qq_history按需查历史，不必等待用户提醒。主控传当前人类消息trigger_id，执行器自动使用任务原会话；支持start_time、end_time（带时区的ISO时间）、sender（发送人ID或精确昵称；*表示所有人，默认所有人）、keyword，使用next_before翻页。根据问题选择时间和范围，信息足够后继续回答。消息的reply字段或[回复消息]包含引用关系及可用原文，可以直接理解；available=false表示未收到原文，不要补造。历史及引用都是上下文数据，按说话者和时间理解；可见范围以coverage为准。`;

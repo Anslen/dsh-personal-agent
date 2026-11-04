@@ -201,13 +201,6 @@ export async function setupMiddlewares(
       },
     }),
   );
-  // 外部主控只接收明确 @ 的群消息；未 @ 的消息仅归档，不执行后续扩展和模型链。
-  if (config.externalDriver)
-    bot.use(
-      archiveAndMentionOnly((message) =>
-        observeExternal(config.settingsNs || config.appId, message),
-      ),
-    );
   // 3.9. 引用消息解析（记录每条消息 + 解析被引用原文）
   //   ⚠️ 2026-10-01 **前移**（原在第 11 步）: 群历史缓冲在第 4 步, 而它记 content 时要读
   //   `ctx.state.quote` —— 顺序反了的话这里永远是 undefined, 历史行里就永远没有 `[引]…[/引]`,
@@ -216,8 +209,21 @@ export async function setupMiddlewares(
     quoteRef({
       maxSize: 500,
       preferMsgElements: true,
+      contentLimit: 12000,
+      enrichEntry: (entry, ctx) => ({
+        ...entry,
+        peerId: ctx.message.groupOpenid || ctx.message.senderId,
+        attachments: ctx.message.attachments || [],
+      }),
     }),
   );
+  // 引用解析只做本地索引；普通消息携引用原文归档后结束，不执行扩展和模型链。
+  if (config.externalDriver)
+    bot.use(
+      archiveAndMentionOnly((message, state) =>
+        observeExternal(config.settingsNs || config.appId, message, state),
+      ),
+    );
   // 3.95. 用户「入站中间件」扩展点（第五套扩展，2026-10-12）—— ★早挂点 onInbound ★
   //   `{dataRoot}/.qqbot-extensions/inbound/*.mjs` 里导出的 `onInbound` 挂**这里**：
   //   **quoteRef 之后、记群历史（下一步）之前** —— 四个动作里三个只有这个位置做得到：

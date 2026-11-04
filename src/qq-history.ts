@@ -3,7 +3,12 @@ const keepMs = 7 * 86400000,
   maxRows = 2000;
 const key = (scope: string, peer: string) =>
   "personal:history:" + scope + ":" + peer;
-export function recordHistory(runtime: any, bot: any, message: any) {
+export function recordHistory(
+  runtime: any,
+  bot: any,
+  message: any,
+  state?: any,
+) {
   const scope = message.kind === "group" ? "group" : "c2c",
     peer = message.groupOpenid || message.peerId || message.senderId;
   if (
@@ -15,6 +20,49 @@ export function recordHistory(runtime: any, bot: any, message: any) {
   if (!id) return;
   const time = new Date(message.timestamp || Date.now()).getTime();
   if (!Number.isFinite(time)) return;
+  const saved = (runtime.store.get(key(scope, peer)) || []).filter(
+    (r: any) => Date.parse(r.at) > Date.now() - keepMs,
+  );
+  const previous = saved.find((r: any) => r.id === id);
+  const ref = message.refMsgIdx || state?.quote?.refKey;
+  const parent =
+    ref && saved.find((r: any) => r.id === ref || r.ref_index === ref);
+  const quote = state?.quote;
+  const entry =
+    quote?.entry?.peerId === peer && quote.entry.scope === message.kind
+      ? quote.entry
+      : undefined;
+  const quoteText =
+    quote?.source === "msg_elements"
+      ? (quote.rawContent ?? quote.text ?? "")
+      : (entry?.content ?? "");
+  // 引用只在同Bot、同会话的台账内解析，重启后仍可按平台消息索引找到原文。
+  const reply = ref
+    ? {
+        ref,
+        available: !!parent || !!entry || quote?.source === "msg_elements",
+        ...(parent
+          ? {
+              id: parent.id,
+              from: parent.from,
+              name: parent.name,
+              at: parent.at,
+              text: parent.text,
+              attachments: parent.attachments,
+            }
+          : {
+              id: entry?.messageId,
+              from: entry?.senderId,
+              name: entry?.senderName,
+              at: entry?.timestamp,
+              text: quoteText,
+              attachments:
+                quote?.source === "msg_elements"
+                  ? quote.attachments || []
+                  : entry?.attachments || [],
+            }),
+      }
+    : previous?.reply;
   const row = {
     id,
     from: message.senderId,
@@ -22,13 +70,18 @@ export function recordHistory(runtime: any, bot: any, message: any) {
     at: new Date(time).toISOString(),
     text: String(message.content || "").slice(0, 12000),
     attachments: message.attachments || [],
+    ...(message.msgIdx || previous?.ref_index
+      ? { ref_index: message.msgIdx || previous.ref_index }
+      : {}),
+    ...(reply ? { reply } : {}),
   };
-  const rows = (runtime.store.get(key(scope, peer)) || []).filter(
+  const rows = saved.filter(
     (r: any) => r.id !== id && Date.parse(r.at) > Date.now() - keepMs,
   );
   rows.push(row);
   rows.sort((a: any, b: any) => Date.parse(a.at) - Date.parse(b.at));
   runtime.store.set(key(scope, peer), rows.slice(-maxRows));
+  return row;
 }
 export function readHistory(
   runtime: any,
@@ -50,6 +103,7 @@ export function readHistory(
       at: t.at,
       text: t.text,
       attachments: t.meta.attachments || [],
+      ...(t.meta.reply ? { reply: t.meta.reply } : {}),
     }));
   const combined = new Map(
     [...prior, ...(runtime.store.get(key(scope, peer)) || [])].map((r: any) => [
@@ -58,6 +112,19 @@ export function readHistory(
     ]),
   );
   let cursor: any;
+  const parseTime = (value: string | undefined) => {
+    if (!value) return undefined;
+    if (
+      !/(Z|[+-]\d{2}:\d{2})$/i.test(value) ||
+      !Number.isFinite(Date.parse(value))
+    )
+      throw Error("时间须为包含时区的ISO时间，如2026-11-04T15:00:00+08:00");
+    return Date.parse(value);
+  };
+  const start = parseTime(options.start_time),
+    end = parseTime(options.end_time);
+  if (start !== undefined && end !== undefined && start > end)
+    throw Error("开始时间不能晚于结束时间");
   if (options.before) {
     try {
       cursor = JSON.parse(Buffer.from(options.before, "base64url").toString());
@@ -77,6 +144,12 @@ export function readHistory(
     .slice(0, maxRows)
     .filter(
       (r: any) =>
+        (start === undefined || Date.parse(r.at) >= start) &&
+        (end === undefined || Date.parse(r.at) <= end) &&
+        (!options.sender ||
+          options.sender === "*" ||
+          r.from === options.sender ||
+          r.name === options.sender) &&
         (!cursor ||
           Date.parse(r.at) < Date.parse(cursor.at) ||
           (r.at === cursor.at &&
@@ -88,6 +161,11 @@ export function readHistory(
   const messages = rows.slice(0, options.limit || 50);
   return {
     messages,
+    filters: {
+      sender: options.sender || "*",
+      start_time: options.start_time,
+      end_time: options.end_time,
+    },
     ...(rows.length > messages.length
       ? {
           next_before: Buffer.from(
