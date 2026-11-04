@@ -13,7 +13,18 @@ export function channelTarget(runtime: any, bot: any, args: any, ticket?: any) {
     ticket ||
     (args.task_id ? runtime.store.tickets.get(args.task_id) : undefined);
   if (current?.ended?.by === "human") throw Error("任务已被用户取消");
-  const id = current?.origin.triggerId || args.trigger_id;
+  let id = current?.origin.triggerId || args.trigger_id;
+  if (current && args.trigger_id) {
+    // 执行器可回复已交付给当前任务的追问，不能借此切换到任意会话。
+    const belongs =
+      current.origin.triggerId === args.trigger_id ||
+      current.inputs?.some(
+        (input: any) =>
+          input.kind === "trigger" && input.triggerId === args.trigger_id,
+      );
+    if (!belongs) throw Error("该消息未交付给当前任务");
+    id = args.trigger_id;
+  }
   const trigger = id && runtime.store.triggers.get(id);
   const address = trigger?.channel?.address;
   if (!trigger?.human || address?.botId !== bot.id)
@@ -26,6 +37,9 @@ export function channelTarget(runtime: any, bot: any, args: any, ticket?: any) {
   return {
     scope: address.scope,
     targetId: address.peerId,
+    ...(trigger.actor?.id || address.senderId
+      ? { senderId: trigger.actor?.id || address.senderId }
+      : {}),
     ...(address.msgId ? { msgId: address.msgId } : {}),
   };
 }

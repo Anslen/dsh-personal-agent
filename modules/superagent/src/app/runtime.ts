@@ -168,10 +168,17 @@ export class Runtime extends Service implements SourceHost {
         deployed,
         feishu,
       ));
+      // 切换主控代际只启用新的会话，任务、归档和旧会话记录继续保留。
+      const generation = (machine as any).masterSessionGeneration as
+        | string
+        | undefined;
+      const masterKey = generation
+        ? `${KV.runtime.masterId}:${generation}`
+        : KV.runtime.masterId;
       const masterId = (this.masterId =
-        store.get(KV.runtime.masterId) ??
-        `orchestrator-${key(machine.stateDir)}`);
-      store.set(KV.runtime.masterId, masterId);
+        store.get<string>(masterKey) ??
+        `orchestrator-${generation ? key(machine.stateDir, generation) : key(machine.stateDir)}`);
+      store.set(masterKey, masterId);
       const commands = (this.commands = new Commands(
         () => setup.deployment,
         setup.commandEnvironment,

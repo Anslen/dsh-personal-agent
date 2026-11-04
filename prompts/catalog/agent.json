@@ -19,6 +19,6 @@
   "agent/stickers/sticker_tag.description": "看图后修改已入库表情的检索标签和描述，支持角色库与共享库。",
   "agent/stickers/sticker_input_view.description": "查看用户消息或其引用原消息中的图片。传原trigger_id和图片序号index（从0开始），source=reply查看引用图片，无需搜索历史。",
   "agent/stickers/sticker_view.description": "查看已检索候选的实际图片。返回图片本身，确认合适后用sticker_send发送同一id。",
-  "agent/stickers/sticker_send.description": "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。",
+  "agent/stickers/sticker_send.description": "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。 执行器可指定已交付本任务的trigger_id，回复对应消息的发送人。",
   "agent/index/apply": "Bot标识和AppID必须唯一"
 }

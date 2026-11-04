@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // 渠道层只负责转交和发送；外部驱动缺失或失败时不得进入原插件模型会话。
+import { groupReplyText } from "./qq-mentions.mjs";
 const transports = new Map();
 const drivers = new Map();
 export function registerTransport(id, sender) {
@@ -29,6 +30,15 @@ export async function receive(id, message, state) {
 export async function send(id, kind, target, content) {
   const sender = transports.get(id);
   if (!sender) throw new Error("QQ渠道尚未就绪");
+  if (target.scope === "group") {
+    if (kind === "text" || kind === "markdown")
+      content = groupReplyText(content, target.senderId);
+    else if (kind === "image" || kind === "video")
+      content = {
+        ...content,
+        content: groupReplyText(content.content || "", target.senderId),
+      };
+  }
   if (kind === "text") return sender.sendText(target, content);
   if (kind === "markdown") return sender.sendMarkdown(target, content);
   if (["image", "voice", "video", "file"].includes(kind))

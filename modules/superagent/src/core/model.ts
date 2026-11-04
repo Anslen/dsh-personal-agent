@@ -30,6 +30,8 @@ export interface Trigger {
   human: boolean
   /** Source-declared: the sender addressed the agent, by mentioning it or in a direct message to it. */
   addressed?: 'mention' | 'direct'
+  /** 来源声明：聊天新消息先由主控判断归属，不自动唤醒线程中的旧任务。 */
+  dispatch?: 'orchestrator'
   at: string
   text: string
   channel?: ChannelRef
@@ -325,11 +327,17 @@ export const runningAssignment = (ticket: Ticket): Assignment | undefined => tic
  */
 export function reached(ticket: Ticket, trigger: Trigger, thread: (key: string) => Thread | undefined, context = true): boolean {
   if (ticket.origin.triggerId === trigger.id) return true
-  const input = ticket.inputs.some(item => item.kind === 'trigger' && item.triggerId === trigger.id)
-  return trigger.threads.some(ref => {
-    const current = thread(threadKey(ref))
-    return current?.subscriptions.includes(ticket.id) === true && (context || !current.context?.includes(ticket.id))
-  }) || (input && (context || !trigger.threads.every(ref => thread(threadKey(ref))?.context?.includes(ticket.id))))
+  // 聊天会话不是任务线程；只有主控明确交付的输入才属于某个任务。
+  if (trigger.dispatch === 'orchestrator')
+    return ticket.inputs.some((item) => item.kind === 'trigger' && item.triggerId === trigger.id && (context || !item.context))
+  const input = ticket.inputs.some((item) => item.kind === 'trigger' && item.triggerId === trigger.id)
+  return (
+    trigger.threads.some((ref) => {
+      const current = thread(threadKey(ref))
+      return current?.subscriptions.includes(ticket.id) === true && (context || !current.context?.includes(ticket.id))
+    }) ||
+    (input && (context || !trigger.threads.every((ref) => thread(threadKey(ref))?.context?.includes(ticket.id))))
+  )
 }
 export const latestAssignment = (ticket: Ticket): Assignment | undefined => ticket.assignments.at(-1)
 /** The latest report any of a ticket's Assignments made, which is what the ticket last said. */

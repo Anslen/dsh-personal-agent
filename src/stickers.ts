@@ -255,7 +255,7 @@ export class Stickers {
         }),
         execute: async (args: any) => {
           channelTarget(this.runtime, this.bot, args, ticket);
-          const triggerId = ticket?.origin.triggerId || args.trigger_id;
+          const triggerId = args.trigger_id || ticket?.origin.triggerId;
           const result = await this.request("request", {
             query: args.query,
             library: args.library,
@@ -334,7 +334,7 @@ export class Stickers {
               query: args.reason,
             },
           });
-          const triggerId = ticket?.origin.triggerId || args.trigger_id;
+          const triggerId = args.trigger_id || ticket?.origin.triggerId;
           this.runtime.store.set(
             subscriptions(result.job.id + ":" + (ticket?.id || triggerId)),
             {
@@ -395,7 +395,7 @@ export class Stickers {
         execute: async (args: any) => {
           channelTarget(this.runtime, this.bot, args, ticket);
           const trigger = this.runtime.store.triggers.get(
-            ticket?.origin.triggerId || args.trigger_id,
+            args.trigger_id || ticket?.origin.triggerId,
           );
           const input = (
             args.source === "reply"

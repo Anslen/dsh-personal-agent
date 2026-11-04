@@ -61,6 +61,10 @@ export function qqSource(
             scope: address.scope,
             targetId: address.peerId,
             ...(address.msgId ? { msgId: address.msgId } : {}),
+            senderId:
+              address.senderId ||
+              runtime?.store.triggers.get(`qq:${bot.id}:${address.msgId}`)
+                ?.actor.id,
           },
           message.text,
         );
@@ -132,6 +136,7 @@ export function qqTrigger(
     threads: [{ source: "qq", id: thread }],
     actor: { source: "qq", id: message.senderId },
     human: true,
+    dispatch: "orchestrator",
     ...(scope === "c2c"
       ? { addressed: "direct" as const }
       : state?.mention?.wasMentioned
@@ -154,7 +159,13 @@ export function qqTrigger(
     channel: {
       source: "qq",
       thread: `qq:${thread}`,
-      address: { botId, scope, peerId, msgId: message.messageId },
+      address: {
+        botId,
+        scope,
+        peerId,
+        msgId: message.messageId,
+        senderId: message.senderId,
+      },
     },
     meta: {
       botId,

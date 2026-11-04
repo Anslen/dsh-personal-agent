@@ -822,8 +822,10 @@ export async function bootstrapGateway(ctx, agents, config, logger, hooks) {
           ? { localPath: source.localPath }
           : {};
       let out;
-      if (kind === "image") out = await bot.sendImage(target, srcOpt);
-      else if (kind === "video") out = await bot.sendVideo(target, srcOpt);
+      if (kind === "image")
+        out = await bot.sendImage(target, srcOpt, { content: source.content });
+      else if (kind === "video")
+        out = await bot.sendVideo(target, srcOpt, { content: source.content });
       else if (kind === "voice") out = await bot.sendVoice(target, srcOpt);
       else out = await bot.sendFile(target, srcOpt);
       const id = out?.message?.id;

@@ -78,7 +78,9 @@ export class Replies extends EnginePart {
     if (request.purpose === 'answer' && !trigger?.human) throw new UserError('notQuestion')
     const id = attention ? key('attention-reply', attention.id) : key('reply', trigger?.id ?? ticket?.id ?? '', request.text)
     const existing = this.options.outbox.status(id)
-    const ready = !ticket || !trigger || ticket.answers?.includes(trigger.id)
+    // 主控可对聊天消息先自然回应；任务结果仍通过result的就绪校验。
+    const directChat = trigger?.dispatch === 'orchestrator' && !request.ticketId
+    const ready = directChat || !ticket || !trigger || ticket.answers?.includes(trigger.id)
     if (request.purpose === 'answer' && !ready && !existing) throw new UserError('noAnswer')
     const asker = attention?.triggerId ? this.repo.triggers.get(attention.triggerId) : undefined
     const channel = request.purpose === 'answer' ? trigger!.channel : asker?.channel ?? (ticket ? this.sourceChannel(ticket) : undefined)

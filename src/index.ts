@@ -138,6 +138,7 @@ export async function apply(ctx: Context, config: any) {
       child,
       {
         stateDir,
+        masterSessionGeneration: "chat-dispatch-v2",
         isolatedEnvironment: true,
         bindAgent: (agent: any) =>
           bindExecution(agent, stateDir, process.env.PATH || ""),

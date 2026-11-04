@@ -72,6 +72,39 @@ function accepted(h: ReturnType<typeof harness>, id = '1', thread = 't1') {
 }
 
 describe('intake', () => {
+  it('聊天先交主控，不广播给旧任务；主控仍可自主关联任务并先回应', () => {
+    const h = harness()
+    const first = accepted(h, '1').ticketId!
+    h.engine.receive(trigger('2', { dispatch: 'orchestrator' }))
+    h.pump()
+    const second = h.decide(h.requests.at(-1)!, {
+      kind: 'accept',
+      title: 'Other',
+      scope: 'other',
+      reason: 'requested',
+      acknowledgement: 'ok'
+    }).ticketId!
+    h.settle()
+    const message = trigger('3', { dispatch: 'orchestrator' })
+    h.engine.receive(message)
+    h.pump()
+    expect(h.repo.triggers.disposition('3')?.fanout).toEqual([])
+    expect([first, second].every((id) => !h.repo.tickets.get(id)!.inputs.some((i) => i.kind === 'trigger' && i.triggerId === '3'))).toBe(true)
+    expect(h.requests.at(-1)?.triggers.map((t) => t.id)).toContain('3')
+    expect(h.engine.reply({ purpose: 'answer', triggerId: '3', text: '我来看看。' }).status).toBe('pending')
+    h.engine.attach(first, '3')
+    expect(h.repo.triggers.disposition('3')?.fanout).toEqual([first])
+    expect(h.engine.reply({ purpose: 'answer', triggerId: '3', text: '已经接到这件事，会继续处理。' }).status).toBe('pending')
+    expect(() => h.engine.reply({ purpose: 'result', ticketId: first, text: '未完成的结果' })).toThrow(new UserError('notReady'))
+    h.engine.report(second, { state: 'dropped', summary: '任务已结束' })
+    const ended = h.repo.tickets.get(second)!.ended
+    const assignments = h.repo.tickets.get(second)!.assignments.length
+    h.engine.receive(trigger('4', { dispatch: 'orchestrator' }))
+    h.pump()
+    expect(h.repo.triggers.disposition('4')?.fanout).toEqual([])
+    expect(h.repo.tickets.get(second)!.ended).toEqual(ended)
+    expect(h.repo.tickets.get(second)!.assignments.length).toBe(assignments)
+  })
   it('stores a trigger once and records source filtering', () => {
     const h = harness()
     expect(h.engine.receive(trigger('1'))).toBe('stored')
