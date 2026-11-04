@@ -43,3 +43,5 @@ dsh plugin --profile web add /absolute/path/to/dsh-personal-agent
 - QQ：https://github.com/wuwo1979/dsh-qqbot-muu
 
 原型仍是研究代码。当前项目保留它的工作范式；原文设想中尚未实现的能力不因复制代码自动出现。
+
+`qq_history` 查询当前人类消息或任务所在会话的已接收历史，支持keyword、limit和before游标；不指定其他群号。历史覆盖以实际接收和保存为准，最多最近7天、每会话2000条。

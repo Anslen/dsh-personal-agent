@@ -2,6 +2,7 @@
 import { z } from "zod";
 import type { SourceKind } from "../modules/superagent/src/sources/kind.ts";
 import type { Trigger } from "../modules/superagent/src/core/index.ts";
+import { recordHistory } from "./qq-history.ts";
 import { send } from "./qq-transport.mjs";
 
 // 每个角色的Runtime单独注册同名Source；Bot身份不由模型传入。
@@ -59,6 +60,16 @@ export function qqSource(
           },
           message.text,
         );
+        if (runtime)
+          recordHistory(runtime, bot, {
+            kind: address.scope,
+            groupOpenid: address.scope === "group" ? address.peerId : undefined,
+            peerId: address.peerId,
+            senderId: "self",
+            messageId: message.id,
+            content: message.text,
+            timestamp: new Date().toISOString(),
+          });
         if (runtime)
           runtime.store.set(receipt, {
             sentAt: new Date().toISOString(),

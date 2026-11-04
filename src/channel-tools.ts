@@ -4,6 +4,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { tool } from "../modules/superagent/src/app/tools/tool.ts";
+import { readHistory } from "./qq-history.ts";
 import { send } from "./qq-transport.mjs";
 // 发送目的地只从数据库中的已授权入站推导，模型不能传任意QQ号。
 export function channelTarget(runtime: any, bot: any, args: any, ticket?: any) {
@@ -38,6 +39,21 @@ export function channelTools(
     trigger_id: z.string().optional(),
   };
   const tools = [
+    tool({
+      name: "qq_history",
+      description:
+        "读取当前任务或当前人类消息所在QQ群/私聊的本地历史，可按关键词搜索并按时间翻页。先查看历史再回答关于之前聊天的问题。",
+      schema: z.object({
+        ...context,
+        keyword: z.string().max(100).optional(),
+        limit: z.number().int().min(1).max(200).default(50),
+        before: z.string().optional(),
+      }),
+      execute: async (args) => {
+        const target = channelTarget(runtime, bot, args, ticket);
+        return readHistory(runtime, bot, target.scope, target.targetId, args);
+      },
+    }),
     tool({
       name: "qq_send_media",
       description:

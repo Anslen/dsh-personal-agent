@@ -16,6 +16,11 @@ export function registerDriver(id, driver) {
     if (drivers.get(id) === driver) drivers.delete(id);
   };
 }
+export async function observe(id, message) {
+  const driver = drivers.get(id);
+  if (!driver) throw Error("QQ历史记录器尚未就绪");
+  await driver.observe?.(message);
+}
 export async function receive(id, message, state) {
   const driver = drivers.get(id);
   if (!driver) throw new Error("外部编排驱动尚未就绪，消息不能进入默认回复链");

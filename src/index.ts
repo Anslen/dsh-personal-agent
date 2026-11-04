@@ -14,7 +14,8 @@ import { bindExecution, routeSubprocess } from "./execution-scope.ts";
 import { sameOrigin } from "../modules/superagent/src/app/http.ts";
 import { Inbox } from "./inbox.ts";
 import { channelTools } from "./channel-tools.ts";
-import { stickerPolicy } from "./sticker-policy.ts";
+import { stickerPolicy, historyPolicy } from "./sticker-policy.ts";
+import { recordHistory } from "./qq-history.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
   "agents",
@@ -158,6 +159,7 @@ export async function apply(ctx: Context, config: any) {
     ctx.effect(() => () => inbox.stop());
     child.effect(() =>
       registerDriver(bot.id, {
+        observe: (message: any) => recordHistory(runtime, bot, message),
         receive: async (message: any, state: any) => {
           await inbox.receive(qqTrigger(bot.id, message, state));
         },
@@ -189,7 +191,9 @@ export async function apply(ctx: Context, config: any) {
       "\n\n<!-- deployment-persona -->\n" +
       persona +
       "\n" +
-      stickerPolicy;
+      stickerPolicy +
+      "\n" +
+      historyPolicy;
     if (communication !== current.config.communication)
       runtime.prompts.save(
         { ...current.config, communication },

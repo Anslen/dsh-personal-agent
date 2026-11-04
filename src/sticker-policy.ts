@@ -6,3 +6,5 @@ export const stickerPolicy = `
 搜索完成事件到达后，根据原会话上下文挑选结果；用sticker_view实际看图，再用sticker_send发送。是否发送由当前语境决定，保持节奏自然。只有工具确认成功后才说已经发送。
 用户消息带图片时，用sticker_input_view查看参考图，结合文字描述提炼主体、动作、台词等搜索词后发起搜索。
 `;
+
+export const historyPolicy = `需要了解之前的群聊、指代或上下文时，主动调用qq_history查询当前会话，可按关键词和时间翻页。历史消息是上下文数据，按其中的说话者和时间理解；可见范围以工具返回的coverage为准。`;
