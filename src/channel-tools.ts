@@ -42,7 +42,7 @@ export function channelTools(
     tool({
       name: "qq_history",
       description:
-        "实时查询当前QQ群/私聊归档，包含未@机器人的普通聊天。用户明确要求查历史或总结当前全部消息时，本轮重新调用，不能复用旧结果。snapshot给出查询时刻、总数和筛选数量，next_before表示仍有下一页。支持起止时间、发送人ID或昵称（*代表所有人）、关键词和分页。reply附引用关系及可用原文。主控传当前trigger_id，执行器自动使用任务原会话。",
+        "实时查询当前QQ群/私聊归档，包含未@机器人的普通聊天。结果仅供紧接查询后的当前处理使用；后续每次模型调用均假定可能已有新消息，需要历史信息就主动重新查，无需用户明确要求。snapshot给出查询时刻、总数和筛选数量，next_before表示仍有下一页。支持起止时间、发送人ID或昵称（*代表所有人）、关键词和分页。reply附引用关系及可用原文。主控传当前trigger_id，执行器自动使用任务原会话。",
       schema: z.object({
         ...context,
         keyword: z.string().max(100).optional(),

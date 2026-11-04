@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { recordHistory, readHistory } from "../src/qq-history.ts";
 import { qqSource, qqTrigger } from "../src/qq-source.ts";
-import { historyPolicy } from "../src/sticker-policy.ts";
 import { archiveAndMentionOnly } from "../src/qq-inbound-policy.mjs";
 import { quoteRef } from "@tencent-connect/qqbot-nodejs";
 function fixture(id = "one") {
@@ -60,7 +59,6 @@ test("重新查询返回最新普通聊天和时效快照，默认上下文仅�
     undefined,
   );
   assert.equal(page.messages.length, 0);
-  assert.match(historyPolicy, /本轮必须重新调用qq_history/);
 });
 test("历史工具按时间、发送人ID或昵称筛选，所有人支持分页，拒绝无时区和倒序范围", async () => {
   const { runtime, bot } = fixture();

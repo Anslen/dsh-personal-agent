@@ -166,6 +166,8 @@ export function readHistory(
       total_messages: archived.length,
       latest_message_at: archived[0]?.at || null,
       matched_messages: rows.length,
+      freshness:
+        "仅供紧接本次查询后的处理使用；后续模型调用均假定可能已有新消息，需要历史信息时重新查询。",
     },
     filters: {
       sender: options.sender || "*",
