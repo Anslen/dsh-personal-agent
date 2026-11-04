@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * card-callback.ts — 自定义卡片按钮回调（dock「📝 卡片」编辑器发出的卡）
  *
@@ -121,7 +122,12 @@ export function createCardCallbackController(deps) {
                 if (btn.action === 'url') {
                     // 官方 type=0 跳转按钮点击时客户端直接跳, 正常不会走到回调; 降级时给个提示
                     const url = String(btn.payload ?? '').trim();
-                    await sendText(target, url ? `跳转按钮: ${url}(如未自动跳转请手动打开)` : '该按钮是跳转按钮, 请在支持跳转的客户端点击');
+                    await sendText(
+                        target,
+                        url
+                            ? `跳转按钮: ${url}(如未自动跳转请手动打开)`
+                            : promptText('qq/features/card-callback/createCardCallbackController')
+                    );
                     return true;
                 }
             }

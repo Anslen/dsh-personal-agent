@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * sticker_auto.mjs — 【扩展工具】「自动配表情包」开关 + **隔离设置**（2026-10-16 建，2026-10-17 加隔离）
  *
@@ -128,148 +129,156 @@ function dataDirRoot(dataRoot) {
 }
 
 export default {
-  name: TOOL,
-  description:
-    '开关「自动配表情包」并管理生效范围（隔离设置）：on=开启 / off=关闭 / toggle=反转 / status=状态；' +
-    'scope-add=把某个群或私聊加进生效名单 / scope-remove=移出 / scope-list=看名单 / ' +
-    'scope-mode=切换 whitelist(只对名单生效，默认) 或 all(所有目标都生效) / scope-clear=清空名单。' +
-    '默认是隔离的：没加进名单的群/私聊不会自动配图。状态存在数据根下两个扩展共用。',
-  inputSchema: {
-    action: {
-      type: 'string',
-      required: true,
-      description:
-        'on / off / toggle / status / scope-add / scope-remove / scope-list / scope-mode / scope-clear',
+    name: TOOL,
+    description:
+        promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description') +
+        promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.2') +
+        promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.3') +
+        promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.4'),
+    inputSchema: {
+        action: {
+            type: 'string',
+            required: true,
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.5')
+        },
+        target: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.6')
+        },
+        label: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.7')
+        },
+        mode: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.8')
+        }
     },
-    target: {
-      type: 'string',
-      description:
-        'scope-add、scope-remove 用：目标写成 group:<群openid> 或 c2c:<用户openid>（也可只写裸 openid）',
-    },
-    label: { type: 'string', description: '可选备注（群名 / 昵称），只写进配置文件方便人看' },
-    mode: { type: 'string', description: 'scope-mode 用：whitelist（只对名单生效，默认）/ all（所有目标）' },
-  },
 
-  async run(args, env) {
-    const action = String(args?.action ?? 'status').trim().toLowerCase();
-    const dataRoot = String(env?.dataRoot ?? '');
-    if (!dataRoot) {
-      return { ok: false, msg: '拿不到数据根（env.dataRoot 为空），无法读写开关文件' };
-    }
+    async run(args, env) {
+        const action = String(args?.action ?? 'status')
+            .trim()
+            .toLowerCase();
+        const dataRoot = String(env?.dataRoot ?? '');
+        if (!dataRoot) {
+            return { ok: false, msg: '拿不到数据根（env.dataRoot 为空），无法读写开关文件' };
+        }
 
-    const cur = readState(dataRoot);
-    const enabled = cur.exists ? !!cur.enabled : true; // 文件不存在 ⇒ 与示范扩展的默认值一致（默认开）
-    const scope = readScope(dataRoot);
+        const cur = readState(dataRoot);
+        const enabled = cur.exists ? !!cur.enabled : true; // 文件不存在 ⇒ 与示范扩展的默认值一致（默认开）
+        const scope = readScope(dataRoot);
 
-    // ── 只读：状态 ────────────────────────────────────────────────────────
-    if (action === 'status') {
-      return {
-        ok: true,
-        msg:
-          `自动配表情包总开关：${enabled ? '已开启' : '已关闭'}` +
-          (cur.exists ? '' : '（还没有状态文件，用的是默认值「开」）') +
-          `\n${scopeSummary(dataRoot, scope)}` +
-          runtimeSummary(dataRoot),
-      };
-    }
+        // ── 只读：状态 ────────────────────────────────────────────────────────
+        if (action === 'status') {
+            return {
+                ok: true,
+                msg:
+                    `自动配表情包总开关：${enabled ? '已开启' : '已关闭'}` +
+                    (cur.exists ? '' : '（还没有状态文件，用的是默认值「开」）') +
+                    `\n${scopeSummary(dataRoot, scope)}` +
+                    runtimeSummary(dataRoot)
+            };
+        }
 
-    // ── 隔离名单管理 ──────────────────────────────────────────────────────
-    if (action === 'scope-list') {
-      return { ok: true, msg: `自动配表情包 —— ${scopeSummary(dataRoot, scope)}` };
-    }
+        // ── 隔离名单管理 ──────────────────────────────────────────────────────
+        if (action === 'scope-list') {
+            return { ok: true, msg: `自动配表情包 —— ${scopeSummary(dataRoot, scope)}` };
+        }
 
-    if (action === 'scope-mode') {
-      const mode = String(args?.mode ?? '').trim().toLowerCase();
-      if (mode !== 'whitelist' && mode !== 'all') {
-        return { ok: false, msg: `scope-mode 只认 whitelist / all，收到：${mode || '(空)'}` };
-      }
-      try {
-        writeScope(dataRoot, mode, scope.list);
-      } catch (err) {
-        return { ok: false, msg: `写隔离文件失败：${err instanceof Error ? err.message : String(err)}` };
-      }
-      return {
-        ok: true,
-        msg:
-          mode === 'all'
-            ? '已切到 all：之后所有群/私聊都会自动配图（名单保留但不再用于判定）'
-            : `已切回 whitelist：只对名单里的 ${scope.list.length} 个目标配图`,
-      };
-    }
+        if (action === 'scope-mode') {
+            const mode = String(args?.mode ?? '')
+                .trim()
+                .toLowerCase();
+            if (mode !== 'whitelist' && mode !== 'all') {
+                return { ok: false, msg: `scope-mode 只认 whitelist / all，收到：${mode || '(空)'}` };
+            }
+            try {
+                writeScope(dataRoot, mode, scope.list);
+            } catch (err) {
+                return { ok: false, msg: `写隔离文件失败：${err instanceof Error ? err.message : String(err)}` };
+            }
+            return {
+                ok: true,
+                msg:
+                    mode === 'all'
+                        ? '已切到 all：之后所有群/私聊都会自动配图（名单保留但不再用于判定）'
+                        : `已切回 whitelist：只对名单里的 ${scope.list.length} 个目标配图`
+            };
+        }
 
-    if (action === 'scope-clear') {
-      try {
-        writeScope(dataRoot, scope.mode, []);
-      } catch (err) {
-        return { ok: false, msg: `写隔离文件失败：${err instanceof Error ? err.message : String(err)}` };
-      }
-      return { ok: true, msg: '隔离名单已清空（whitelist 模式下 = 谁都不再自动配图）' };
-    }
+        if (action === 'scope-clear') {
+            try {
+                writeScope(dataRoot, scope.mode, []);
+            } catch (err) {
+                return { ok: false, msg: `写隔离文件失败：${err instanceof Error ? err.message : String(err)}` };
+            }
+            return { ok: true, msg: '隔离名单已清空（whitelist 模式下 = 谁都不再自动配图）' };
+        }
 
-    if (action === 'scope-add' || action === 'scope-remove') {
-      const key = normalizeTarget(args?.target);
-      if (!key) {
+        if (action === 'scope-add' || action === 'scope-remove') {
+            const key = normalizeTarget(args?.target);
+            if (!key) {
+                return {
+                    ok: false,
+                    msg: "要指定 target，写成 group:<群openid> 或 c2c:<用户openid>（例：sticker_auto {action:'scope-add', target:'group:<你的群openid>'}）"
+                };
+            }
+            const hitIdx = scope.list.findIndex((t) => t.key === key);
+            if (action === 'scope-add') {
+                if (hitIdx >= 0) {
+                    if (args?.label) scope.list[hitIdx].label = String(args.label).trim();
+                } else {
+                    scope.list.push({ key, label: String(args?.label || '').trim(), addedAt: Date.now() });
+                }
+            } else {
+                if (hitIdx < 0) {
+                    return {
+                        ok: false,
+                        msg: `名单里没有 ${key}，没东西可删。\n当前名单（${scope.list.length} 个）：\n${listLines(scope)}`
+                    };
+                }
+                scope.list.splice(hitIdx, 1);
+            }
+            try {
+                writeScope(dataRoot, scope.mode, scope.list);
+            } catch (err) {
+                return { ok: false, msg: `写隔离文件失败：${err instanceof Error ? err.message : String(err)}` };
+            }
+            return {
+                ok: true,
+                msg:
+                    (action === 'scope-add'
+                        ? `已加入生效名单：${key}` + (args?.label ? `（${String(args.label).trim()}）` : '')
+                        : `已移出生效名单：${key}`) +
+                    `\n模式：${scope.mode === 'all' ? 'all（名单不参与判定）' : 'whitelist'}` +
+                    `\n当前名单（${scope.list.length} 个）：\n${listLines(scope)}` +
+                    (enabled ? '' : '\n注意：总开关是「已关闭」状态，光加名单不会配图，需要再 action=on。')
+            };
+        }
+
+        // ── 总开关 ────────────────────────────────────────────────────────────
+        let next;
+        if (action === 'on') next = true;
+        else if (action === 'off') next = false;
+        else if (action === 'toggle') next = !enabled;
+        else {
+            return {
+                ok: false,
+                msg: `不认识的 action：${action}（用 on / off / toggle / status / scope-add / scope-remove / scope-list / scope-mode / scope-clear）`
+            };
+        }
+
+        try {
+            writeState(dataRoot, next);
+        } catch (err) {
+            return { ok: false, msg: `写开关失败：${err instanceof Error ? err.message : String(err)}` };
+        }
         return {
-          ok: false,
-          msg: "要指定 target，写成 group:<群openid> 或 c2c:<用户openid>（例：sticker_auto {action:'scope-add', target:'group:<你的群openid>'}）",
+            ok: true,
+            msg:
+                `自动配表情包总开关已${next ? '开启' : '关闭'}` +
+                (next ? '（下一条回复起生效）' : '（她不再自动配图）') +
+                (next ? `\n注意：只有名单里的目标才会配图（当前 ${scope.list.length} 个，模式 ${scope.mode}）。` : '')
         };
-      }
-      const hitIdx = scope.list.findIndex((t) => t.key === key);
-      if (action === 'scope-add') {
-        if (hitIdx >= 0) {
-          if (args?.label) scope.list[hitIdx].label = String(args.label).trim();
-        } else {
-          scope.list.push({ key, label: String(args?.label || '').trim(), addedAt: Date.now() });
-        }
-      } else {
-        if (hitIdx < 0) {
-          return {
-            ok: false,
-            msg: `名单里没有 ${key}，没东西可删。\n当前名单（${scope.list.length} 个）：\n${listLines(scope)}`,
-          };
-        }
-        scope.list.splice(hitIdx, 1);
-      }
-      try {
-        writeScope(dataRoot, scope.mode, scope.list);
-      } catch (err) {
-        return { ok: false, msg: `写隔离文件失败：${err instanceof Error ? err.message : String(err)}` };
-      }
-      return {
-        ok: true,
-        msg:
-          (action === 'scope-add'
-            ? `已加入生效名单：${key}` + (args?.label ? `（${String(args.label).trim()}）` : '')
-            : `已移出生效名单：${key}`) +
-          `\n模式：${scope.mode === 'all' ? 'all（名单不参与判定）' : 'whitelist'}` +
-          `\n当前名单（${scope.list.length} 个）：\n${listLines(scope)}` +
-          (enabled ? '' : '\n注意：总开关是「已关闭」状态，光加名单不会配图，需要再 action=on。'),
-      };
     }
-
-    // ── 总开关 ────────────────────────────────────────────────────────────
-    let next;
-    if (action === 'on') next = true;
-    else if (action === 'off') next = false;
-    else if (action === 'toggle') next = !enabled;
-    else {
-      return {
-        ok: false,
-        msg: `不认识的 action：${action}（用 on / off / toggle / status / scope-add / scope-remove / scope-list / scope-mode / scope-clear）`,
-      };
-    }
-
-    try {
-      writeState(dataRoot, next);
-    } catch (err) {
-      return { ok: false, msg: `写开关失败：${err instanceof Error ? err.message : String(err)}` };
-    }
-    return {
-      ok: true,
-      msg:
-        `自动配表情包总开关已${next ? '开启' : '关闭'}` +
-        (next ? '（下一条回复起生效）' : '（她不再自动配图）') +
-        (next ? `\n注意：只有名单里的目标才会配图（当前 ${scope.list.length} 个，模式 ${scope.mode}）。` : ''),
-    };
-  },
 };

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/draw.mjs — 工具 `draw`：本地文生图（sd-turbo）
  *
@@ -16,8 +17,16 @@ export const description =
   '画她自己的时候，prompt 里带上外形：圆脸、深蓝紫波浪长发、白色褶边头箍配蓝蝴蝶结、深蓝白女仆裙、身后鲸尾。';
 
 export const inputSchema = {
-  prompt: { type: 'string', required: true, description: '想画什么（中文就行，会翻成英文）' },
-  size: { type: 'string', enum: ['square', 'wide', 'tall'], description: '画幅：square 方/wide 横/tall 竖（默认 square）' },
+    prompt: {
+        type: 'string',
+        required: true,
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/draw/description')
+    },
+    size: {
+        type: 'string',
+        enum: ['square', 'wide', 'tall'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/draw/description.2')
+    }
 };
 
 const SIZES = {

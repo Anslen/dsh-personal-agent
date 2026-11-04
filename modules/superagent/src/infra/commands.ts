@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /** Subprocess wrapper for running gh, lark-cli, and git commands under the deployment's configured accounts. */
 import { execFile } from 'node:child_process'
 import { basename } from 'node:path'
@@ -49,7 +50,7 @@ export function validItems<T>(item: z.ZodType<T>, list: readonly unknown[], tall
 /** Rewrites Feishu error 232011 (bot not in chat) with remediation instructions. */
 function membership(error: unknown): unknown {
   if (!(error instanceof CliError) || error.code !== 232011) return error
-  const hint = 'The Feishu bot is not a member of the chat. Add the bot in the chat settings, then retry.'
+  const hint = promptText('superagent/infra/commands/hint')
   return new CliError(hint, error.code, error.exitCode)
 }
 /**

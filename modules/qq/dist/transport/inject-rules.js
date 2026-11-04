@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { inferMediaKind } from './media-kind.js';
 /** 单轮累计注入预算(字符), 防爆上下文 */
 const BUDGET_CHARS = 1500;
@@ -10,11 +11,11 @@ const LEGACY_IMAGE_RULE = {
         hasLink: false,
         contentRegex: '',
         contentKeywords: [],
-        matchScope: 'any',
+        matchScope: 'any'
     },
     // ⚠️ 2026-09-13 改文案: 图片给的是**本地路径**(下载没成功时才回退成 QQ 链接) ——
     //    所以别说死"URL"或"路径", 统一说"地址(本地路径或链接)", 两种都能覆盖。
-    prompt: '上方消息里的图片会给出地址（本地文件路径；下载失败时是 QQ 链接），请直接把它交给桥接视觉工具（modlens_read_image / analyze_image）看图并描述内容，不要只复述地址。',
+    prompt: promptText('qq/transport/inject-rules/prompt')
 };
 /** 消息是否含附件图片。
  *  ⚠️ 2026-09-10 根因修复（主人实测：自定义小提醒配了「消息里带图片」却**永不触发**）：
@@ -71,7 +72,7 @@ export function applyInjectRules(body, msg, rules, logger, imageHintAuto = true)
         }
         if (!matchRule(rule, text, msg, logger))
             continue;
-        const inj = `[系统提示] ${rule.prompt}`;
+        const inj = renderPrompt('qq/transport/inject-rules/inj', { p0: rule.prompt });
         out += `\n\n${inj}`;
         budget -= inj.length;
     }

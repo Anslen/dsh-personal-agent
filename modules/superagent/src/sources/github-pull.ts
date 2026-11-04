@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /** Pull request binding, lifecycle observation, and terminal IM notification helpers. */
 import { z } from 'zod'
 import { key, liveTicket, type Follow, type OutboundMessage, type ThreadFact, type Ticket } from '../core/index.ts'
@@ -64,7 +65,9 @@ export async function observePull(ctx: SourceContext, pr: Pull): Promise<boolean
     const reopened = ticket?.follows?.some(item => item.thread === `${SOURCE}:${pr.number}` && item.closed)
     if (ticket && (reopened || pullsOf(ticket, true).every(number => number === pr.number))) claimPull(ctx, ticket.id, pr)
   }
-  ctx.threads.describe(`github:${pr.number}`, { facts: { autoMerge: !ended && pr.auto_merge != null ? AUTO_MERGE_ON : null } })
+  ctx.threads.describe(renderPrompt('superagent/sources/github-pull/observePull', { p0: pr.number }), {
+    facts: { autoMerge: !ended && pr.auto_merge != null ? AUTO_MERGE_ON : null }
+  })
   return ended
 }
 function bind(ctx: SourceContext, ticketId: string, pr: Pull, own: boolean): void {

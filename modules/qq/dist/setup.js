@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../prompts/index.mjs";
 /**
  * QQ Bot 凭据初始化 — 扫码绑定
  *
@@ -187,31 +188,31 @@ export function persistCredentialsToProfile(credentials, profileDir, logger, ins
 }
 /** 开发模式引导：未定位到 profile 目录，引导用环境变量配置（console.log 确保可见） */
 function printEnvInstructions(credentials) {
-    console.log('未检测到 profile 目录（开发模式），请通过环境变量配置凭据:');
+    console.log(promptText('qq/setup/printEnvInstructions'));
     if (process.platform === 'win32') {
         // CMD 语法
-        console.log(`  set QQBOT_APPID=${credentials.appId}`);
-        console.log(`  set QQBOT_SECRET=${credentials.appSecret}`);
+        console.log(renderPrompt('qq/setup/printEnvInstructions.2', { p0: credentials.appId }));
+        console.log(renderPrompt('qq/setup/printEnvInstructions.3', { p0: credentials.appSecret }));
         // PowerShell 语法（dsh 默认 shell 是 pwsh）
-        console.log('PowerShell 用户请用:');
+        console.log(promptText('qq/setup/printEnvInstructions.6'));
         console.log(`  $env:QQBOT_APPID="${credentials.appId}"`);
         console.log(`  $env:QQBOT_SECRET="${credentials.appSecret}"`);
     }
     else {
-        console.log(`  export QQBOT_APPID="${credentials.appId}"`);
-        console.log(`  export QQBOT_SECRET="${credentials.appSecret}"`);
+        console.log(renderPrompt('qq/setup/printEnvInstructions.4', { p0: credentials.appId }));
+        console.log(renderPrompt('qq/setup/printEnvInstructions.5', { p0: credentials.appSecret }));
     }
 }
 /** 正式安装引导：自动写入失败，引导手动在 cordis.patch.yml 配置（console.log 确保可见） */
 function printYamlInstructions(credentials, patchPath, entryId = 'im-qqbot') {
-    console.log('无法自动保存凭据，请手动打开以下文件添加配置:');
+    console.log(promptText('qq/setup/printYamlInstructions.4'));
     console.log(`  ${patchPath}`);
     console.log('');
-    console.log('  - insert:');
-    console.log(`      - id: ${entryId}`);
-    console.log("        name: 'dsh-qqbot-muu'");
-    console.log('        config:');
-    console.log(`          appId: '${credentials.appId}'`);
-    console.log(`          appSecret: '${credentials.appSecret}'`);
+    console.log(promptText('qq/setup/printYamlInstructions.5'));
+    console.log(renderPrompt('qq/setup/printYamlInstructions.6', { p0: entryId }));
+    console.log(promptText('qq/setup/printYamlInstructions'));
+    console.log(promptText('qq/setup/printYamlInstructions.7'));
+    console.log(renderPrompt('qq/setup/printYamlInstructions.2', { p0: credentials.appId }));
+    console.log(renderPrompt('qq/setup/printYamlInstructions.3', { p0: credentials.appSecret }));
 }
 //# sourceMappingURL=setup.js.map

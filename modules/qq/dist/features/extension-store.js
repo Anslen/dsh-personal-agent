@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * extension-store.ts — 用户扩展注册表(Phase 4 P4.1, 2026-09-08)
  *
@@ -18,7 +19,8 @@
  * 群聊前置解析 cmdMap + SDK slash 都覆盖 → /命令 重启后即用(宿主有 /bot-restart 一键重启)。
  * 热刷(不重启)留给 P4.2 dock 管理 UI。
  */
-import { readdirSync, statSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { readdirSync, statSync, existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { promptRoot } from '../../../../prompts/index.mjs';
 import { absCwdOf } from '../util/abs-path.js';
 import { scanExtFiles } from './ext-packs.js';
 import { join, extname } from 'node:path';
@@ -78,10 +80,10 @@ function normalizeModule(mod, file, logger) {
         // 这样「扩展命令」也能像「扩展工具」那样收 `ext:<名字>:<卡id>:<按钮id>` 按钮回调。
         const cmd = {
             name: finalNames.length > 1 ? finalNames : finalNames[0],
-            description: String(obj.description ?? '自定义扩展命令'),
+            description: String(obj.description ?? promptText('qq/features/extension-store/description')),
             handler: obj.handler,
             // 2026-10-24：记住来源文件，供执行时把「该扩展自己的设置」塞进 ctx.config
-            __file: file,
+            __file: file
         };
         if (obj.usage)
             cmd.usage = obj.usage;
@@ -145,13 +147,13 @@ function normalizeToolModule(mod, file, logger) {
         return {
             file,
             name,
-            description: String(obj.description ?? '用户扩展工具'),
+            description: String(obj.description ?? promptText('qq/features/extension-store/description.2')),
             inputSchema: obj.inputSchema ?? obj.parameters ?? {},
             run: obj.run,
             // 有才挂：让"不接收交互的工具"与老版本行为完全一致
             ...(onInteraction ? { onInteraction } : {}),
             // 同上：不声明 expose 的工具，行为与老版本一模一样
-            ...(obj?.expose === 'all' ? { expose: 'all' } : {}),
+            ...(obj?.expose === 'all' ? { expose: 'all' } : {})
         };
     }
     catch (err) {
@@ -365,7 +367,14 @@ function copyExampleTree(srcDir, dstDir, allowFiles) {
         if (existsSync(dst))
             continue; // ★ 不覆盖用户已有的（也就不会重复搬）
         try {
-            copyFileSync(src, dst);
+            // 扩展示例被复制到用户目录后，提示仍从当前插件的统一目录读取。
+            const text = readFileSync(src, 'utf8');
+            const relocated = text.replace(
+                /from\s+["'][^"']*prompts\/index\.mjs["']/g,
+                `from ${JSON.stringify(pathToFileURL(join(promptRoot, 'index.mjs')).href)}`
+            );
+            if (text === relocated) copyFileSync(src, dst);
+            else writeFileSync(dst, relocated, 'utf8');
             n += 1;
         }
         catch { /* 单个失败继续 */ }

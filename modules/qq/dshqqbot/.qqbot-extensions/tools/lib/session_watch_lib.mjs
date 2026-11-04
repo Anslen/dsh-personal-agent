@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../../prompts/index.mjs";
 /**
  * session_watch_lib.mjs — 「回合结束回灌」的共用实现（放在 tools/lib/ 下，不被当工具扫描）
  *
@@ -627,23 +628,31 @@ export function buildSettlementNotice(input = {}) {
   const rawReason = String(input.rawReason ?? '');
   const stage = reasonText(rawReason);
   const summary = boundContextSummary(
-    `子会话${label ? '「' + label + '」' : ''} ${shortSessionId(sid)}… 回合${stage}` +
-    `${rawReason && rawReason !== stage ? '（reason=' + rawReason + '）' : ''}`,
+      renderPrompt('qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/summary', {
+          p0: label ? '「' + label + '」' : '',
+          p1: shortSessionId(sid),
+          p2: stage
+      }) + `${rawReason && rawReason !== stage ? '（reason=' + rawReason + '）' : ''}`
   );
   return {
-    id: (globalThis.crypto?.randomUUID?.() ?? ('inj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8))),
-    role: 'user',
-    content: [
-      // ★ 主人 2026-10-12 定：模拟用户消息的**首行直接给出源会话 id**（完整 id）。
-      { type: 'text', text: '【来自会话 ' + sid + '】' },
-      { type: 'text', text: summary },
-      { type: 'text', text: '它的结尾正文：' },
-      { type: 'text', text: String(input.text ?? '') },
-      { type: 'text', text: '（这是子会话的自动回灌，父会话无需回复。）' },
-    ],
-    // ★ 2026-10-12 主人定案：回灌**一律模拟用户消息**（source.kind='user'），
-    //   不再伪装成子会话结算通知 / 系统消息 / 开发者消息。
-    source: { kind: 'user' },
+      id:
+          globalThis.crypto?.randomUUID?.() ??
+          'inj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      role: 'user',
+      content: [
+          // ★ 主人 2026-10-12 定：模拟用户消息的**首行直接给出源会话 id**（完整 id）。
+          {
+              type: 'text',
+              text: promptText('qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/text') + sid + '】'
+          },
+          { type: 'text', text: summary },
+          { type: 'text', text: promptText('qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/text.2') },
+          { type: 'text', text: String(input.text ?? '') },
+          { type: 'text', text: promptText('qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/text.3') }
+      ],
+      // ★ 2026-10-12 主人定案：回灌**一律模拟用户消息**（source.kind='user'），
+      //   不再伪装成子会话结算通知 / 系统消息 / 开发者消息。
+      source: { kind: 'user' }
   };
 }
 

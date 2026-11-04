@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * lib/bili-ops.mjs — B 站账号自主运营核心
  *
@@ -1246,9 +1247,12 @@ export async function renderJob(job, cfg = {}, deps = {}) {
         //   sanitizeTopic 只留前 200 字，整改要求和原稿信息点全被砍掉，扩写等于盲写
         //   （主人反复实锤「文案还是很差」的直接根因之一）。改走 briefing 通道（system 侧，无截断）。
         const refDraft = script.panels.map((x) => String(x.narration || '').trim()).join(' / ').slice(0, 400);
-        const briefing2 = (briefing ? briefing + '\n\n' : '')
-          + (feedback.length ? '# 上一稿整改要求（必须全部遵守）\n' + feedback.join('；') + '\n' : '')
-          + (refDraft ? '# 上一稿旁白（只提炼它提到的信息点，写法不许抄它）\n' + refDraft : '');
+        const briefing2 =
+            (briefing ? briefing + '\n\n' : '') +
+            (feedback.length
+                ? promptText('qq/dshqqbot/.qqbot-extensions/lib/bili-ops/briefing2') + feedback.join('；') + '\n'
+                : '') +
+            (refDraft ? '# 上一稿旁白（只提炼它提到的信息点，写法不许抄它）\n' + refDraft : '');
         const s2 = await writeScript(
           {
             topic,
@@ -1341,8 +1345,10 @@ export async function renderJob(job, cfg = {}, deps = {}) {
   // 后面每屏再从它 img2img 派生；本地失败就退回云端。
   if (!composeMode && videoStyle === 'image' && ops.video?.characterLock !== false && cp) {
     try {
-      const anchorPrompt = cp + ' full body, standing, front view, dark blue underwater background, soft light, 2D anime'
-        + ', full bleed illustration, edge to edge, no frame, no border';
+      const anchorPrompt =
+          cp +
+          promptText('qq/dshqqbot/.qqbot-extensions/lib/bili-ops/anchorPrompt') +
+          promptText('qq/dshqqbot/.qqbot-extensions/lib/bili-ops/anchorPrompt.2');
       const a = await localDraw(anchorPrompt, {
         width: GEN_W,
         height: GEN_H,
@@ -2323,20 +2329,20 @@ export async function reviseCommentDraft(dataRoot, { id, suggestion } = {}, cfg 
     const llm = await import('./local-llm.mjs');
     const c = llm.loadConfig({ dataRoot });
     const r = await withReviewLock(() =>
-      llm.chat({
-        cfg: c,
-        maxTokens: 220,
-        temperature: 0.6,
-        messages: [
-          {
-            role: 'system',
-            content:
-              '你是 B 站评论改写助手。保持第一人称、口语、像真人，不要客服腔，不要解释。' +
-              '只输出改写后的评论正文，不要引号、不要标题。',
-          },
-          { role: 'user', content: `原评论：${d.text}\n修改建议：${tip}\n请按建议改写，60 字以内。` },
-        ],
-      }),
+        llm.chat({
+            cfg: c,
+            maxTokens: 220,
+            temperature: 0.6,
+            messages: [
+                {
+                    role: 'system',
+                    content:
+                        promptText('qq/dshqqbot/.qqbot-extensions/lib/bili-ops/content') +
+                        promptText('qq/dshqqbot/.qqbot-extensions/lib/bili-ops/content.2')
+                },
+                { role: 'user', content: `原评论：${d.text}\n修改建议：${tip}\n请按建议改写，60 字以内。` }
+            ]
+        })
     );
     if (!r.ok || !r.text) return { ok: false, error: r.error || '本地模型没有返回', fallbackText: d.text };
     const next = updateCommentDraft(dataRoot, { id: d.id, text: r.text });

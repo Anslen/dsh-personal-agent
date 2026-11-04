@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * bedrock.mjs — 底层刻写（信条）· 主人的手笔，LLM 只读不可改。
  *
@@ -50,9 +51,9 @@ function writeAll(dataRoot, entries) {
   const p = bedrockFile(dataRoot);
   mkdirSync(dirname(p), { recursive: true });
   const payload = {
-    _说明: '底层刻写（信条）：主人的手笔，LLM 只读不可改。只经浮窗人工确认增删。免疫记忆淘汰/去重/forget。',
-    _保护: '本文件在 secrets 目录（同 memory.key），不要提交到仓库、不要贴进对话。',
-    entries,
+      _说明: '底层刻写（信条）：主人的手笔，LLM 只读不可改。只经浮窗人工确认增删。免疫记忆淘汰/去重/forget。',
+      _保护: promptText('qq/dshqqbot/.qqbot-extensions/lib/bedrock/_保护'),
+      entries
   };
   const tmp = p + '.tmp';
   writeFileSync(tmp, JSON.stringify(payload, null, 2) + '\n', 'utf8');

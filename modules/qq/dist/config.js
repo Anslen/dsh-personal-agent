@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../prompts/index.mjs";
 /**
  * dsh-im-qqbot 插件配置 Schema
  *
@@ -12,46 +13,46 @@ import Schema from "@deepseek-ai/schemastery";
  * 由 qqbot 通道注入 agentBody(scope=group 时), 所有走 QQ 的 preset 通用, 不修改任何 persona。
  */
 export const DEFAULT_GROUP_PROMPT = [
-  "【表情包礼仪】你有一座本地表情包库(群友存的图,带标签)。想用表情包回应时先调 list_stickers 搜库,命中后再用 send_media 发出,别发没把握的图。",
-  '只在群里正热闹、情绪正浓时,才在回复末尾附 0~1 张:满屏哈哈/笑死(爆笑)、大家"确实/我也是"(共鸣)、有人抛梗你能接住(接梗)、有人当面夸你(被夸)、轻度吐槽可以接治愈/滑稽图。',
-  "绝不发:冷场没人接话、正事/技术问答/找资源、吵架互怼中、对方难过或聊严肃事、私聊。",
-  "出手前自检,缺一不发:①库里有 9 成贴切的图;②发出来群友会心一笑;③这轮没发过、今天这群没刷过图。",
-  "把图删掉话照样完整;一次最多一张;发离谱/冒犯/色气/羞辱人的图=人设崩塌,永远不许。",
-  "【提问卡片(ask_user_question)·QQ】在 QQ 会话里调用 ask_user_question 提问:选项会以按钮卡片发出,可点权限默认只绑「当前对话发起者本人」(群聊=刚与你对话的那位群友,私聊=对方),只有 TA 能点、别人点了会被拒,不会误答;同一问题会同步出现在 Web 浮层,任一端作答即结算、另一端自动失效。**可以显式指定某位群友来答(指定权限)**:把 `<@对方openid>` **或 `<@对方昵称>`** 直接写进本次提问的 question(或 header)文本里(例如 question 写成「<@对方openid> 要帮你找这个游戏吗?」或「<@请输入文本> 要帮你找这个游戏吗?」),卡片权限就会精确绑给该群友——只有 TA 能点。昵称写法 2026-09-24 起支持(走本地群成员台账解析,即在群里发过言/申请过入群的人;查不到或多人同名有歧义时不指定,请改用 32 位 openid);question/header 里没写 `<@...>` 标注、但唯一提到某位群友昵称时同样算点名。也可以先按【@ 人的方法】点名 TA 再提问(效果等同)。不确定该问谁、或想让对方自己答时才不写(保持默认给当前对话者)。",
-].join("\n");
+    promptText('qq/config/DEFAULT_GROUP_PROMPT'),
+    promptText('qq/config/DEFAULT_GROUP_PROMPT.2'),
+    promptText('qq/config/DEFAULT_GROUP_PROMPT.3'),
+    promptText('qq/config/DEFAULT_GROUP_PROMPT.4'),
+    promptText('qq/config/DEFAULT_GROUP_PROMPT.5'),
+    promptText('qq/config/DEFAULT_GROUP_PROMPT.6')
+].join('\n');
 /**
  * 通道固定注入上下文(2026-09-09): 与可编辑群守则(groupPrompt)无关、无条件注入每个 QQ 会话,
  * 保证任何 AI/任何预设都会收到 QQ 通道的基础使用规则(即使群守则被清空/覆盖)。
  */
 export const FIXED_CHANNEL_CONTEXT = [
-  "【@ 人的方法】当你要对特定某人说话，在回复文本里直接写 <@对方openid>（无斜杠）就能在 QQ 群里 @ 到对方（高亮显示），例如 <@0123456789ABCDEF0123456789ABCDEF> 起床啦。如果别人@你，你用 @对方 回复；也可以主动 @别人。 **@全体成员**：在回复正文里写 <qqbot-at-everyone />（半角尖括号，QQ 官方语法）就会被渲染成真正的「@全体成员」。⚠️ 这是打扰全群的动作 —— 只在主人明确要求、或有紧急公告要发时才用；普通聊天、回答某个人的问题一律不要用。",
-  '【提问卡片·指定回答者】调用 ask_user_question 时，若要**只有某人**能回答，必须在该问题的 header 或 question 文本里写 <@对方的32位openid>（无斜杠）。只写 <@昵称> 仅在"该昵称在群成员台账里唯一命中"时才生效（台账=在群里发过言的人），否则会退化成全员可点；拿不到 openid 时宁可不写（默认只绑"刚和你对话的那位"）。卡片上还会带一个「🙋 我来回答」按钮：**所有人都能点，点一次即把回答权转移给点击者**，用于问错人/被问的人不在的场景。',
-  // ★ 2026-10-13 主人指出（真机踩到）：原句把"两端加方括号"当**括号注释**写在后面，
-  //   模型很容易漏掉方括号 ⇒ 写出来是裸文本 `MEDIA:image|D:\...`，富媒体不生效、还会原样发给群友。
-  //   改法：把**带方括号的完整写法**直接写进语法行 + 给一条示例，让"方括号必须出现"无法忽略。
-  "【富媒体】你在 QQ 里能真的发图/文件/语音/视频 —— 语法**必须带英文方括号**（漏了方括号=不生效，会当普通文字发出去）：",
-  "  · 发图：[MEDIA:image|本地绝对路径或 http(s) 网址]　例：[MEDIA:image|D:\\pics\\cat.png]",
-  "  · 发文件/语音/视频同理：[MEDIA:file|路径]　[MEDIA:voice|路径]　[MEDIA:video|路径]",
-  "  · 撤回自己刚发的消息：单独输出一行 [RECALL]",
-  "  这些标记本身不会显示给群友（发出去的只有媒体本身）。",
-].join("\n");
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT'),
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT.2'),
+    // ★ 2026-10-13 主人指出（真机踩到）：原句把"两端加方括号"当**括号注释**写在后面，
+    //   模型很容易漏掉方括号 ⇒ 写出来是裸文本 `MEDIA:image|D:\...`，富媒体不生效、还会原样发给群友。
+    //   改法：把**带方括号的完整写法**直接写进语法行 + 给一条示例，让"方括号必须出现"无法忽略。
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT.3'),
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT.4'),
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT.5'),
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT.6'),
+    promptText('qq/config/FIXED_CHANNEL_CONTEXT.7')
+].join('\n');
 /**
  * 引用消息能力说明(2026-09-13 主人定; 短消息号版): 开启 messageReference 时随群守则一起注入。
  * 教 AI ①入站消息带短"消息号"(如 #0913a) ②出站用 [rf:消息号] 引用对方。
  */
 export const REFERENCE_CONTEXT = [
-  `【发图组·正文直接发图】DSH 支持在回复正文里直接写 markdown 图片，前端会照样渲染成图；本插件也会把它原样转发到 QQ（本地路径自动上传，不需要任何工具）。`,
-  `· 一张图：![说明 #宽px #高px](D:/path/x.jpg) —— 尺寸可省，插件会读文件头自动补真实宽高。`,
-  `· 图组（小剧场/分镜）：一行一张、连续几行，中间可夹一句当前情说明，QQ 侧会按顺序渲染成一屏。`,
-  `· 本地路径（D:/… 或 D:\… 或 file:///…）：插件自动上传成 qqbot-media 引用；单机器人上限 100 张，满了自动删最早的。`,
-  `· http(s) 图片原样保留（QQ 直接加载）；已是 qqbot-media:// 的引用原样透传。`,
-  `· 配表情包最顺手：list_stickers 搜到图 → 把它的本地路径写进正文 → 图组出来，比连发 send_media 更像翻漫画。`,
-  `· 失败策略：正文里图传不上去会原样留在文字里（不阻断本条），不会吞掉你的文字。`,
-  '【引用消息】本群已开启引用能力(可在设置关闭): 每条入站消息都带一个"消息号"(形如 #0913a, 很短)。',
-  '想让自己的回复"引用"某条消息: 在回复正文里写 [rf:消息号](两端加英文方括号), 如 [rf:0913a] —— 这条回复就会以"引用"形式发出, 对方能看到你引用了他那条消息。消息号就是入站消息标签里 # 后面那一小串。',
-  // 注(2026-09-13 主人定): 样例库的用法**不写进守则**(常驻注入会每轮占 token) ——
-  // 面板「让ai写」按钮本身就是**注入一条消息**, 路径/格式/做法全写在那条消息里, 零常驻开销。
-].join("\n");
+    promptText('qq/config/REFERENCE_CONTEXT'),
+    promptText('qq/config/REFERENCE_CONTEXT.2'),
+    promptText('qq/config/REFERENCE_CONTEXT.3'),
+    promptText('qq/config/REFERENCE_CONTEXT.4'),
+    promptText('qq/config/REFERENCE_CONTEXT.5'),
+    promptText('qq/config/REFERENCE_CONTEXT.6'),
+    promptText('qq/config/REFERENCE_CONTEXT.7'),
+    promptText('qq/config/REFERENCE_CONTEXT.8'),
+    promptText('qq/config/REFERENCE_CONTEXT.9')
+    // 注(2026-09-13 主人定): 样例库的用法**不写进守则**(常驻注入会每轮占 token) ——
+    // 面板「让ai写」按钮本身就是**注入一条消息**, 路径/格式/做法全写在那条消息里, 零常驻开销。
+].join('\n');
 // ── 共享字段子 schema(主 ConfigSchema 与 EditableConfigSchema 复用) ──
 /** 本地小模型(2026-09-13 主人定): 零 token 的本地语义能力(价值评分 / 表情包语义搜索), 模型缺失时静默降级 */
 const localModelSchema = Schema.object({
@@ -178,91 +179,60 @@ const behaviorSchema = Schema.object({
   })
   .description("回复调度");
 const stickerGatesSchema = Schema.object({
-  enabled: Schema.boolean()
-    .default(false)
-    .description("闸门总开关,false=不限制"),
-  perTurnMax: Schema.number()
-    .min(0)
-    .default(0)
-    .description("每轮最多发送张数,0=不限"),
-  perWindowSec: Schema.number().min(0).default(600).description("频率窗口(秒)"),
-  maxPerWindow: Schema.number()
-    .min(0)
-    .default(0)
-    .description("每窗口每群最多张数,0=不限"),
-  dailyBudgetPerGroup: Schema.number()
-    .min(0)
-    .default(0)
-    .description("每群每日预算,0=不限"),
-  dupTTLHours: Schema.number()
-    .min(0)
-    .default(0)
-    .description("同图去重(小时),0=关"),
-  activityWindowSec: Schema.number()
-    .min(0)
-    .default(3600)
-    .description("活性窗口(秒)"),
-  activityMinMsgs: Schema.number()
-    .min(0)
-    .default(0)
-    .description("活性窗口消息下限,0=不要求"),
-  bannedGroups: Schema.array(Schema.string())
-    .default([])
-    .description("禁发群group_openid"),
-  libRoots: Schema.array(Schema.string())
-    .default([])
-    .description("表情包路径白名单(追加)"),
+    enabled: Schema.boolean().default(false).description('闸门总开关,false=不限制'),
+    perTurnMax: Schema.number().min(0).default(0).description('每轮最多发送张数,0=不限'),
+    perWindowSec: Schema.number().min(0).default(600).description('频率窗口(秒)'),
+    maxPerWindow: Schema.number().min(0).default(0).description('每窗口每群最多张数,0=不限'),
+    dailyBudgetPerGroup: Schema.number().min(0).default(0).description('每群每日预算,0=不限'),
+    dupTTLHours: Schema.number().min(0).default(0).description('同图去重(小时),0=关'),
+    activityWindowSec: Schema.number().min(0).default(3600).description('活性窗口(秒)'),
+    activityMinMsgs: Schema.number().min(0).default(0).description(promptText('qq/config/activityMinMsgs')),
+    bannedGroups: Schema.array(Schema.string()).default([]).description('禁发群group_openid'),
+    libRoots: Schema.array(Schema.string()).default([]).description('表情包路径白名单(追加)')
 })
-  .default({
-    enabled: false,
-    perTurnMax: 0,
-    perWindowSec: 600,
-    maxPerWindow: 0,
-    dailyBudgetPerGroup: 0,
-    dupTTLHours: 0,
-    activityWindowSec: 3600,
-    activityMinMsgs: 0,
-    bannedGroups: [],
-    libRoots: [],
-  })
-  .description("表情包主动发送闸门(默认不限制)");
+    .default({
+        enabled: false,
+        perTurnMax: 0,
+        perWindowSec: 600,
+        maxPerWindow: 0,
+        dailyBudgetPerGroup: 0,
+        dupTTLHours: 0,
+        activityWindowSec: 3600,
+        activityMinMsgs: 0,
+        bannedGroups: [],
+        libRoots: []
+    })
+    .description('表情包主动发送闸门(默认不限制)');
 const injectRuleItemSchema = Schema.object({
-  id: Schema.string().required().description("规则ID"),
-  name: Schema.string().description("规则名"),
-  enabled: Schema.boolean().default(true).description("开关"),
-  conditions: Schema.object({
-    hasImage: Schema.boolean().default(false).description("消息含图片"),
-    hasLink: Schema.boolean().default(false).description("消息含链接"),
-    contentRegex: Schema.string().default("").description("正文正则,空=不启用"),
-    contentKeywords: Schema.array(Schema.string())
-      .default([])
-      .description("关键词(任一命中)"),
-    matchScope: Schema.union(["any", "all"])
-      .default("any")
-      .description("any=任一命中;all=全部满足"),
-  }),
-  prompt: Schema.string()
-    .required()
-    .max(400)
-    .description("注入的系统提示文本(≤400字)"),
+    id: Schema.string().required().description('规则ID'),
+    name: Schema.string().description('规则名'),
+    enabled: Schema.boolean().default(true).description('开关'),
+    conditions: Schema.object({
+        hasImage: Schema.boolean().default(false).description('消息含图片'),
+        hasLink: Schema.boolean().default(false).description('消息含链接'),
+        contentRegex: Schema.string().default('').description('正文正则,空=不启用'),
+        contentKeywords: Schema.array(Schema.string()).default([]).description('关键词(任一命中)'),
+        matchScope: Schema.union(['any', 'all']).default('any').description('any=任一命中;all=全部满足')
+    }),
+    prompt: Schema.string().required().max(400).description(promptText('qq/config/prompt'))
 });
 /** 一条时刻任务(挂在某个目标分组下) */
 const scheduleTaskSchema = Schema.object({
-  id: Schema.string().required().description("任务ID(唯一)"),
-  time: Schema.string()
-    .required()
-    .pattern(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .description("每天触发时刻(24h本地时区 HH:MM)"),
-  enabled: Schema.boolean().default(true).description("启用"),
-  prompt: Schema.string().description("可选: 想让她聊的方向(空=自由发挥)"),
+    id: Schema.string().required().description('任务ID(唯一)'),
+    time: Schema.string()
+        .required()
+        .pattern(/^([01]\d|2[0-3]):[0-5]\d$/)
+        .description('每天触发时刻(24h本地时区 HH:MM)'),
+    enabled: Schema.boolean().default(true).description('启用'),
+    prompt: Schema.string().description(promptText('qq/config/prompt.2'))
 })
-  .default({
-    id: "",
-    time: "09:00",
-    enabled: true,
-    prompt: "",
-  })
-  .description("定时时刻");
+    .default({
+        id: '',
+        time: '09:00',
+        enabled: true,
+        prompt: ''
+    })
+    .description('定时时刻');
 /** 一个目标(群/人), 号码填一次, 下面挂多个时刻 */
 const scheduleTargetSchema = Schema.object({
   id: Schema.string().required().description("目标ID(唯一)"),
@@ -637,174 +607,125 @@ export const EditableConfigSchema = Schema.object({
     ),
 });
 const ConfigSchemaRaw = Schema.object({
-  appId: Schema.string().default("").description("QQ Bot AppID"),
-  appSecret: Schema.string().default("").description("QQ Bot AppSecret"),
-  provider: Schema.string().description("LLM provider name"),
-  model: Schema.string().description("Model name"),
-  preset: Schema.string().description("Agent preset id"),
-  // ⚠️ 2026-10-02 修 issue #7：手机/POSIX 下反斜杠相对路径会让会话创建必失败 ⇒ 统一走规范化
-  cwd: Schema.string().description("Agent working directory"),
-  dataRoot: Schema.string().description(
-    "插件数据根目录(可选; 缺省=cwd): 表情包/.qqbot/.qqbot-extensions 统一挂其下, 与工作区其他文件分离",
-  ),
-  settingsNs: Schema.string().description(
-    "Web 设置命名空间(多账号时每实例唯一, 默认 im-qqbot)",
-  ),
-  requireMention: Schema.boolean()
-    .default(true)
-    .description("群聊是否需要@bot触发"),
-  groupPrompt: Schema.string()
-    .default(DEFAULT_GROUP_PROMPT)
-    .description("群聊常驻守则(默认表情包礼仪, 可清空关闭)"),
-  externalDriver: Schema.boolean()
-    .default(false)
-    .description("由外部编排器接管消息，禁用默认模型会话"),
-  directPrompt: Schema.string().description("私聊额外system prompt"),
-  textChunkLimit: Schema.number()
-    .default(4500)
-    .description("单条消息最大字符数"),
-  streaming: Schema.boolean()
-    .default(true)
-    .description("是否启用流式输出（群聊始终不启用）"),
-  sessionIdleTimeout: Schema.number()
-    .default(30 * 60 * 1000)
-    .description("会话闲置超时(ms)"),
-  maxQueue: Schema.number().default(20).description("并发队列最大长度"),
-  processingTimeoutMs: Schema.number()
-    .default(120000)
-    .description("处理超时(ms)"),
-  historyLimit: Schema.number().default(10).description("群历史缓冲条数"),
-  contextlessMode: Schema.boolean()
-    .default(false)
-    .description(
-      "无上下文模式: 每轮不继承历史(只带「@ 之前 N 条群消息」+ 系统规则)",
+    appId: Schema.string().default('').description('QQ Bot AppID'),
+    appSecret: Schema.string().default('').description('QQ Bot AppSecret'),
+    provider: Schema.string().description('LLM provider name'),
+    model: Schema.string().description('Model name'),
+    preset: Schema.string().description('Agent preset id'),
+    // ⚠️ 2026-10-02 修 issue #7：手机/POSIX 下反斜杠相对路径会让会话创建必失败 ⇒ 统一走规范化
+    cwd: Schema.string().description('Agent working directory'),
+    dataRoot: Schema.string().description(
+        '插件数据根目录(可选; 缺省=cwd): 表情包/.qqbot/.qqbot-extensions 统一挂其下, 与工作区其他文件分离'
     ),
-  contextlessWindow: Schema.number()
-    .default(5)
-    .description("无上下文模式下携带的「@ 之前」群消息条数(0=完全不带)"),
-  contextlessSmart: Schema.boolean()
-    .default(false)
-    .description(
-      "无上下文模式·智能判断(与 contextlessWindow 互斥): 让 AI 自己判断话题并自主压缩/丢弃上下文，只留它自己的备忘",
-    ),
-  contextMemoMaxItems: Schema.number()
-    .default(20)
-    .description("备忘条数上限(超出自动丢最旧)"),
-  access: Schema.object({
-    c2cMode: Schema.union(["care", "open", "allowlist", "disabled"])
-      .default("care")
-      .description(
-        "C2C访问模式（默认 care：只允许「特别关心的人」私聊，名单同人格体系的 group-tiers.json）",
-      ),
-    c2cAllow: Schema.array(Schema.string())
-      .default([])
-      .description(
-        'C2C额外白名单（用户 openid；"*"=全部；care/allowlist 模式下叠加生效）',
-      ),
-    groupMode: Schema.union(["care", "open", "allowlist", "disabled"])
-      .default("care")
-      .description("群聊访问模式（默认 care：只响应「特别关心群」）"),
-    groupAllow: Schema.array(Schema.string())
-      .default([])
-      .description('群额外白名单（群 openid；"*"=全部）'),
-  })
-    .default({
-      c2cMode: "care",
-      c2cAllow: [],
-      groupMode: "care",
-      groupAllow: [],
+    settingsNs: Schema.string().description('Web 设置命名空间(多账号时每实例唯一, 默认 im-qqbot)'),
+    requireMention: Schema.boolean().default(true).description('群聊是否需要@bot触发'),
+    groupPrompt: Schema.string().default(DEFAULT_GROUP_PROMPT).description('群聊常驻守则(默认表情包礼仪, 可清空关闭)'),
+    externalDriver: Schema.boolean().default(false).description('由外部编排器接管消息，禁用默认模型会话'),
+    directPrompt: Schema.string().description('私聊额外system prompt'),
+    textChunkLimit: Schema.number().default(4500).description('单条消息最大字符数'),
+    streaming: Schema.boolean().default(true).description('是否启用流式输出（群聊始终不启用）'),
+    sessionIdleTimeout: Schema.number()
+        .default(30 * 60 * 1000)
+        .description('会话闲置超时(ms)'),
+    maxQueue: Schema.number().default(20).description('并发队列最大长度'),
+    processingTimeoutMs: Schema.number().default(120000).description('处理超时(ms)'),
+    historyLimit: Schema.number().default(10).description('群历史缓冲条数'),
+    contextlessMode: Schema.boolean()
+        .default(false)
+        .description('无上下文模式: 每轮不继承历史(只带「@ 之前 N 条群消息」+ 系统规则)'),
+    contextlessWindow: Schema.number().default(5).description('无上下文模式下携带的「@ 之前」群消息条数(0=完全不带)'),
+    contextlessSmart: Schema.boolean()
+        .default(false)
+        .description(
+            '无上下文模式·智能判断(与 contextlessWindow 互斥): 让 AI 自己判断话题并自主压缩/丢弃上下文，只留它自己的备忘'
+        ),
+    contextMemoMaxItems: Schema.number().default(20).description('备忘条数上限(超出自动丢最旧)'),
+    access: Schema.object({
+        c2cMode: Schema.union(['care', 'open', 'allowlist', 'disabled'])
+            .default('care')
+            .description('C2C访问模式（默认 care：只允许「特别关心的人」私聊，名单同人格体系的 group-tiers.json）'),
+        c2cAllow: Schema.array(Schema.string())
+            .default([])
+            .description('C2C额外白名单（用户 openid；"*"=全部；care/allowlist 模式下叠加生效）'),
+        groupMode: Schema.union(['care', 'open', 'allowlist', 'disabled'])
+            .default('care')
+            .description('群聊访问模式（默认 care：只响应「特别关心群」）'),
+        groupAllow: Schema.array(Schema.string()).default([]).description('群额外白名单（群 openid；"*"=全部）')
     })
-    .description("访问控制"),
-  behavior: behaviorSchema,
-  sticker: Schema.object({
-    collectEnabled: Schema.boolean()
-      .default(true)
-      .description(
-        '自动下载群图到候选区(只存本地; ⚠️ 这是"采集"不等于"收藏" —— 收藏指打标/挑进正式库)',
-      ),
-    dataDir: Schema.string()
-      .default("")
-      .description("图库数据根目录(默认 {agent cwd}/表情包)"),
-    gates: stickerGatesSchema,
-    autoTagEnabled: Schema.boolean()
-      .default(false)
-      .description("新图后台自动识图打标(耗视觉额度,默认关;开需可用视觉CLI)"),
-    visionCli: Schema.string()
-      .default("")
-      .description("视觉CLI命令模板(含{img}占位), 空=自动探测本机视觉CLI"),
-  })
-    .default({
-      collectEnabled: true,
-      dataDir: "",
-      gates: {
-        enabled: false,
-        perTurnMax: 0,
-        perWindowSec: 600,
-        maxPerWindow: 0,
-        dailyBudgetPerGroup: 0,
-        dupTTLHours: 0,
-        activityWindowSec: 3600,
-        activityMinMsgs: 0,
-        bannedGroups: [],
-        libRoots: [],
-      },
-      autoTagEnabled: false,
-      visionCli: "",
+        .default({
+            c2cMode: 'care',
+            c2cAllow: [],
+            groupMode: 'care',
+            groupAllow: []
+        })
+        .description('访问控制'),
+    behavior: behaviorSchema,
+    sticker: Schema.object({
+        collectEnabled: Schema.boolean()
+            .default(true)
+            .description('自动下载群图到候选区(只存本地; ⚠️ 这是"采集"不等于"收藏" —— 收藏指打标/挑进正式库)'),
+        dataDir: Schema.string().default('').description('图库数据根目录(默认 {agent cwd}/表情包)'),
+        gates: stickerGatesSchema,
+        autoTagEnabled: Schema.boolean()
+            .default(false)
+            .description('新图后台自动识图打标(耗视觉额度,默认关;开需可用视觉CLI)'),
+        visionCli: Schema.string().default('').description('视觉CLI命令模板(含{img}占位), 空=自动探测本机视觉CLI')
     })
-    .description("表情包图库"),
-  injectRules: Schema.array(injectRuleItemSchema)
-    .default([])
-    .description("条件注入规则:消息含图片/链接/自定义文本时自动插入系统提示"),
-  imageHint: Schema.boolean()
-    .default(true)
-    .description(
-      "图片消息自动追加「看图」内置提示(默认开; 关掉=不再注入那条「把 URL 传给识图工具」)",
-    ),
-  messageReference: Schema.boolean()
-    .default(true)
-    .description(
-      "引用消息(默认开): 入站消息带短消息号 + 引用消息附原文 + 注入引用指令; 出站支持 [rf:短号] 标签引用对方消息",
-    ),
-  localModel: localModelSchema,
-  schedule: scheduleSchema,
-  groupAdmin: groupAdminSchema,
-  showToolResults: Schema.boolean()
-    .default(false)
-    .description("是否展示工具调用成功结果（工具错误始终展示）"),
-  debug: Schema.boolean().default(false),
-  diagLog: Schema.boolean()
-    .default(false)
-    .description(
-      "诊断日志落盘(默认关): 开=把排查用的诊断日志写进 {DSH_HOME|~/.dsh}/*.log, 单文件 2MB 自动轮转(只留 1 份旧档); 平时别开, 会持续占盘",
-    ),
-  enableApprovals: Schema.boolean()
-    .default(false)
-    .description(
-      "通过 QQ 接收并处理 dsh 一次性权限申请(远程审批: 发起者用 /approve CODE 放行)",
-    ),
-  approvalTimeoutMs: Schema.number()
-    .default(120000)
-    .description("QQ 权限申请超时(ms), 超时自动拒绝"),
-  questionsMode: Schema.union(["async", "blocking"])
-    .default("async")
-    .description(
-      "提问卡片怎么等答案: 后台(async, 默认)=卡片发出后工具立刻返回, 她能继续聊天/干活, 对方答完的答案会自动作为一条回执消息送回来(她忙就插进当前回合、空闲就唤醒她处理); 阻塞(blocking)=旧行为, 工具一直挂到对方作答或超时才继续(期间她动不了)",
-    ),
-  outboundMode: Schema.union([
-    "adaptive",
-    "detail",
-    "active",
-    "passive",
-    "silent",
-    "nothink",
-  ])
-    .default("adaptive")
-    .description(
-      "出站模式: 适配主动(默认)=收到新消息后前5次带msg_id被动回复, 超出/无新消息自动转主动(连发不受限); 详细主动=同适配主动 + 额外推送工具调用/工具结果到QQ(看进度, 消息更多); 被动=携带msg_id回复(连发受QQ回复同一消息上限); 完全不出站=思考但不发(静默); 完全不思考=QQ入站不唤醒LLM, 仅记录上下文(仅设置页可配, 防机器人自锁)",
-    ),
-  botplayEvents: Schema.array(botplayEventSchema)
-    .default(DEMO_BOTPLAY_EVENTS)
-    .description("botplay 互动事件(装配器编辑; /botplay 触发发卡)"),
+        .default({
+            collectEnabled: true,
+            dataDir: '',
+            gates: {
+                enabled: false,
+                perTurnMax: 0,
+                perWindowSec: 600,
+                maxPerWindow: 0,
+                dailyBudgetPerGroup: 0,
+                dupTTLHours: 0,
+                activityWindowSec: 3600,
+                activityMinMsgs: 0,
+                bannedGroups: [],
+                libRoots: []
+            },
+            autoTagEnabled: false,
+            visionCli: ''
+        })
+        .description('表情包图库'),
+    injectRules: Schema.array(injectRuleItemSchema).default([]).description(promptText('qq/config/injectRules')),
+    imageHint: Schema.boolean()
+        .default(true)
+        .description('图片消息自动追加「看图」内置提示(默认开; 关掉=不再注入那条「把 URL 传给识图工具」)'),
+    messageReference: Schema.boolean()
+        .default(true)
+        .description(
+            '引用消息(默认开): 入站消息带短消息号 + 引用消息附原文 + 注入引用指令; 出站支持 [rf:短号] 标签引用对方消息'
+        ),
+    localModel: localModelSchema,
+    schedule: scheduleSchema,
+    groupAdmin: groupAdminSchema,
+    showToolResults: Schema.boolean().default(false).description('是否展示工具调用成功结果（工具错误始终展示）'),
+    debug: Schema.boolean().default(false),
+    diagLog: Schema.boolean()
+        .default(false)
+        .description(
+            '诊断日志落盘(默认关): 开=把排查用的诊断日志写进 {DSH_HOME|~/.dsh}/*.log, 单文件 2MB 自动轮转(只留 1 份旧档); 平时别开, 会持续占盘'
+        ),
+    enableApprovals: Schema.boolean()
+        .default(false)
+        .description('通过 QQ 接收并处理 dsh 一次性权限申请(远程审批: 发起者用 /approve CODE 放行)'),
+    approvalTimeoutMs: Schema.number().default(120000).description('QQ 权限申请超时(ms), 超时自动拒绝'),
+    questionsMode: Schema.union(['async', 'blocking'])
+        .default('async')
+        .description(
+            '提问卡片怎么等答案: 后台(async, 默认)=卡片发出后工具立刻返回, 她能继续聊天/干活, 对方答完的答案会自动作为一条回执消息送回来(她忙就插进当前回合、空闲就唤醒她处理); 阻塞(blocking)=旧行为, 工具一直挂到对方作答或超时才继续(期间她动不了)'
+        ),
+    outboundMode: Schema.union(['adaptive', 'detail', 'active', 'passive', 'silent', 'nothink'])
+        .default('adaptive')
+        .description(
+            '出站模式: 适配主动(默认)=收到新消息后前5次带msg_id被动回复, 超出/无新消息自动转主动(连发不受限); 详细主动=同适配主动 + 额外推送工具调用/工具结果到QQ(看进度, 消息更多); 被动=携带msg_id回复(连发受QQ回复同一消息上限); 完全不出站=思考但不发(静默); 完全不思考=QQ入站不唤醒LLM, 仅记录上下文(仅设置页可配, 防机器人自锁)'
+        ),
+    botplayEvents: Schema.array(botplayEventSchema)
+        .default(DEMO_BOTPLAY_EVENTS)
+        .description('botplay 互动事件(装配器编辑; /botplay 触发发卡)')
 });
 /**
  * 递归给 schema 所有字段标 volatile（2026-09-24，适配 dsh 0.1.7）。

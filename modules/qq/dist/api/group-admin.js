@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * group-admin.ts — QQ 普通群管理 API 客户端(2026-09-05, 设计见 参考文档/群管理实现设计.md)
  *
@@ -204,7 +205,7 @@ export class GroupAdminClient {
     async apiCall(method, path, body) {
         const p = String(path || '').trim();
         if (!p.startsWith('/')) {
-            return { ok: false, err: { code: 'BAD_PATH', human: 'path 必须以 / 开头（不含 host），例如 /v2/groups/{gid}/members/{mid}' } };
+            return { ok: false, err: { code: 'BAD_PATH', human: promptText('qq/api/group-admin/human') } };
         }
         return this.call(method, p, body);
     }

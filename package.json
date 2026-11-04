@@ -10,8 +10,9 @@
   "scripts": {
     "test:core": "pnpm --dir modules/superagent test",
     "test": "node --import tsx --test tests/*.test.mjs",
-    "format": "prettier --write src tests examples docs package.json pnpm-workspace.yaml",
-    "build": "tsdown"
+    "format": "prettier --write src tests examples docs package.json pnpm-workspace.yaml prompts/index.mjs prompts/index.d.mts prompts/catalog prompts/files.json prompts/manifest.json prompts/profiles",
+    "build": "tsdown",
+    "check:prompts": "node --import tsx --test tests/prompts.test.mjs"
   },
   "dependencies": {
     "@tencent-connect/qqbot-nodejs": "1.0.4",

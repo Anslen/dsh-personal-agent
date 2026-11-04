@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 export const EMO_SAMPLES = {
     暖: [
         // 她自己的口吻
@@ -39,7 +40,7 @@ export const EMO_SAMPLES = {
         '有你在真好',
         '这个做得不错，点赞',
         '别想太多啦，会好的',
-        '兄弟辛苦，喝口水歇歇',
+        '兄弟辛苦，喝口水歇歇'
     ],
     冷: [
         // 她自己的口吻（傲娇 / 敷衍 / 拒绝）
@@ -71,7 +72,7 @@ export const EMO_SAMPLES = {
         '不看，没兴趣',
         '谁会看这种东西',
         '笑死，就这？',
-        '烦死了',
+        '烦死了'
     ],
     中性: [
         // 口语提问 / 陈述 / 报进度 / 给信息（**不是说明书**）
@@ -105,12 +106,12 @@ export const EMO_SAMPLES = {
         '在吗',
         '这个多少钱',
         '几点开始？',
-        '你是说哪一个？',
+        promptText('qq/features/emo-samples/中性'),
         '收到。',
         '好，人家改一下。',
         '等一下，人家确认一下版本号。',
-        '那人家再搜搜看。',
-    ],
+        '那人家再搜搜看。'
+    ]
 };
 export const EMO_LABELS = ['暖', '冷', '中性'];
 //# sourceMappingURL=emo-samples.js.map

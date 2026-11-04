@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * memory-graph-llm.mjs — 用本地小模型补三元组（"类海马体"图谱的实体/关系抽取）
  *
@@ -28,17 +29,17 @@ export const DEFAULTS = {
 };
 
 const SYSTEM = [
-  '你是一个信息抽取器。从聊天记录里抽「实体—关系—实体」三元组。',
-  '规则：',
-  '1. 只输出 JSON 数组，不要解释、不要代码块标记；',
-  '2. 每个元素形如 {"src":"老王","rel":"负责","dst":"审核"}；',
-  '3. 实体用原文里的称呼（人名/群名/物品/地点），不要改写成代词；',
-  '4. 关系用 2~4 个汉字（是/住在/负责/喜欢/想去/在…），不要长句；',
-  '5. 抽不出就输出 []。',
-  '',
-  '例：',
-  '输入：老王现在管审核了，他自己说的',
-  '输出：[{"src":"老王","rel":"负责","dst":"审核"}]',
+    promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM'),
+    '规则：',
+    promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM.2'),
+    '2. 每个元素形如 {"src":"老王","rel":"负责","dst":"审核"}；',
+    promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM.3'),
+    promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM.4'),
+    '5. 抽不出就输出 []。',
+    '',
+    '例：',
+    '输入：老王现在管审核了，他自己说的',
+    '输出：[{"src":"老王","rel":"负责","dst":"审核"}]'
 ].join('\n');
 
 /** 去掉模型爱加的解释/代码块，拿到第一段 JSON 数组 */

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { diagWrite } from '../shared/diag.js';
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 /** 只解析显式审批命令; 普通聊天消息原样放行给 agent */
@@ -95,15 +96,21 @@ export class QqApprovalController {
         });
         const seconds = Math.ceil(timeoutMs / 1000);
         const prompt = [
-            '⚠️ **DSH 权限申请**',
-            `工具：${tool}`,
-            reason ? `原因：${reason}` : '',
+            promptText('qq/features/qq-approval/prompt.2'),
+            renderPrompt('qq/features/qq-approval/prompt.3', { p0: tool }),
+            reason ? renderPrompt('qq/features/qq-approval/prompt.4', { p0: reason }) : '',
             '',
-            `仅本次有效，${seconds} 秒后自动拒绝。`,
+            renderPrompt('qq/features/qq-approval/prompt.5', { p0: seconds }),
             '',
-            `🔑 验证码：\`${code}\``,
-            '（点上方按钮最快; 按钮不可用时回复 `/approve ' + code + '` 或 `/deny ' + code + '`）',
-        ].filter(Boolean).join('\n');
+            renderPrompt('qq/features/qq-approval/prompt.6', { p0: code }),
+            promptText('qq/features/qq-approval/prompt') +
+                code +
+                promptText('qq/features/qq-approval/prompt.7') +
+                code +
+                '`）'
+        ]
+            .filter(Boolean)
+            .join('\n');
         try {
             // ① 按钮卡片优先: 按钮仅发起者本人可点(permission.specify_user_ids = 发起者 openid)
             const kb = approvalKeyboard(code);
@@ -131,14 +138,16 @@ export class QqApprovalController {
             this.logger.warn(`QQ approval button failed, fallback text: ${err instanceof Error ? err.message : String(err)}`);
             try {
                 const textPrompt = [
-                    '⚠️ **DSH 权限申请**',
-                    `工具：${tool}`,
-                    reason ? `原因：${reason}` : '',
+                    promptText('qq/features/qq-approval/textPrompt'),
+                    renderPrompt('qq/features/qq-approval/textPrompt.2', { p0: tool }),
+                    reason ? renderPrompt('qq/features/qq-approval/textPrompt.3', { p0: reason }) : '',
                     '',
-                    `允许本次操作：\`/approve ${code}\``,
-                    `拒绝本次操作：\`/deny ${code}\``,
-                    `仅本次有效，${seconds} 秒后自动拒绝。`,
-                ].filter(Boolean).join('\n');
+                    renderPrompt('qq/features/qq-approval/textPrompt.4', { p0: code }),
+                    renderPrompt('qq/features/qq-approval/textPrompt.5', { p0: code }),
+                    renderPrompt('qq/features/qq-approval/textPrompt.6', { p0: seconds })
+                ]
+                    .filter(Boolean)
+                    .join('\n');
                 await this.sender.sendMarkdown(record.replyTarget, textPrompt);
             }
             catch (err2) {

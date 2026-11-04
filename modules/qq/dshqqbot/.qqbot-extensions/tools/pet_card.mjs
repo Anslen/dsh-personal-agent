@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * pet_card — 生成一张小蓝形象卡（竖版 PNG），可顺手发到群或私聊
  *
@@ -56,60 +57,96 @@ function runPython(py, args, timeoutMs = 90_000) {
 }
 
 export default {
-  name: 'pet_card',
-  expose: 'all',
-  description: '生成一张小蓝的竖版形象卡（PNG，1080×1920，深海蓝底+立绘+一句状态），可选直接发到群/私聊（手机上点开就能看）。轻量：本机 PIL 合成，不架服务、不联网',
-  inputSchema: {
-    pose: { type: 'string', enum: POSES, description: '用哪张立绘（默认 idle）' },
-    text: { type: 'string', description: '卡上那句状态字（一句话就够，最多 4 行）' },
-    send: { type: 'boolean', description: 'true = 出图后直接发出去（需配 target）' },
-    target: { type: 'string', description: 'send=true 时必填：群名 / 昵称 / openid（规则同 qq_send）' },
-    scope: { type: 'string', enum: ['group', 'c2c'], description: 'send=true 时的目标类型（按名字发可省）' },
-  },
-  run: async (args, env) => {
-    const root = String((env && env.caps && env.caps.dataRoot) || (env && env.dataRoot) || '').trim()
-      || join(REPO, 'dshqqbot');
-    if (!existsSync(PY_SCRIPT)) return { ok: false, msg: '找不到渲染脚本：' + PY_SCRIPT };
+    name: 'pet_card',
+    expose: 'all',
+    description: promptText('qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description'),
+    inputSchema: {
+        pose: {
+            type: 'string',
+            enum: POSES,
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.2')
+        },
+        text: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.3')
+        },
+        send: {
+            type: 'boolean',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.4')
+        },
+        target: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.5')
+        },
+        scope: {
+            type: 'string',
+            enum: ['group', 'c2c'],
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.6')
+        }
+    },
+    run: async (args, env) => {
+        const root =
+            String((env && env.caps && env.caps.dataRoot) || (env && env.dataRoot) || '').trim() ||
+            join(REPO, 'dshqqbot');
+        if (!existsSync(PY_SCRIPT)) return { ok: false, msg: '找不到渲染脚本：' + PY_SCRIPT };
 
-    const pose = POSES.includes(String(args.pose || '')) ? String(args.pose) : 'idle';
-    const posePath = join(POSE_DIR, pose + '.png');
-    const text = String(args.text || '').replace(/\s+/g, ' ').trim().slice(0, 120);
-    // 落 {dataRoot}/pet-cards：宿主对 .qqbot 子目录有写限制（PIL 会 EPERM），别往里塞
-    const dir = join(root, 'pet-cards');
-    try { mkdirSync(dir, { recursive: true }); } catch { /* ignore */ }
-    const out = join(dir, `pet-${pose}-${Date.now()}.png`);
-    // 这台机器上 python 子进程写不进 {dataRoot}（EPERM），所以先渲染到工作区暂存目录，再由 node 搬过去
-    const stage = join(REPO, 'tmp', 'qqbot-pet');
-    try { mkdirSync(stage, { recursive: true }); } catch { /* ignore */ }
-    const tmpOut = join(stage, `pet-${process.pid}-${Date.now()}.png`);
+        const pose = POSES.includes(String(args.pose || '')) ? String(args.pose) : 'idle';
+        const posePath = join(POSE_DIR, pose + '.png');
+        const text = String(args.text || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 120);
+        // 落 {dataRoot}/pet-cards：宿主对 .qqbot 子目录有写限制（PIL 会 EPERM），别往里塞
+        const dir = join(root, 'pet-cards');
+        try {
+            mkdirSync(dir, { recursive: true });
+        } catch {
+            /* ignore */
+        }
+        const out = join(dir, `pet-${pose}-${Date.now()}.png`);
+        // 这台机器上 python 子进程写不进 {dataRoot}（EPERM），所以先渲染到工作区暂存目录，再由 node 搬过去
+        const stage = join(REPO, 'tmp', 'qqbot-pet');
+        try {
+            mkdirSync(stage, { recursive: true });
+        } catch {
+            /* ignore */
+        }
+        const tmpOut = join(stage, `pet-${process.pid}-${Date.now()}.png`);
 
-    const py = resolvePython(loadDrawCfg(root));
-    const pyArgs = [PY_SCRIPT, '--out', tmpOut, '--pose', posePath, '--text', text];
-    const r = await runPython(py, pyArgs);
-    if (!r.ok) return { ok: false, msg: `形象卡没画出来（${r.reason}）—— 检查 ${py} 有没有装 Pillow` };
-    if (!existsSync(tmpOut)) return { ok: false, msg: '渲染脚本说成功，但文件不在：' + tmpOut };
-    try {
-      copyFileSync(tmpOut, out);
-    } catch (e) {
-      return { ok: false, msg: '图生成了但搬不过去：' + (e instanceof Error ? e.message : String(e)) };
-    } finally {
-      try { rmSync(tmpOut, { force: true }); } catch { /* ignore */ }
+        const py = resolvePython(loadDrawCfg(root));
+        const pyArgs = [PY_SCRIPT, '--out', tmpOut, '--pose', posePath, '--text', text];
+        const r = await runPython(py, pyArgs);
+        if (!r.ok) return { ok: false, msg: `形象卡没画出来（${r.reason}）—— 检查 ${py} 有没有装 Pillow` };
+        if (!existsSync(tmpOut)) return { ok: false, msg: '渲染脚本说成功，但文件不在：' + tmpOut };
+        try {
+            copyFileSync(tmpOut, out);
+        } catch (e) {
+            return { ok: false, msg: '图生成了但搬不过去：' + (e instanceof Error ? e.message : String(e)) };
+        } finally {
+            try {
+                rmSync(tmpOut, { force: true });
+            } catch {
+                /* ignore */
+            }
+        }
+
+        const rel = out.replace(/\\/g, '/');
+        if (!(args.send === true || args.send === 'true')) {
+            return { ok: true, msg: `形象卡已生成：${rel}（1080×1920）。要发就说 send:true + target` };
+        }
+
+        const target = String(args.target || '').trim();
+        if (!target) return { ok: true, msg: `形象卡已生成：${rel}；但没给 target，所以没发` };
+        const qqsend = await import('./qq_send.mjs');
+        const s = await qqsend.default.run(
+            {
+                target,
+                scope: args.scope === 'group' ? 'group' : args.scope === 'c2c' ? 'c2c' : undefined,
+                image: rel,
+                text: text || ''
+            },
+            env
+        );
+        return { ok: !!s.ok, msg: `${rel}\n${s.msg || ''}`.trim() };
     }
-
-    const rel = out.replace(/\\/g, '/');
-    if (!(args.send === true || args.send === 'true')) {
-      return { ok: true, msg: `形象卡已生成：${rel}（1080×1920）。要发就说 send:true + target` };
-    }
-
-    const target = String(args.target || '').trim();
-    if (!target) return { ok: true, msg: `形象卡已生成：${rel}；但没给 target，所以没发` };
-    const qqsend = await import('./qq_send.mjs');
-    const s = await qqsend.default.run({
-      target,
-      scope: args.scope === 'group' ? 'group' : (args.scope === 'c2c' ? 'c2c' : undefined),
-      image: rel,
-      text: text || '',
-    }, env);
-    return { ok: !!s.ok, msg: `${rel}\n${s.msg || ''}`.trim() };
-  },
 };

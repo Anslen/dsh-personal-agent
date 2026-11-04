@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../prompts/index.mjs";
 /**
  * channel-tools.ts — QQ 通道工具插件(send_media / recall_message)
  *
@@ -540,38 +541,42 @@ export async function apply(ctx) {
     diag(`apply 调用: tools=${typeof toolsAny} register=${typeof toolsAny?.register} ctxKeys=${Object.keys(ctx).slice(0, 12).join(',')}`);
     const sendMediaTool = defineTool({
         name: 'send_media',
-        description: '在当前 QQ 会话给对方发送富媒体(图片/语音/视频/文件)。kind=image|voice|video|file；source=本地文件绝对路径 或 http(s) 网址。',
+        description: promptText('qq/channel-tools/send_media.description'),
         parameters: {
-            kind: { type: 'string', required: true, enum: ['image', 'voice', 'video', 'file'], description: '媒体类型' },
-            source: { type: 'string', required: true, description: '本地绝对路径或 http(s) 网址' },
+            kind: {
+                type: 'string',
+                required: true,
+                enum: ['image', 'voice', 'video', 'file'],
+                description: promptText('qq/channel-tools/send_media.description.2')
+            },
+            source: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/send_media.description.3')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [
-                { type: 'text', text: v.ok ? '已发送' : `发送失败: ${v.msg}` },
-            ],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? '已发送' : `发送失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const _sess = findSessionRec(channelOf(exec), exec);
-            if (!_sess)
-                return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
+            if (!_sess) return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
             const ch = _sess.ch;
             const rec = _sess.rec;
             try {
-                const srcOpt = /^https?:\/\//i.test(args.source)
-                    ? { url: args.source }
-                    : { localPath: args.source };
+                const srcOpt = /^https?:\/\//i.test(args.source) ? { url: args.source } : { localPath: args.source };
                 // 本地大文件(>=5MB): 走后台任务——SDK 自动分片上传(prepare->parts->complete)耗时较长,
                 // 工具立即返回不阻塞回合; 完成后/失败把系统消息写回会话, LLM 下轮自然知晓。
                 if (srcOpt.localPath && typeof srcOpt.localPath === 'string') {
                     let big = false;
                     try {
                         big = statSync(srcOpt.localPath).size >= FILE_ASYNC_MIN;
-                    }
-                    catch {
+                    } catch {
                         big = false;
                     }
                     if (big && typeof srcOpt.localPath === 'string') {
@@ -580,26 +585,43 @@ export async function apply(ctx) {
                         const fname = (lp.split(String.fromCharCode(92)).pop() || '').split('/').pop() || 'file';
                         const seq = ++bgSeq;
                         const agent = rec.agent;
-                        void ch.sender.sendMedia(rec.replyTarget, args.kind, { localPath: lp })
+                        void ch.sender
+                            .sendMedia(rec.replyTarget, args.kind, { localPath: lp })
                             .then(async (r) => {
-                            await notifySession(agent, '[系统] 后台任务 #' + seq + ' 完成：已发送 ' + fname + '(' + fmtMB(st.size) + ')。');
-                            if (r && r.id) {
-                                try {
-                                    const store = getStickerStore(ch.manager.stickerDataDir);
-                                    const sid = lookupId(store, lp);
-                                    if (sid)
-                                        store.markUsed(sid);
+                                await notifySession(
+                                    agent,
+                                    '[系统] 后台任务 #' + seq + ' 完成：已发送 ' + fname + '(' + fmtMB(st.size) + ')。'
+                                );
+                                if (r && r.id) {
+                                    try {
+                                        const store = getStickerStore(ch.manager.stickerDataDir);
+                                        const sid = lookupId(store, lp);
+                                        if (sid) store.markUsed(sid);
+                                    } catch {
+                                        /* 统计失败不影响发送 */
+                                    }
                                 }
-                                catch { /* 统计失败不影响发送 */ }
-                            }
-                            diag('bgSend #' + seq + ' ok ' + fname);
-                        })
+                                diag('bgSend #' + seq + ' ok ' + fname);
+                            })
                             .catch(async (e) => {
-                            const msg = e instanceof Error ? e.message : String(e);
-                            await notifySession(agent, '[系统] 后台任务 #' + seq + ' 失败：' + msg + '（未发送完成, 可重试或改用小文件）');
-                            diag('bgSend #' + seq + ' fail ' + fname + ': ' + msg);
-                        });
-                        return { ok: true, msg: '📤 大文件 ' + fname + '(' + fmtMB(st.size) + ') 已提交后台任务 #' + seq + '——分片上传耗时较长, 完成/失败后会有系统消息通知' };
+                                const msg = e instanceof Error ? e.message : String(e);
+                                await notifySession(
+                                    agent,
+                                    '[系统] 后台任务 #' + seq + ' 失败：' + msg + '（未发送完成, 可重试或改用小文件）'
+                                );
+                                diag('bgSend #' + seq + ' fail ' + fname + ': ' + msg);
+                            });
+                        return {
+                            ok: true,
+                            msg:
+                                '📤 大文件 ' +
+                                fname +
+                                '(' +
+                                fmtMB(st.size) +
+                                ') 已提交后台任务 #' +
+                                seq +
+                                '——分片上传耗时较长, 完成/失败后会有系统消息通知'
+                        };
                     }
                 }
                 const r = await ch.sender.sendMedia(rec.replyTarget, args.kind, srcOpt);
@@ -608,41 +630,41 @@ export async function apply(ctx) {
                     try {
                         const store = getStickerStore(ch.manager.stickerDataDir);
                         const sid = lookupId(store, srcOpt.localPath);
-                        if (sid)
-                            store.markUsed(sid);
+                        if (sid) store.markUsed(sid);
+                    } catch {
+                        /* 统计失败不影响发送 */
                     }
-                    catch { /* 统计失败不影响发送 */ }
                 }
                 return { ok: true, msg: r?.id ? String(r.id) : '' };
-            }
-            catch (e) {
+            } catch (e) {
                 // 表情包闸门拒绝: 明确告知"不要重试", 避免 LLM 换图/反复尝试刷闸
                 if (isStickerGateDenied(e)) {
-                    return { ok: false, msg: `表情包闸门拦截, 本轮不再尝试发图: ${e.message.replace(/^\[sticker-gate\]\s*/, '')}` };
+                    return {
+                        ok: false,
+                        msg: `表情包闸门拦截, 本轮不再尝试发图: ${e.message.replace(/^\[sticker-gate\]\s*/, '')}`
+                    };
                 }
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const recallTool = defineTool({
         name: 'recall_message',
-        description: '撤回本机器人最近发给当前 QQ 会话的消息。index 缺省 1(=最近一条)，2=倒数第 2 条，以此类推。',
+        description: promptText('qq/channel-tools/recall_message.description'),
         parameters: {
-            index: { type: 'integer', description: '要撤的倒数第几条(默认1)' },
+            index: { type: 'integer', description: promptText('qq/channel-tools/recall_message.description.2') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [
-                { type: 'text', text: v.ok ? '已撤回' : `撤回失败: ${v.msg}` },
-            ],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? '已撤回' : `撤回失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const _sess = findSessionRec(channelOf(exec), exec);
-            if (!_sess)
-                return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
+            if (!_sess) return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
             const ch = _sess.ch;
             const rec = _sess.rec;
             const rawIdx = args.index;
@@ -650,53 +672,54 @@ export async function apply(ctx) {
             try {
                 const ok = await ch.sender.recallByIndex(rec.replyTarget, idx);
                 return ok ? { ok: true, msg: '' } : { ok: false, msg: `第${idx}条无可撤回消息或已超时` };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const listStickersTool = defineTool({
         name: 'list_stickers',
-        description: '(聊天加分项,气氛对就大胆用!)按情绪关键词搜本地表情包库, 挑最贴切的一张用 send_media(kind=image, source=路径) 发出去(一次最多一张); 实在查不到贴切的才回纯文字。',
+        description: promptText('qq/channel-tools/list_stickers.description'),
         parameters: {
-            query: { type: 'string', description: '语义关键词(可空=最近收藏; 匹配标签与描述)' },
-            tag: { type: 'string', description: '标签过滤(可空)' },
-            limit: { type: 'integer', description: '返回条数 1~20(默认 3)' },
+            query: { type: 'string', description: promptText('qq/channel-tools/list_stickers.description.2') },
+            tag: { type: 'string', description: promptText('qq/channel-tools/list_stickers.description.3') },
+            limit: { type: 'integer', description: promptText('qq/channel-tools/list_stickers.description.4') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
+                type: 'object',
+                additionalProperties: false,
                 properties: {
                     ok: { type: 'boolean', required: true },
                     msg: { type: 'string', required: true },
                     items: {
-                        type: 'array', required: true,
+                        type: 'array',
+                        required: true,
                         items: {
-                            type: 'object', additionalProperties: false,
+                            type: 'object',
+                            additionalProperties: false,
                             properties: {
                                 path: { type: 'string', required: true },
                                 tags: { type: 'array', required: true, items: { type: 'string' } },
                                 desc: { type: 'string', required: true },
                                 used: { type: 'integer', required: true },
                                 formal: { type: 'boolean', required: true },
-                                src: { type: 'string', required: true },
-                            },
-                        },
-                    },
-                },
+                                src: { type: 'string', required: true }
+                            }
+                        }
+                    }
+                }
             },
             render: (_a, v) => {
-                if (!v.ok)
-                    return [{ type: 'text', text: `查询失败: ${v.msg}` }];
+                if (!v.ok) return [{ type: 'text', text: `查询失败: ${v.msg}` }];
                 if (v.items.length === 0) {
                     return [{ type: 'text', text: '表情包库中无匹配,不建议发图,只回文字即可' }];
                 }
                 return v.items.map((it, i) => ({
                     type: 'text',
-                    text: `${i + 1}. [${it.tags.length > 0 ? it.tags.join('/') : '未打标'}] 用过${it.used}次${it.desc ? `\n   描述: ${it.desc.slice(0, 120)}` : ''}\n   → ${it.path}`,
+                    text: `${i + 1}. [${it.tags.length > 0 ? it.tags.join('/') : '未打标'}] 用过${it.used}次${it.desc ? `\n   描述: ${it.desc.slice(0, 120)}` : ''}\n   → ${it.path}`
                 }));
-            },
+            }
         },
         async execute(args, exec) {
             try {
@@ -707,25 +730,24 @@ export async function apply(ctx) {
                 const hits = store.search({
                     q: args.query ?? '',
                     tag: args.tag ?? '',
-                    limit,
+                    limit
                 });
                 return {
                     ok: true,
                     msg: '',
-                    items: hits.map(h => ({
+                    items: hits.map((h) => ({
                         path: h.path,
                         tags: h.tags,
                         desc: h.desc ?? '',
                         used: h.useCount,
                         formal: h.layer === 'library',
-                        src: h.sourceGroup ?? '',
-                    })),
+                        src: h.sourceGroup ?? ''
+                    }))
                 };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e), items: [] };
             }
-        },
+        }
     });
     /** 按 path / id 前缀 / 来源URL 定位条目(list_stickers 的 path、或群消息里那张图的 URL 都行) */
     const lookupId = (store, ref) => {
@@ -753,28 +775,35 @@ export async function apply(ctx) {
     };
     const tagStickerTool = defineTool({
         name: 'sticker_tag',
-        description: '(主动维护)看到值得留的图就收藏+打标(群友发的有梗/好图, 不管这轮发不发): tags=逗号分隔中文短标签(如 爆笑,元气), desc=一句"画面+情绪+适用场合"; 缺标签的图(见 sticker_untagged)也用它补。想省视觉额度可传 vision=false(只对已在库的图打标)。',
+        description: promptText('qq/channel-tools/sticker_tag.description'),
         parameters: {
-            sticker: { type: 'string', required: true, description: '图片URL 或 本地绝对路径(也可传 list_stickers 返回的路径)' },
-            tags: { type: 'string', description: '逗号分隔中文标签,如 开心,元气,打招呼' },
-            desc: { type: 'string', description: '一句中文详细描述(画面+情绪+适合场合)' },
-            vision: { type: 'boolean', description: '图不在库时是否先识图生成草稿,默认true' },
+            sticker: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/sticker_tag.description.2')
+            },
+            tags: { type: 'string', description: promptText('qq/channel-tools/sticker_tag.description.3') },
+            desc: { type: 'string', description: promptText('qq/channel-tools/sticker_tag.description.4') },
+            vision: { type: 'boolean', description: promptText('qq/channel-tools/sticker_tag.description.5') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             try {
                 const a = args;
                 const store = stickerStoreOf(exec);
                 const sticker = (a.sticker ?? '').trim();
-                if (!sticker)
-                    return { ok: false, msg: 'sticker 不能为空' };
-                const userTags = (a.tags ?? '').split(/[,，\s]+/).map(s => s.trim()).filter(Boolean);
+                if (!sticker) return { ok: false, msg: 'sticker 不能为空' };
+                const userTags = (a.tags ?? '')
+                    .split(/[,，\s]+/)
+                    .map((s) => s.trim())
+                    .filter(Boolean);
                 const userDesc = (a.desc ?? '').trim() || undefined;
                 if (!userTags.length && !userDesc && a.vision === false) {
                     return { ok: false, msg: 'tags/desc 至少给一个(或允许 vision 识图生成草稿)' };
@@ -784,19 +813,15 @@ export async function apply(ctx) {
                 if (!id) {
                     if (/^https?:\/\//i.test(sticker)) {
                         const r = await store.capture(sticker, { sourceUrl: sticker }, undefined);
-                        if (r.status === 'error')
-                            return { ok: false, msg: `下载收藏失败: ${r.error}` };
+                        if (r.status === 'error') return { ok: false, msg: `下载收藏失败: ${r.error}` };
                         id = r.id;
                         created = r.status === 'new';
-                    }
-                    else if (existsSync(sticker)) {
+                    } else if (existsSync(sticker)) {
                         const r = await store.importLocalFile(sticker); // 2026-09-13 起 async(内部要算感知哈希 dHash)
-                        if (r.status === 'error')
-                            return { ok: false, msg: `导入失败: ${r.error}` };
+                        if (r.status === 'error') return { ok: false, msg: `导入失败: ${r.error}` };
                         id = r.id;
                         created = r.status === 'new';
-                    }
-                    else {
+                    } else {
                         return { ok: false, msg: '找不到这张图(图不在库里,且给的不是有效URL/路径)' };
                     }
                 }
@@ -819,14 +844,15 @@ export async function apply(ctx) {
                                     return { ok: true, msg: `该图原无标签/描述,已识图补标: [${draft.tags.join('/')}]` };
                                 }
                             }
+                        } catch {
+                            /* 草稿失败则提示用户手填 */
                         }
-                        catch { /* 草稿失败则提示用户手填 */ }
                         return { ok: true, msg: '该图原无标签/描述,识图失败,请传 tags/desc 手动补' };
                     }
                     const cur = store.get(id);
                     return {
                         ok: true,
-                        msg: `该图已在库里(标签: ${(cur?.tags ?? []).join('/') || '无'}${cur?.desc ? `; 描述: ${cur.desc.slice(0, 60)}` : ''})。想改请传 tags/desc`,
+                        msg: `该图已在库里(标签: ${(cur?.tags ?? []).join('/') || '无'}${cur?.desc ? `; 描述: ${cur.desc.slice(0, 60)}` : ''})。想改请传 tags/desc`
                     };
                 }
                 // 新收藏: 识图草稿(默认) + 用户内容覆盖
@@ -843,84 +869,90 @@ export async function apply(ctx) {
                                 d = draft.desc;
                             }
                         }
+                    } catch {
+                        /* 草稿失败则留待整理 */
                     }
-                    catch { /* 草稿失败则留待整理 */ }
                 }
-                if (t || d)
-                    store.setDescTags(id, t, d);
+                if (t || d) store.setDescTags(id, t, d);
                 store.promote(id); // 主动收藏 → 正式区(不参与自动滚动清理)
                 const tagsShown = (t ?? []).join('/') || '无';
                 return { ok: true, msg: `已收藏并打标 [${tagsShown}]` };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const deleteStickerTool = defineTool({
         name: 'sticker_delete',
-        description: '把表情包库里的某张图送进回收站(30天后自动清,期间可用 sticker_restore 找回)。当这张图不合适/不想要/发出去被嫌弃时用。sticker=那张图的本地路径(来自 list_stickers)或群图URL。',
+        description: promptText('qq/channel-tools/sticker_delete.description'),
         parameters: {
-            sticker: { type: 'string', required: true, description: '要操作的图: list_stickers 查到的本地路径 / 或当时群消息里那张图的图片URL' },
+            sticker: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/sticker_delete.description.2')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? '已送回收站(30天内可找回)' : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? '已送回收站(30天内可找回)' : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             try {
                 const store = stickerStoreOf(exec);
                 const id = lookupId(store, args.sticker ?? '');
-                if (!id)
-                    return { ok: false, msg: '找不到这张图(请先用 list_stickers 拿到准确 path)' };
+                if (!id) return { ok: false, msg: promptText('qq/channel-tools/msg.20') };
                 store.markTrash(id);
                 return { ok: true, msg: '' };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const restoreStickerTool = defineTool({
         name: 'sticker_restore',
-        description: '从回收站找回一张图(取消删除)。sticker=回收站里那张图的路径或URL。',
+        description: promptText('qq/channel-tools/sticker_restore.description'),
         parameters: {
-            sticker: { type: 'string', required: true, description: '回收站中那张图的路径或URL' },
+            sticker: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/sticker_restore.description.2')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? '已找回 ✓' : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? '已找回 ✓' : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             try {
                 const store = stickerStoreOf(exec);
                 const id = lookupId(store, args.sticker ?? '');
-                if (!id)
-                    return { ok: false, msg: '找不到(请确认在回收站且路径准确)' };
+                if (!id) return { ok: false, msg: '找不到(请确认在回收站且路径准确)' };
                 store.restore(id);
                 return { ok: true, msg: '' };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const statsStickerTool = defineTool({
         name: 'sticker_stats',
-        description: '查看表情包库概况(总数/各分区/未打标数/占用)。想了解库存或准备整理时用: 若"未打标"数大于0, 接着用 sticker_untagged 翻出未整理图并 sticker_tag 补标, 保持弹药库好用。',
+        description: promptText('qq/channel-tools/sticker_stats.description'),
         parameters: {},
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.msg }],
+            render: (_a, v) => [{ type: 'text', text: v.msg }]
         },
         async execute(_args, exec) {
             try {
@@ -928,28 +960,33 @@ export async function apply(ctx) {
                 const mb = (s.totalBytes / 1024 / 1024).toFixed(1);
                 return {
                     ok: true,
-                    msg: `表情包库: 共${s.total}张(候选${s.candidate}/正式${s.library}/回收站${s.trash}/负${s.negative}), 未打标${s.untagged}张, 占用${mb}MB`,
+                    msg: `表情包库: 共${s.total}张(候选${s.candidate}/正式${s.library}/回收站${s.trash}/负${s.negative}), 未打标${s.untagged}张, 占用${mb}MB`
                 };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const untaggedStickerTool = defineTool({
         name: 'sticker_untagged',
-        description: '(日常整理巡检,AI应主动做)列出表情包库里还没整理完的图(缺标签或缺介绍)。群里没活/或想维护图库时先调它(也可先 sticker_stats 看有没有未打标), 发现有图就逐张用 sticker_tag 补标签和一句描述; 库越干净, list_stickers 搜图越准。参数 a: 1=全部(候选+收藏) 2=只看收藏(正式文件夹)。可选 limit(每批条数, 默认20, 上限100)、offset(跳过前N条, 翻页用)。',
+        description: promptText('qq/channel-tools/sticker_untagged.description'),
         parameters: {
-            a: { type: 'integer', enum: [1, 2], required: true, description: '1=查全部 2=只查收藏文件夹(正式)' },
-            limit: { type: 'integer', description: '每批返回条数(1-100, 默认20)' },
-            offset: { type: 'integer', description: '跳过前 N 条(翻页用, 默认0)' },
+            a: {
+                type: 'integer',
+                enum: [1, 2],
+                required: true,
+                description: promptText('qq/channel-tools/sticker_untagged.description.2')
+            },
+            limit: { type: 'integer', description: promptText('qq/channel-tools/sticker_untagged.description.3') },
+            offset: { type: 'integer', description: promptText('qq/channel-tools/sticker_untagged.description.4') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.msg }],
+            render: (_a, v) => [{ type: 'text', text: v.msg }]
         },
         async execute(args, exec) {
             try {
@@ -958,8 +995,15 @@ export async function apply(ctx) {
                 const limit = Math.min(100, Math.max(1, Math.floor(args.limit ?? 20)));
                 const offset = Math.max(0, Math.floor(args.offset ?? 0));
                 // untagged 查询语义=标签与介绍都空; 这里要"缺任一即算未整理", 故全量取回后过滤
-                const all = store.queryAll({ layer: onlyLibrary ? 'library' : undefined, q: undefined, untagged: false, includeTrash: false });
-                const miss = all.filter((it) => it.layer !== 'negative' && ((!it.tags || it.tags.length === 0) || !it.desc));
+                const all = store.queryAll({
+                    layer: onlyLibrary ? 'library' : undefined,
+                    q: undefined,
+                    untagged: false,
+                    includeTrash: false
+                });
+                const miss = all.filter(
+                    (it) => it.layer !== 'negative' && (!it.tags || it.tags.length === 0 || !it.desc)
+                );
                 const total = miss.length;
                 const end = Math.min(total, offset + limit);
                 const page = miss.slice(offset, end);
@@ -973,36 +1017,44 @@ export async function apply(ctx) {
                 const more = total > end ? `\n(还有 ${total - end} 张, 想看更多请传 offset=${end} 继续翻页)` : '';
                 return {
                     ok: true,
-                    msg: total === 0
-                        ? `🎉 ${scopeTxt}里的图都整理好了(都带标签和介绍)`
-                        : `未整理完的图(${scopeTxt}): 共 ${total} 张, 显示第 ${offset + 1}-${end} 张:\n${lines.join('\n')}${more}\n想补的用 sticker_tag 打标/写介绍(图路径就是上面返回的)。`,
+                    msg:
+                        total === 0
+                            ? `🎉 ${scopeTxt}里的图都整理好了(都带标签和介绍)`
+                            : `未整理完的图(${scopeTxt}): 共 ${total} 张, 显示第 ${offset + 1}-${end} 张:\n${lines.join('\n')}${more}\n想补的用 sticker_tag 打标/写介绍(图路径就是上面返回的)。`
                 };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const scheduleTimerTool = defineTool({
         name: 'schedule_timer',
-        description: '给自己(当前 QQ 会话)安排定时任务: 到点后系统会把 prompt 作为新消息注入本会话, 你会带着上下文处理并回复到 QQ。kind=once(一次性, 默认)或 daily(每天固定时刻)。once 用 seconds(N 秒后, ≥30) 或 atTime(今天 HH:MM, 已过则明天); daily 必填 atTime(HH:MM)。seconds 与 atTime 至少给一个。同一会话同一时刻的每日任务不要重复建。',
+        description: promptText('qq/channel-tools/schedule_timer.description'),
         parameters: {
-            kind: { type: 'string', enum: ['once', 'daily'], description: 'once=一次性(默认); daily=每天固定时刻' },
-            seconds: { type: 'integer', description: '多少秒后触发(仅 once; ≥30)' },
-            atTime: { type: 'string', description: '几点几分 24h 制 HH:MM(如 08:30; once 且无 seconds 时=今天该点已过则明天; daily 必填)' },
-            prompt: { type: 'string', required: true, description: '到点后注入本会话的提示内容(≤800字), 写清要你做什么' },
+            kind: {
+                type: 'string',
+                enum: ['once', 'daily'],
+                description: promptText('qq/channel-tools/schedule_timer.description.2')
+            },
+            seconds: { type: 'integer', description: promptText('qq/channel-tools/schedule_timer.description.3') },
+            atTime: { type: 'string', description: promptText('qq/channel-tools/schedule_timer.description.4') },
+            prompt: {
+                type: promptText('qq/channel-tools/type'),
+                required: true,
+                description: promptText('qq/channel-tools/schedule_timer.description.5')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `定时失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `定时失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const _sess = findSessionRec(channelOf(exec), exec);
-            if (!_sess)
-                return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
+            if (!_sess) return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
             const ch = _sess.ch;
             const rec = _sess.rec;
             try {
@@ -1013,61 +1065,78 @@ export async function apply(ctx) {
                     peerId: rec.peerId,
                     seconds: args.seconds,
                     atTime: args.atTime,
-                    prompt: args.prompt,
+                    prompt: args.prompt
                 });
-                if (!r.ok || !r.id)
-                    return { ok: false, msg: r.error ?? '创建失败' };
+                if (!r.ok || !r.id) return { ok: false, msg: r.error ?? '创建失败' };
                 const job = store.get(r.id);
                 let whenDesc = '';
                 if (job) {
                     if (job.kind === 'daily') {
                         whenDesc = `每天 ${job.atTime}`;
-                    }
-                    else {
+                    } else {
                         const nf = store.nextFireAt(job);
-                        whenDesc = nf ? new Date(nf).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '稍后';
+                        whenDesc = nf
+                            ? new Date(nf).toLocaleString('zh-CN', {
+                                  month: 'numeric',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false
+                              })
+                            : '稍后';
                     }
                 }
-                return { ok: true, msg: `✅ 已创建${job?.kind === 'daily' ? '每日' : '一次性'}定时任务(id=${r.id}, ${whenDesc}触发)。到点我会自动收到提示并处理。可用 schedule_cancel 查看/取消。` };
-            }
-            catch (e) {
+                return {
+                    ok: true,
+                    msg: `✅ 已创建${job?.kind === 'daily' ? '每日' : '一次性'}定时任务(id=${r.id}, ${whenDesc}触发)。到点我会自动收到提示并处理。可用 schedule_cancel 查看/取消。`
+                };
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     const scheduleCancelTool = defineTool({
         name: 'schedule_cancel',
-        description: '取消/删除当前会话的定时任务。不带 id 调用会列出本会话全部定时任务(id+时间+内容)供挑选; 带 id 则删除该任务。',
+        description: promptText('qq/channel-tools/schedule_cancel.description'),
         parameters: {
-            id: { type: 'string', description: '要删除的任务 id(不填=列出本会话所有定时任务)' },
+            id: { type: 'string', description: promptText('qq/channel-tools/schedule_cancel.description.2') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.msg }],
+            render: (_a, v) => [{ type: 'text', text: v.msg }]
         },
         async execute(args, exec) {
             const _sess = findSessionRec(channelOf(exec), exec);
-            if (!_sess)
-                return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
+            if (!_sess) return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
             const ch = _sess.ch;
             const rec = _sess.rec;
             const store = getScheduleStore(ch.manager.scheduleDataDir);
             if (!args.id) {
-                const mine = store.list().filter(j => j.scope === rec.scope && j.peerId === rec.peerId);
-                if (mine.length === 0)
-                    return { ok: true, msg: '本会话暂无定时任务。' };
-                const lines = mine.map(j => {
-                    const when = j.kind === 'daily'
-                        ? `每天 ${j.atTime}`
-                        : j.dueAt
-                            ? new Date(j.dueAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
-                            : '';
+                const mine = store.list().filter((j) => j.scope === rec.scope && j.peerId === rec.peerId);
+                if (mine.length === 0) return { ok: true, msg: '本会话暂无定时任务。' };
+                const lines = mine.map((j) => {
+                    const when =
+                        j.kind === 'daily'
+                            ? `每天 ${j.atTime}`
+                            : j.dueAt
+                              ? new Date(j.dueAt).toLocaleString('zh-CN', {
+                                    month: 'numeric',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false
+                                })
+                              : '';
                     return `- id=${j.id} ${j.kind === 'daily' ? '每日' : '一次性'} ${when}${j.enabled ? '' : ' [已停用]'} | ${(j.prompt ?? '').slice(0, 60)}`;
                 });
-                return { ok: true, msg: `本会话定时任务共 ${mine.length} 条:\n${lines.join('\n')}\n要删除哪条, 请带对应 id 再调用 schedule_cancel。` };
+                return {
+                    ok: true,
+                    msg: `本会话定时任务共 ${mine.length} 条:\n${lines.join('\n')}\n要删除哪条, 请带对应 id 再调用 schedule_cancel。`
+                };
             }
             const job = store.get(args.id);
             if (!job || job.scope !== rec.scope || job.peerId !== rec.peerId) {
@@ -1075,7 +1144,7 @@ export async function apply(ctx) {
             }
             store.remove(args.id);
             return { ok: true, msg: `🗑️ 已删除定时任务 ${args.id}` };
-        },
+        }
     });
     // text_break: 专用"打断正文"工具(2026-09-05, 主人定) —— 零副作用、零查询、近零 token。
     // 机制: 把回复正文拆成多个文本块、块间调用本工具, QQ 端就会把每块作为独立一条消息发出
@@ -1084,46 +1153,59 @@ export async function apply(ctx) {
     //   第6条起自动转主动), 工具本身无 5 条限制; 5 条上限是旧「被动回复同一 msg」的 QQ 限制, 已由适配主动解决。
     const textBreakTool = defineTool({
         name: 'text_break',
-        description: '打断正文实现"逐条发送": 想逐字/逐句卖萌或把长话拆成多条连发时, 把内容拆成几个文本块, 每块之间调用一次本工具(参数随便填个占位值即可), 对方就会收到分割的多条消息。工具本身无任何副作用, 不会发东西。拆多少条都行, 没有 5 条限制(连发保护由出站方式自动处理: 前5条带引用、之后自动转独立消息, 不会被吞)。',
+        description: promptText('qq/channel-tools/text_break.description'),
         parameters: {
-            next: { type: 'string', required: true, description: '占位参数: 随便填一个值(如 "." 或下一段内容), 工具不读它, 只用于打断文本流' },
+            next: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/text_break.description.2')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true } }
             },
             // ⚠️ 2026-09-30 修: render 空文本 → 空 tool_result → DeepSeek 400 INVALID_REQUEST
-            render: () => [{ type: 'text', text: '·' }],
+            render: () => [{ type: 'text', text: '·' }]
         },
         async execute() {
             return { ok: true }; // 纯打断, 无实质结果
-        },
+        }
     });
     // reply_gate: 回复闸门(实验, 2026-09-05, 主人设想: 让 AI"自主判定要不要回", 判定不吃瓜时由宿主硬终止回合,
     // 实现"真·静默吃瓜"。机制参考 dsh-task-control: agent.cancel({kind:'user'},{keepInbox:true}) 立即切断当前回合输出)。
     // ⚠️ 描述只讲两个分支的效果, 不给场景规则——选哪个由模型按当前对话氛围自行权衡(写死规则会导致静默率过高)。
     const replyGateTool = defineTool({
         name: 'reply_gate',
-        description: '回复闸门: 开始回复前先调用它, 决定本回合开口还是静默。传 reply:true → 正常继续, 按当前对话决定说什么; 传 reply:false → 本回合立即静默终止, 你不会再输出任何内容(这条消息就像没发生过)。选 true 还是 false 由你根据当前对话自己判断: 觉得该回应就 true, 觉得安静待着更好就 false。' +
-            '\n✅ **收到 reply:false 后，你会看到一条 `tool call aborted` 之类的"报错" —— 那正是「静默成功」本身**（本工具就是靠中断输出实现的，设计如此），不是工具坏了、也不是调用失败。看到它请直接收手，什么都不用做、也不用重试。' +
-            '\n⛔ **不要为了"想安静"去动别的开关**（例如把出站模式切成 silent/静默）：那会影响**后续所有回合**，而你要的只是"这一轮别说话"。要静默，只走本工具。' +
-            '\n⚠️ 传 reply:false 后**不要再调用任何工具**(包括记笔记、记喜好、发表情包): 本回合已经关闭, 那些调用会被直接中止 —— 想记录的话, 留到下一次开口的回合里做。',
+        description:
+            promptText('qq/channel-tools/reply_gate.description') +
+            promptText('qq/channel-tools/reply_gate.description.2') +
+            promptText('qq/channel-tools/reply_gate.description.3') +
+            promptText('qq/channel-tools/reply_gate.description.4'),
         parameters: {
-            reply: { type: 'boolean', required: true, description: 'true=正常开口回复; false=静默终止本回合(不再输出任何内容)' },
-            reason: { type: 'string', required: true, description: '简短判定理由, 如"未@不插嘴" / "被@需回复" / "私聊"' },
+            reply: {
+                type: 'boolean',
+                required: true,
+                description: promptText('qq/channel-tools/reply_gate.description.5')
+            },
+            reason: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/reply_gate.description.6')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
+                type: 'object',
+                additionalProperties: false,
                 properties: {
                     ok: { type: 'boolean', required: true },
-                    stopped: { type: 'boolean', required: true },
-                },
+                    stopped: { type: 'boolean', required: true }
+                }
             },
-            render: (_a, v) => [
-                { type: 'text', text: v.stopped ? '(已静默: 本回合终止, 不再回复)' : '(继续回复)' },
-            ],
+            render: (_a, v) => [{ type: 'text', text: v.stopped ? '(已静默: 本回合终止, 不再回复)' : '(继续回复)' }]
         },
         async execute(args, exec) {
             if (args.reply === false) {
@@ -1132,38 +1214,59 @@ export async function apply(ctx) {
                     if (agent && typeof agent.cancel === 'function') {
                         agent.cancel({ kind: 'user' }, { keepInbox: true });
                     }
-                }
-                catch {
+                } catch {
                     /* cancel 抛错也按静默处理 */
                 }
                 return { ok: true, stopped: true };
             }
             return { ok: true, stopped: false };
-        },
+        }
     });
     // outbound_mode: 出站模式开关(2026-09-07, 主人定) —— 让 AI 自己决定三档(不含 nothink!)
     // ⚠️ 安全边界: nothink(完全不思考)禁止 AI 自切(防锁死, 主人只能在设置页配; 唤醒走 /outmode 斜杠)。
     // 切换走 outbound-mode-switch 注册表 → live 热生效 + settings 持久化 → dock/设置一致。
     const outboundModeTool = defineTool({
         name: 'outbound_mode',
-        description: '出站模式开关(自己决定, 热更新不用重启): adaptive=适配主动(默认: 真人消息前5条带引用、连发自动转独立消息不被QQ吞); detail=详细主动(聊天同 adaptive, 额外把工具调用/工具结果也推到QQ —— 主人要看进度时用, 消息会变多, 用完切回); passive=被动(始终回最后一条, 连发约4~5条后被QQ吞); silent=完全不出站(照常思考但不发, 潜水观察)。nothink 那档只能主人在设置页配。' +
-            '\n怎么选: 正常聊天/被@→adaptive · 主人要看工具进度→detail · 想保持引用感→passive · 判断不该在群里说话→silent',
+        description:
+            promptText('qq/channel-tools/outbound_mode.description') +
+            promptText('qq/channel-tools/outbound_mode.description.2'),
         parameters: {
-            mode: { type: 'string', required: true, enum: ['adaptive', 'detail', 'passive', 'silent'], description: '目标模式: adaptive(默认推荐) / detail(详细主动: 连工具调用一起推) / passive / silent' },
-            reason: { type: 'string', required: true, description: '为什么切到这档(简短理由)' },
+            mode: {
+                type: 'string',
+                required: true,
+                enum: ['adaptive', 'detail', 'passive', 'silent'],
+                description: promptText('qq/channel-tools/outbound_mode.description.3')
+            },
+            reason: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/outbound_mode.description.4')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true }, mode: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                    ok: { type: 'boolean', required: true },
+                    msg: { type: 'string', required: true },
+                    mode: { type: 'string', required: true }
+                }
             },
-            render: (_a, v) => [
-                { type: 'text', text: v.ok ? `(出站模式 → ${v.mode})` : `切换失败: ${v.msg}` },
-            ],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? `(出站模式 → ${v.mode})` : `切换失败: ${v.msg}` }]
         },
         async execute(args, exec) {
-            if (args.mode !== 'adaptive' && args.mode !== 'detail' && args.mode !== 'passive' && args.mode !== 'silent') {
-                return { ok: false, msg: '只允许 adaptive/detail/passive/silent(nothink 需主人在设置页配置)', mode: String(args.mode ?? '') };
+            if (
+                args.mode !== 'adaptive' &&
+                args.mode !== 'detail' &&
+                args.mode !== 'passive' &&
+                args.mode !== 'silent'
+            ) {
+                return {
+                    ok: false,
+                    msg: '只允许 adaptive/detail/passive/silent(nothink 需主人在设置页配置)',
+                    mode: String(args.mode ?? '')
+                };
             }
             // 多实例修复(2026-09-11): 按当前会话所属实例(ns)切换 —— 原全局单例 writer 会被多实例覆盖,
             // 导致切到别的实例的 config(dock 显示与实际不符)。
@@ -1171,18 +1274,18 @@ export async function apply(ctx) {
             try {
                 const _sess0 = findSessionRec(channelOf(exec), exec);
                 ns = _sess0?.ch.manager.settingsNs;
+            } catch {
+                /* 解析失败则交给 switchOutboundMode 单实例兜底 */
             }
-            catch { /* 解析失败则交给 switchOutboundMode 单实例兜底 */ }
             const r = await switchOutboundMode(args.mode, ns);
-            if (!r.ok)
-                return { ok: false, msg: r.msg, mode: r.mode };
+            if (!r.ok) return { ok: false, msg: r.msg, mode: r.mode };
             // 切换成功后用 bot 直发确认消息(绕过出站路由): 即使切到 silent(不出站)/被动,
             // 主人也一定能收到"模式已切换"的通知(与 send_media 同款工具直发通道, 不受 outboundMode 拦截)。
             const MODE_LABEL = {
                 adaptive: '适配主动(推荐默认): 真人消息前5条带引用回你, 连发自动转独立消息',
                 detail: '详细主动: 聊天同适配主动, 额外把工具调用/工具结果也推给你(看进度用)',
                 passive: '被动: 始终回复你那条(连发约4~5条后被QQ吞)',
-                silent: '完全不出站: 照常思考但这条回复不发出(潜水观察用; web上仍可对话)',
+                silent: '完全不出站: 照常思考但这条回复不发出(潜水观察用; web上仍可对话)'
             };
             try {
                 const _sess = findSessionRec(channelOf(exec), exec);
@@ -1190,12 +1293,11 @@ export async function apply(ctx) {
                     const confirm = `⇄ 出站模式已切换: **${r.mode}**\n${MODE_LABEL[r.mode] ?? ''}\n(由 outbound_mode 工具切换, bot 直发确认)`;
                     await _sess.ch.sender.sendMarkdown(_sess.rec.replyTarget, confirm);
                 }
-            }
-            catch (err) {
+            } catch (err) {
                 diag(`outbound_mode 确认消息直发失败: ${err instanceof Error ? err.message : String(err)}`);
             }
             return { ok: true, msg: r.msg, mode: r.mode };
-        },
+        }
     });
     // ── QQ 群管理工具组(2026-09-05, P2; 依赖 config.groupAdmin.enabled + 机器人=群管理员) ──
     // 危险写操作(审批/禁言)仅按主人指示执行(工具描述写死约束); owners 白名单接入留待后续,
@@ -1243,38 +1345,37 @@ export async function apply(ctx) {
     }
     const listJoinRequestsTool = defineTool({
         name: 'group_join_requests',
-        description: '群管理(读): 看待审批入群申请(**默认只给本页 5 条**, 用 page 翻页; 同一人重复申请只留最新)。传 gid 可查指定群, 不填=当前群/manageGroup。仅主人要求时调用; 需开启"QQ群管理"且机器人为群管理员。跨群审批请显式带 gid。' +
-            '\n示例: {gid:"<群openid>"} · {gid:"<群openid>", page:2} · {limit:20 看全}',
+        description:
+            promptText('qq/channel-tools/group_join_requests.description') +
+            promptText('qq/channel-tools/group_join_requests.description.2'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(可选)。不填=当前会话群或 manageGroup' },
-            page: { type: 'integer', description: '第几页(默认 1)' },
-            limit: { type: 'integer', description: '本页条数 1~20(默认 5; 要一次看全可传 20)' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_join_requests.description.3') },
+            page: { type: 'integer', description: promptText('qq/channel-tools/group_join_requests.description.4') },
+            limit: { type: 'integer', description: promptText('qq/channel-tools/group_join_requests.description.5') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启(设置→QQ群管理)或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启(设置→QQ群管理)或非群会话' };
             const gid = args.gid || ga.gid;
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
             const r = await ga.client.listJoinRequests(gid);
-            if (!r.ok)
-                return { ok: false, msg: r.err.human };
+            if (!r.ok) return { ok: false, msg: r.err.human };
             // 补群名(官方 info 接口, 失败不阻断)
             let gname = '';
             try {
                 const gi = await ga.client.getGroupInfo(gid);
-                if (gi.ok && gi.data?.group_name)
-                    gname = gi.data.group_name;
+                if (gi.ok && gi.data?.group_name) gname = gi.data.group_name;
+            } catch {
+                /* 群名失败不影响 */
             }
-            catch { /* 群名失败不影响 */ }
             const raw = r.data.list;
             if (raw.length === 0)
                 return { ok: true, msg: `当前没有待审批的入群申请 ✓(群 ${gname ? `「${gname}」` : ''}${gid})` };
@@ -1282,8 +1383,7 @@ export async function apply(ctx) {
             const seen = new Set();
             const list = raw.filter((j) => {
                 const key = String(j.member_openid ?? '');
-                if (key === '' || seen.has(key))
-                    return false;
+                if (key === '' || seen.has(key)) return false;
                 seen.add(key);
                 return true;
             });
@@ -1294,45 +1394,67 @@ export async function apply(ctx) {
             const start = (page - 1) * lim;
             const slice = list.slice(start, start + lim);
             const head = `入群申请 共 ${raw.length} 条(去重后 ${list.length} 条 · 第 ${page}/${totalPages} 页 · 每页 ${lim} 条) 群 ${gname ? `「${gname}」` : ''}${gid}:`;
-            const lines = slice.map((j, i) => `${start + i + 1}. ${j.username ?? '?'} (${j.member_openid}) 来源:${j.apply_source ?? '?'} 验证:${verifyHuman(j.verify_info) || '-'}${j.risk_tips ? ` ⚠️${j.risk_tips}` : ''}`);
-            const more = list.length > start + slice.length ? `\n（还有 ${list.length - start - slice.length} 条 → 再调本工具传 page=${page + 1}）` : '';
+            const lines = slice.map(
+                (j, i) =>
+                    `${start + i + 1}. ${j.username ?? '?'} (${j.member_openid}) 来源:${j.apply_source ?? '?'} 验证:${verifyHuman(j.verify_info) || '-'}${j.risk_tips ? ` ⚠️${j.risk_tips}` : ''}`
+            );
+            const more =
+                list.length > start + slice.length
+                    ? `\n（还有 ${list.length - start - slice.length} 条 → 再调本工具传 page=${page + 1}）`
+                    : '';
             return { ok: true, msg: `${head}\n${lines.join('\n')}${more}` };
-        },
+        }
     });
     const approveJoinTool = defineTool({
         name: 'group_approve_join',
-        description: '群管理(写,危险): 审批入群申请(approve 放行 / decline 拒绝可带理由), 支持批量 member_openids。仅主人明确要求时调用; 调用前先用 group_join_requests 核对申请人。⚠️跨群审批务必显式传 gid(不传=当前会话所在群, 会批错群)。' +
-            '\n示例: {gid:"<群openid>", member_openids:["<id1>","<id2>"], op:"approve", reason:"-"} · 拒绝: op:"decline", reason:"答非所问"',
+        description:
+            promptText('qq/channel-tools/group_approve_join.description') +
+            promptText('qq/channel-tools/group_approve_join.description.2'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(可选)。不填=当前会话群或 manageGroup; 填了则审批指定群的申请' },
-            member_openids: { type: 'array', description: '批量审批: 申请人 member_openid 数组(来自 group_join_requests), 一次批多人' },
-            member_openid: { type: 'string', description: '单个申请人 member_openid(批量时可不填)' },
-            op: { type: 'string', required: true, enum: ['approve', 'decline'], description: 'approve 放行 / decline 拒绝' },
-            reason: { type: 'string', required: true, description: '拒绝理由(decline 时填; approve 或不需要可填 "-")' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_approve_join.description.3') },
+            member_openids: {
+                type: 'array',
+                description: promptText('qq/channel-tools/group_approve_join.description.4')
+            },
+            member_openid: {
+                type: 'string',
+                description: promptText('qq/channel-tools/group_approve_join.description.5')
+            },
+            op: {
+                type: 'string',
+                required: true,
+                enum: ['approve', 'decline'],
+                description: promptText('qq/channel-tools/group_approve_join.description.6')
+            },
+            reason: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/group_approve_join.description.7')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
             const gid = args.gid || ga.gid;
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid' };
-            const targets = Array.isArray(args.member_openids) && args.member_openids.length
-                ? args.member_openids
-                : (args.member_openid ? [args.member_openid] : []);
-            if (targets.length === 0)
-                return { ok: false, msg: '请提供要审批的 member_openid(可多个)' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid' };
+            const targets =
+                Array.isArray(args.member_openids) && args.member_openids.length
+                    ? args.member_openids
+                    : args.member_openid
+                      ? [args.member_openid]
+                      : [];
+            if (targets.length === 0) return { ok: false, msg: '请提供要审批的 member_openid(可多个)' };
             // join_request_id 官方审批必填(缺省报 40103007): 先拉列表按 member_openid 匹配自动补上
             const listR = await ga.client.listJoinRequests(gid);
-            if (!listR.ok)
-                return { ok: false, msg: listR.err.human };
+            if (!listR.ok) return { ok: false, msg: listR.err.human };
             const list = listR.data.list ?? [];
             const results = [];
             let failed = 0;
@@ -1343,21 +1465,28 @@ export async function apply(ctx) {
                     ...(found ? { join_request_id: String(found.join_request_id ?? '') } : {}),
                     ...(args.op === 'decline' && String(args.reason ?? '') && String(args.reason) !== '-'
                         ? { reject_reason: String(args.reason) }
-                        : {}),
+                        : {})
                 });
                 if (r.ok) {
-                    results.push(`${String(mid).slice(0, 10)}… ${args.op === 'approve' ? '✅放行' : '已拒绝'}${found ? `(${String(found.username ?? '')})` : ''}`);
-                }
-                else {
+                    results.push(
+                        `${String(mid).slice(0, 10)}… ${args.op === 'approve' ? '✅放行' : '已拒绝'}${found ? `(${String(found.username ?? '')})` : ''}`
+                    );
+                } else {
                     failed++;
                     results.push(`${String(mid).slice(0, 10)}… ❌ ${r.err.human}`);
                 }
             }
             if (failed === 0) {
-                return { ok: true, msg: `${args.op === 'approve' ? '✅ 已全部放行' : '已全部拒绝'} ${targets.length} 人:\n${results.join('\n')}` };
+                return {
+                    ok: true,
+                    msg: `${args.op === 'approve' ? '✅ 已全部放行' : '已全部拒绝'} ${targets.length} 人:\n${results.join('\n')}`
+                };
             }
-            return { ok: failed === targets.length ? false : true, msg: `${targets.length - failed}/${targets.length} 成功:\n${results.join('\n')}` };
-        },
+            return {
+                ok: failed === targets.length ? false : true,
+                msg: `${targets.length - failed}/${targets.length} 成功:\n${results.join('\n')}`
+            };
+        }
     });
     /**
      * 入群申请「自动审批」(2026-09-12 主人要求): 给一组关键词 —— **验证消息命中的程序直接放行, 不命中的直接拒绝**。
@@ -1367,46 +1496,50 @@ export async function apply(ctx) {
      */
     const autoApproveJoinTool = defineTool({
         name: 'group_join_auto',
-        description: '群管理(写,危险,**仅主人明确要求时调用**): 按关键词批量审批入群申请 —— 验证消息**命中任一关键词的放行**, 其余直接拒绝。基于官方待审列表(不含本地历史流水)。拒绝不可逆; 想先看结果传 dry_run=true。' +
-            '\n示例: {gid:"<群openid>", keywords:["早饭"], rejectReason:"答非所问"} · 只放行不拒: {..., rejectUnmatched:false} · 预览: {..., dry_run:true}',
+        description:
+            promptText('qq/channel-tools/group_join_auto.description') +
+            promptText('qq/channel-tools/group_join_auto.description.2'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(**可选**：不填=当前会话所在的群；跨群操作才传)' },
-            keywords: { type: 'array', items: { type: 'string' }, required: true, description: '放行关键词(任一命中即放行; 不区分大小写)' },
-            rejectUnmatched: { type: 'boolean', description: 'true(默认)=未命中的一律拒绝; false=只放行命中的, 其余不动' },
-            rejectReason: { type: 'string', description: '拒绝理由(默认"答非所问"; 不要写暗号/答案)' },
-            dry_run: { type: 'boolean', description: 'true=只返回"将放行/拒绝哪些人", 不执行' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_join_auto.description.3') },
+            keywords: {
+                type: 'array',
+                items: { type: 'string' },
+                required: true,
+                description: promptText('qq/channel-tools/group_join_auto.description.4')
+            },
+            rejectUnmatched: {
+                type: 'boolean',
+                description: promptText('qq/channel-tools/group_join_auto.description.5')
+            },
+            rejectReason: { type: 'string', description: promptText('qq/channel-tools/group_join_auto.description.6') },
+            dry_run: { type: 'boolean', description: promptText('qq/channel-tools/group_join_auto.description.7') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启(设置→QQ群管理)或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启(设置→QQ群管理)或非群会话' };
             const gid = String(args.gid || ga.gid || '');
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
             const kws = (Array.isArray(args.keywords) ? args.keywords : [])
                 .map((k) => String(k).trim().toLowerCase())
                 .filter(Boolean);
-            if (kws.length === 0)
-                return { ok: false, msg: 'keywords 至少给一个(放行关键词)' };
+            if (kws.length === 0) return { ok: false, msg: 'keywords 至少给一个(放行关键词)' };
             const r = await ga.client.listJoinRequests(gid);
-            if (!r.ok)
-                return { ok: false, msg: r.err.human };
+            if (!r.ok) return { ok: false, msg: r.err.human };
             const raw = r.data.list;
-            if (raw.length === 0)
-                return { ok: true, msg: '当前没有待审批的入群申请 ✓(无需自动审批)' };
+            if (raw.length === 0) return { ok: true, msg: '当前没有待审批的入群申请 ✓(无需自动审批)' };
             // 同一人重复申请只留最新(官方列表按时间倒序 → 首次出现即最新)
             const seen = new Set();
             const list = raw.filter((j) => {
                 const k = String(j.member_openid ?? '');
-                if (k === '' || seen.has(k))
-                    return false;
+                if (k === '' || seen.has(k)) return false;
                 seen.add(k);
                 return true;
             });
@@ -1421,9 +1554,10 @@ export async function apply(ctx) {
             if (args.dry_run === true) {
                 return {
                     ok: true,
-                    msg: `【dry-run, 未执行】待审 ${list.length} 条(去重后):\n` +
+                    msg:
+                        `【dry-run, 未执行】待审 ${list.length} 条(去重后):\n` +
                         `将放行 ${hitList.length} 人: ${hitList.slice(0, 5).map(nameOf).join('、') || '(无)'}\n` +
-                        `将拒绝 ${rejectUnmatched ? missList.length : 0} 人: ${rejectUnmatched ? (missList.slice(0, 5).map(nameOf).join('、') || '(无)') : '(已关闭)'}`,
+                        `将拒绝 ${rejectUnmatched ? missList.length : 0} 人: ${rejectUnmatched ? missList.slice(0, 5).map(nameOf).join('、') || '(无)' : '(已关闭)'}`
                 };
             }
             let okA = 0;
@@ -1433,10 +1567,9 @@ export async function apply(ctx) {
             const errs = [];
             for (const j of hitList) {
                 const rr = await ga.client.approveJoinRequest(gid, String(j.member_openid), 'approve', {
-                    join_request_id: String(j.join_request_id ?? ''),
+                    join_request_id: String(j.join_request_id ?? '')
                 });
-                if (rr.ok)
-                    okA++;
+                if (rr.ok) okA++;
                 else {
                     failA++;
                     errs.push(`${nameOf(j)} 放行失败: ${rr.err.human}`);
@@ -1447,10 +1580,9 @@ export async function apply(ctx) {
                 for (const j of missList) {
                     const rr = await ga.client.approveJoinRequest(gid, String(j.member_openid), 'decline', {
                         join_request_id: String(j.join_request_id ?? ''),
-                        reject_reason: reason,
+                        reject_reason: reason
                     });
-                    if (rr.ok)
-                        okD++;
+                    if (rr.ok) okD++;
                     else {
                         failD++;
                         errs.push(`${nameOf(j)} 拒绝失败: ${rr.err.human}`);
@@ -1461,25 +1593,32 @@ export async function apply(ctx) {
                 ok: true,
                 msg: [
                     `✅ 自动审批完成: 放行 ${okA}/${hitList.length}${rejectUnmatched ? ` · 拒绝 ${okD}/${missList.length}` : ''}(待审共 ${list.length} 条)`,
-                    hitList.length ? `放行: ${hitList.slice(0, 5).map(nameOf).join('、')}${hitList.length > 5 ? ` …等 ${hitList.length} 人` : ''}` : '',
-                    rejectUnmatched && missList.length ? `拒绝: ${missList.slice(0, 5).map(nameOf).join('、')}${missList.length > 5 ? ` …等 ${missList.length} 人` : ''}` : '',
-                    errs.length ? `⚠️ 失败 ${failA + failD} 条: ${errs.slice(0, 3).join('; ')}` : '',
-                ].filter(Boolean).join('\n'),
+                    hitList.length
+                        ? `放行: ${hitList.slice(0, 5).map(nameOf).join('、')}${hitList.length > 5 ? ` …等 ${hitList.length} 人` : ''}`
+                        : '',
+                    rejectUnmatched && missList.length
+                        ? `拒绝: ${missList.slice(0, 5).map(nameOf).join('、')}${missList.length > 5 ? ` …等 ${missList.length} 人` : ''}`
+                        : '',
+                    errs.length ? `⚠️ 失败 ${failA + failD} 条: ${errs.slice(0, 3).join('; ')}` : ''
+                ]
+                    .filter(Boolean)
+                    .join('\n')
             };
-        },
+        }
     });
     const sessionListTool = defineTool({
         name: 'session_list',
-        description: '会话(读): 列出全部活跃会话(范围/peer/群名/活跃时间), 用于跨会话寻址。**默认 peer/sender 只给尾号**(省 token); 需要完整 openid 时传 full=true。',
+        description: promptText('qq/channel-tools/session_list.description'),
         parameters: {
-            full: { type: 'boolean', description: 'true=给完整 openid; 默认 false(只给尾号, 寻址用群名/备注即可)' },
+            full: { type: 'boolean', description: promptText('qq/channel-tools/session_list.description.2') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const full = args?.full === true;
@@ -1489,11 +1628,9 @@ export async function apply(ctx) {
             if (managers.length === 0) {
                 const ch = channelOf(exec);
                 const manager = ch?.manager;
-                if (manager)
-                    managers.push(manager);
+                if (manager) managers.push(manager);
             }
-            if (managers.length === 0)
-                return { ok: false, msg: '找不到会话管理器实例(无已注册实例)' };
+            if (managers.length === 0) return { ok: false, msg: '找不到会话管理器实例(无已注册实例)' };
             let n = 0;
             for (const manager of managers) {
                 const list = manager.listSessions();
@@ -1505,8 +1642,7 @@ export async function apply(ctx) {
                 let reg = {};
                 try {
                     reg = JSON.parse(readFileSync(groupRegistryPath(manager.dataRoot), 'utf8'));
-                }
-                catch {
+                } catch {
                     reg = {};
                 }
                 for (const s of list) {
@@ -1516,7 +1652,9 @@ export async function apply(ctx) {
                     // 而寻址用"群名/备注"就够(broadcast_send / target_group 都支持按名解析); 要完整 id 传 full=true。
                     const peerShown = full ? s.peerId : '…' + String(s.peerId).slice(-4);
                     const senderShown = full ? s.senderId : '…' + String(s.senderId).slice(-4);
-                    lines.push(`${n}. [${s.scope}]${ns !== 'im-qqbot' ? `(${ns})` : ''} peer=${peerShown}${label} sender=${senderShown} id=${s.sessionId}${s.agentPreset ? ` (${s.agentPreset})` : ''} 活跃=${new Date(s.lastActivity).toLocaleTimeString()}`);
+                    lines.push(
+                        `${n}. [${s.scope}]${ns !== 'im-qqbot' ? `(${ns})` : ''} peer=${peerShown}${label} sender=${senderShown} id=${s.sessionId}${s.agentPreset ? ` (${s.agentPreset})` : ''} 活跃=${new Date(s.lastActivity).toLocaleTimeString()}`
+                    );
                 }
                 // 潜在会话: 群注册表里的群可能还没 getOrCreate(无活跃记录), 但 sessionId 可确定性算出
                 try {
@@ -1526,13 +1664,13 @@ export async function apply(ctx) {
                         if (!ids.has(sid))
                             lines.push(`[潜在群] ${reg[gid]?.name ?? ''} peer=${gid} id=${sid} 活跃=未创建`);
                     }
+                } catch {
+                    /* 注册表异常则跳过 */
                 }
-                catch { /* 注册表异常则跳过 */ }
             }
-            if (lines.length === 0)
-                return { ok: true, msg: '当前无活跃会话, 也无已注册群' };
+            if (lines.length === 0) return { ok: true, msg: '当前无活跃会话, 也无已注册群' };
             return { ok: true, msg: `会话 ${lines.length} 个:\n${lines.join('\n')}` };
-        },
+        }
     });
     /**
      * 群发目标解析(2026-09-12): 完整 openid 直接用; 否则按**群名/备注**模糊匹配
@@ -1638,7 +1776,10 @@ export async function apply(ctx) {
             }
             else if (hits.length === 0) {
                 const list = all.filter((x) => x.name).map((x) => `· ${x.name} — ${x.peerId}`).join('\n');
-                return { targets: [], error: `没找到叫「${raw}」的群/私聊。已知目标:\n${list || '(暂无带备注的目标, 请用完整 openid)'}\n\n请用上面的名字或完整 openid 再调一次。` };
+                return {
+                    targets: [],
+                    error: `没找到叫「${raw}」的群/私聊。已知目标:\n${list || promptText('qq/channel-tools/error')}\n\n请用上面的名字或完整 openid 再调一次。`
+                };
             }
             else {
                 const list = hits.map((x) => `· ${x.name} — ${x.peerId}`).join('\n');
@@ -1685,25 +1826,40 @@ export async function apply(ctx) {
      */
     const broadcastSendTool = defineTool({
         name: 'broadcast_send',
-        description: '群发(写,高影响,**仅主人明确要求时调用**): 同一段内容一次发到多个 QQ 群/私聊, 走插件广播队列(串行+失败重试, 与 dock「📤 群发 · 广播」同一份任务, 2 分钟内可逐目标撤回)。targets 写**分组名/群名或备注**或完整 openid; 名字有歧义时只列候选让你确认, 不猜着发。默认直接发送(dry_run=true 才预览)。不支持发文件/图片 —— 资源把链接写进正文。' +
-            '\n最小示例(照抄改值):\n' +
-            '· 发分组 {targets:["群友"], text:"早上好呀各位～"}\n' +
-            '· 发指定群 {targets:["群A","群B"], text:"公告:…"}\n' +
-            '· 撤回/查进度 {action:"recall", task_id:"bc-xxx", targets:["群友"]} / {action:"status", task_id:"bc-xxx"}',
+        description:
+            promptText('qq/channel-tools/broadcast_send.description') +
+            promptText('qq/channel-tools/broadcast_send.description.2') +
+            promptText('qq/channel-tools/broadcast_send.description.3') +
+            promptText('qq/channel-tools/broadcast_send.description.4') +
+            promptText('qq/channel-tools/broadcast_send.description.5'),
         parameters: {
-            targets: { type: 'array', items: { type: 'string' }, required: true, description: '目标: 分组名(如"群友") / 群名或群备注(模糊匹配) / 完整 openid(32位) / "group:xxx" / "c2c:xxx"' },
-            text: { type: 'string', description: '群发内容(text ≤2000 字 / markdown ≤8000 字); 链接直接写在里面' },
-            type: { type: 'string', enum: ['text', 'markdown'], description: '默认 text(纯文本最稳); markdown 需模板权限(已开通)' },
-            dry_run: { type: 'boolean', description: 'true=只预览"发给谁+内容"; 默认 false 直接发' },
-            action: { type: 'string', enum: ['send', 'recall', 'status'], description: '默认 send; recall=撤回(需 task_id+targets, 2 分钟内); status=查进度' },
-            task_id: { type: 'string', description: 'recall/status 用的任务 id(从发送结果里拿)' },
+            targets: {
+                type: 'array',
+                items: { type: 'string' },
+                required: true,
+                description: promptText('qq/channel-tools/broadcast_send.description.6')
+            },
+            text: { type: 'string', description: promptText('qq/channel-tools/broadcast_send.description.7') },
+            type: {
+                type: 'string',
+                enum: ['text', 'markdown'],
+                description: promptText('qq/channel-tools/broadcast_send.description.8')
+            },
+            dry_run: { type: 'boolean', description: promptText('qq/channel-tools/broadcast_send.description.9') },
+            action: {
+                type: 'string',
+                enum: ['send', 'recall', 'status'],
+                description: promptText('qq/channel-tools/broadcast_send.description.10')
+            },
+            task_id: { type: 'string', description: promptText('qq/channel-tools/broadcast_send.description.11') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const a = args;
@@ -1713,31 +1869,27 @@ export async function apply(ctx) {
             // 而 manager.cwd = config.cwd(本机=<cwd>\AI)。2026-09-12 主人实测发现我一开始写成了 cwd,
             // 结果广播任务落到 AI\.qqbot\(旧位置), dock 在 dshqqbot\.qqbot\ 里根本看不到。
             const root = ch?.manager?.dataRoot ?? managersOf()[0]?.dataRoot ?? managersOf()[0]?.cwd;
-            if (!root)
-                return { ok: false, msg: '找不到数据根(无已注册实例)' };
-            if (!ga)
-                return { ok: false, msg: '群管理未开启(设置页→QQ群管理): 群发要走官方接口, 需要机器人凭据' };
+            if (!root) return { ok: false, msg: '找不到数据根(无已注册实例)' };
+            if (!ga) return { ok: false, msg: '群管理未开启(设置页→QQ群管理): 群发要走官方接口, 需要机器人凭据' };
             const action = String(a.action ?? 'send');
             const rawTargets = Array.isArray(a.targets) ? a.targets.map((t) => String(t).trim()).filter(Boolean) : [];
-            if (rawTargets.length === 0)
-                return { ok: false, msg: 'targets 至少给一个(群名或 openid)' };
+            if (rawTargets.length === 0) return { ok: false, msg: 'targets 至少给一个(群名或 openid)' };
             if (action === 'status') {
                 const t = a.task_id ? broadcastQueue.getTask(root, String(a.task_id)) : undefined;
-                if (!t)
-                    return { ok: false, msg: '没找到该任务(或没传 task_id)' };
+                if (!t) return { ok: false, msg: '没找到该任务(或没传 task_id)' };
                 return { ok: true, msg: fmtBroadcastTask(t) };
             }
             const resolved = resolveBroadcastTargets(rawTargets, root);
-            if (resolved.error)
-                return { ok: false, msg: resolved.error };
+            if (resolved.error) return { ok: false, msg: resolved.error };
             if (action === 'recall') {
                 const taskId = String(a.task_id ?? '');
-                if (!taskId)
-                    return { ok: false, msg: 'recall 需要 task_id(从发送结果里拿)' };
+                if (!taskId) return { ok: false, msg: 'recall 需要 task_id(从发送结果里拿)' };
                 const out = [];
                 for (const tg of resolved.targets) {
                     const r = await broadcastQueue.recallTaskMessage(root, taskId, tg.peerId, ga.client);
-                    out.push(`${r.ok ? '✅ 已撤回' : '❌ 撤回失败'} ${tg.name ?? ''}(${tg.peerId})${r.err ? ' — ' + r.err : ''}`);
+                    out.push(
+                        `${r.ok ? '✅ 已撤回' : '❌ 撤回失败'} ${tg.name ?? ''}(${tg.peerId})${r.err ? ' — ' + r.err : ''}`
+                    );
                 }
                 return { ok: true, msg: out.join('\n') };
             }
@@ -1745,22 +1897,29 @@ export async function apply(ctx) {
             const text = String(a.text ?? '');
             const type = a.type === 'markdown' ? 'markdown' : 'text';
             const limit = type === 'markdown' ? 8000 : 2000;
-            if (!text.trim())
-                return { ok: false, msg: 'text 必填(要群发的内容)' };
-            if (text.length > limit)
-                return { ok: false, msg: `内容过长: ${text.length} 字(${type} 上限 ${limit} 字)` };
+            if (!text.trim()) return { ok: false, msg: 'text 必填(要群发的内容)' };
+            if (text.length > limit) return { ok: false, msg: `内容过长: ${text.length} 字(${type} 上限 ${limit} 字)` };
             if (resolved.targets.length > 20)
                 return { ok: false, msg: `目标太多(${resolved.targets.length} 个), 单次最多 20 个` };
             if (a.dry_run === true) {
                 return {
                     ok: true,
-                    msg: `【dry-run, 未发送】将发到 ${resolved.targets.length} 个目标:\n` +
-                        resolved.targets.slice(0, 5).map((t) => `· ${t.name ?? '(无备注)'}`).join('\n') +
+                    msg:
+                        `【dry-run, 未发送】将发到 ${resolved.targets.length} 个目标:\n` +
+                        resolved.targets
+                            .slice(0, 5)
+                            .map((t) => `· ${t.name ?? '(无备注)'}`)
+                            .join('\n') +
                         (resolved.targets.length > 5 ? `\n…还有 ${resolved.targets.length - 5} 个(省略)` : '') +
-                        `\n\n内容(${type}, ${text.length} 字):\n${text.slice(0, 200)}${text.length > 200 ? '…' : ''}`,
+                        `\n\n内容(${type}, ${text.length} 字):\n${text.slice(0, 200)}${text.length > 200 ? '…' : ''}`
                 };
             }
-            const task = broadcastQueue.createTask(root, { type, content: text, targets: resolved.targets, created_by: 'agent' });
+            const task = broadcastQueue.createTask(root, {
+                type,
+                content: text,
+                targets: resolved.targets,
+                created_by: 'agent'
+            });
             broadcastQueue.confirmTask(root, task.task_id);
             // 同步推进: 每次一个目标, 最多等 ~20 秒; 目标多/网络慢时交给 host 的定时器继续, 用 action=status 查。
             // 目标之间隔 1.5s —— 群发是**主动消息**, 官方频控 Bot 维度 60/qpm(认证)/30/qpm(未认证),
@@ -1775,7 +1934,7 @@ export async function apply(ctx) {
                 }
             }
             return { ok: true, msg: fmtBroadcastTask(cur, task.task_id) };
-        },
+        }
     });
     /**
      * 目标分组管理(2026-09-12 主人要求"AI 也要能编辑分组"):
@@ -1784,34 +1943,43 @@ export async function apply(ctx) {
      */
     const targetGroupTool = defineTool({
         name: 'target_group',
-        description: '目标分组管理(与 dock「📇 群组管理 → 🗂 分组」共用同一份数据, 改完主人刷新面板就能看到): 查看/新建/改名/删除分组, 或把目标加进/移出分组。建好后 broadcast_send 的 targets 直接写**分组名**即可群发。改动类动作仅主人明确要求时调用; 重名/找不到会明确报错。' +
-            '\n最小示例: {action:"list"} · {action:"create", name:"开发群"} · {action:"add", name:"群友", targets:["群A"]} · {action:"remove", name:"群友", targets:["群B"]}',
+        description:
+            promptText('qq/channel-tools/target_group.description') +
+            promptText('qq/channel-tools/target_group.description.2'),
         parameters: {
-            action: { type: 'string', enum: ['list', 'create', 'rename', 'delete', 'add', 'remove'], required: true, description: 'list=查看全部分组 / create=新建 / rename=改名 / delete=删除 / add=把 targets 加进分组 / remove=把 targets 移出分组' },
-            name: { type: 'string', description: '分组名(除 list 外必填)' },
-            new_name: { type: 'string', description: 'rename 时的新分组名' },
-            targets: { type: 'array', items: { type: 'string' }, description: 'add/remove 的目标(群名/群备注/完整 openid/分组名 均可, 写法同 broadcast_send)' },
+            action: {
+                type: 'string',
+                enum: ['list', 'create', 'rename', 'delete', 'add', 'remove'],
+                required: true,
+                description: promptText('qq/channel-tools/target_group.description.3')
+            },
+            name: { type: 'string', description: promptText('qq/channel-tools/target_group.description.4') },
+            new_name: { type: 'string', description: promptText('qq/channel-tools/target_group.description.5') },
+            targets: {
+                type: 'array',
+                items: { type: 'string' },
+                description: promptText('qq/channel-tools/target_group.description.6')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const a = args;
             const ch = channelOf(exec);
             const root = ch?.manager?.dataRoot ?? managersOf()[0]?.dataRoot ?? managersOf()[0]?.cwd;
-            if (!root)
-                return { ok: false, msg: '找不到数据根(无已注册实例)' };
+            if (!root) return { ok: false, msg: '找不到数据根(无已注册实例)' };
             const file = join(root, '.qqbot', 'target-groups.json');
             const read = () => {
                 try {
                     const o = JSON.parse(readFileSync(file, 'utf8'));
                     return Array.isArray(o?.groups) ? o.groups : [];
-                }
-                catch {
+                } catch {
                     return [];
                 }
             };
@@ -1819,12 +1987,22 @@ export async function apply(ctx) {
                 try {
                     mkdirSync(join(root, '.qqbot'), { recursive: true });
                     writeFileSync(file, JSON.stringify({ groups }, null, 1), 'utf8');
+                } catch {
+                    /* 落盘失败: 内存结果照常返回, 主人可重试 */
                 }
-                catch { /* 落盘失败: 内存结果照常返回, 主人可重试 */ }
             };
             const fmt = (g) => {
                 const ms = g.members ?? [];
-                const tail = ms.slice(0, 6).map((m) => '…' + String(m).replace(/^[a-z]+:/i, '').slice(-4)).join(', ');
+                const tail = ms
+                    .slice(0, 6)
+                    .map(
+                        (m) =>
+                            '…' +
+                            String(m)
+                                .replace(/^[a-z]+:/i, '')
+                                .slice(-4)
+                    )
+                    .join(', ');
                 return `· ${g.name}(${ms.length})${ms.length ? ' — ' + tail + (ms.length > 6 ? ' …' : '') : ''}`;
             };
             const action = String(a.action ?? 'list');
@@ -1835,22 +2013,25 @@ export async function apply(ctx) {
                     return { ok: true, msg: '当前没有任何分组(dock「📇 群组管理 → 🗂 分组」可新建, 也可以让我建)' };
                 return { ok: true, msg: `分组 ${groups.length} 个:\n${groups.map(fmt).join('\n')}` };
             }
-            if (name === '')
-                return { ok: false, msg: `${action} 需要 name(分组名)` };
+            if (name === '') return { ok: false, msg: `${action} 需要 name(分组名)` };
             const idx = groups.findIndex((g) => String(g.name ?? '') === name);
             if (action === 'create') {
-                if (idx >= 0)
-                    return { ok: false, msg: `分组「${name}」已经存在了` };
+                if (idx >= 0) return { ok: false, msg: `分组「${name}」已经存在了` };
                 groups.push({ id: 'tg-' + Date.now().toString(36), name, members: [] });
                 save(groups);
-                return { ok: true, msg: `✅ 已新建分组「${name}」(空组) —— 可以用 action=add 加目标, 或让主人在面板勾选加入` };
+                return {
+                    ok: true,
+                    msg: `✅ 已新建分组「${name}」(空组) —— 可以用 action=add 加目标, 或让主人在面板勾选加入`
+                };
             }
             if (idx < 0)
-                return { ok: false, msg: `找不到分组「${name}」。现有: ${groups.map((g) => g.name).join('、') || '(无)'}` };
+                return {
+                    ok: false,
+                    msg: `找不到分组「${name}」。现有: ${groups.map((g) => g.name).join('、') || '(无)'}`
+                };
             if (action === 'rename') {
                 const nn = String(a.new_name ?? '').trim();
-                if (nn === '')
-                    return { ok: false, msg: 'rename 需要 new_name' };
+                if (nn === '') return { ok: false, msg: 'rename 需要 new_name' };
                 if (groups.some((g) => String(g.name ?? '') === nn))
                     return { ok: false, msg: `已经有个分组叫「${nn}」了` };
                 groups[idx].name = nn;
@@ -1864,31 +2045,34 @@ export async function apply(ctx) {
                 return { ok: true, msg: `✅ 已删除分组「${name}」(${n} 个成员; 只是取消分组, 不影响这些群/人本身)` };
             }
             if (action === 'add' || action === 'remove') {
-                const rawTargets = Array.isArray(a.targets) ? a.targets.map((t) => String(t).trim()).filter(Boolean) : [];
-                if (rawTargets.length === 0)
-                    return { ok: false, msg: `${action} 需要 targets(至少一个)` };
+                const rawTargets = Array.isArray(a.targets)
+                    ? a.targets.map((t) => String(t).trim()).filter(Boolean)
+                    : [];
+                if (rawTargets.length === 0) return { ok: false, msg: `${action} 需要 targets(至少一个)` };
                 const resolved = resolveBroadcastTargets(rawTargets, root);
-                if (resolved.error)
-                    return { ok: false, msg: resolved.error };
+                if (resolved.error) return { ok: false, msg: resolved.error };
                 const cur = new Set(groups[idx].members ?? []);
                 const before = cur.size;
                 for (const t of resolved.targets) {
                     const k = `${t.scope}:${t.peerId}`;
-                    if (action === 'add')
-                        cur.add(k);
-                    else
-                        cur.delete(k);
+                    if (action === 'add') cur.add(k);
+                    else cur.delete(k);
                 }
                 groups[idx].members = [...cur];
                 save(groups);
                 const delta = action === 'add' ? cur.size - before : before - cur.size;
                 return {
                     ok: true,
-                    msg: `✅ 分组「${name}」${action === 'add' ? '加入' : '移出'} ${delta} 个目标, 现共 ${cur.size} 个${delta < resolved.targets.length ? '(重复的已跳过)' : ''}\n${resolved.targets.slice(0, 5).map((t) => '· ' + (t.name || t.peerId)).join('\n')}${resolved.targets.length > 5 ? `\n…还有 ${resolved.targets.length - 5} 个(省略)` : ''}`,
+                    msg: `✅ 分组「${name}」${action === 'add' ? '加入' : '移出'} ${delta} 个目标, 现共 ${cur.size} 个${delta < resolved.targets.length ? '(重复的已跳过)' : ''}\n${resolved.targets
+                        .slice(0, 5)
+                        .map((t) => '· ' + (t.name || t.peerId))
+                        .join(
+                            '\n'
+                        )}${resolved.targets.length > 5 ? `\n…还有 ${resolved.targets.length - 5} 个(省略)` : ''}`
                 };
             }
             return { ok: false, msg: `未知 action: ${action}` };
-        },
+        }
     });
     /** 发到目标 QQ 群/私聊: 若给了 media 先发图(用目标 manager 归属的 sender), 再发带来源文本; 无 sender 则 groupAdmin 文本兜底 */
     async function sendQQWithMedia(manager, scope, peer, body, media, exec) {
@@ -1941,37 +2125,77 @@ export async function apply(ctx) {
     }
     const sessionWakeTool = defineTool({
         name: 'session_wake',
-        description: '跨会话(写,谨慎,**仅主人明确要求时调用**): 向指定会话发一条消息。mode=wake(默认)唤醒对方 LLM; mode=append 只写上下文不唤醒(省 token 的喇叭模式)。同时经 QQ 通道把消息发到该会话绑定的群/私聊。目标用 session_id(见 session_list) 或 peer_id+scope。' +
-            '\n最小示例(照抄改值):\n' +
-            '· 唤醒单发 {session_id:"<uuid>", text:"帮我看下这个"}\n' +
-            '· 跨群喇叭不唤醒 {peer_id:"<群openid>", scope:"group", text:"公告:…", mode:"append"}\n' +
-            '· 批量(每项自带 text) {batch:[{peer_id:"<g1>",scope:"group",text:"A"},{peer_id:"<g2>",scope:"group",text:"B",media:"D:/pic.png"}]} ← 用 batch 时**不要再传顶层 text**',
+        description:
+            promptText('qq/channel-tools/session_wake.description') +
+            promptText('qq/channel-tools/session_wake.description.2') +
+            promptText('qq/channel-tools/session_wake.description.3') +
+            promptText('qq/channel-tools/session_wake.description.4') +
+            promptText('qq/channel-tools/session_wake.description.5'),
         parameters: {
-            session_id: { type: 'string', description: '目标会话 id(完整 sessionId, 来自 session_list)' },
-            peer_id: { type: 'string', description: '或按 peer 寻址: 群 openid/私聊 openid(需带 scope)' },
-            scope: { type: 'string', enum: ['group', 'c2c'], description: 'peer_id 寻址时的范围(group=群 / c2c=私聊)' },
-            text: { type: 'string', description: '要发送的消息内容(单发必填; 用 batch 时**不要**传这个, 每项自带 text)' },
-            mode: { type: 'string', enum: ['wake', 'append'], description: 'wake=唤醒 LLM 开回合(默认); append=只追加上下文不唤醒(省 token, 喇叭模式)' },
-            send_qq: { type: 'boolean', description: '是否同时发到绑定的 QQ 群/私聊(给人看, 默认 true)。false=只处理 LLM 侧不走 QQ 通道' },
-            media: { type: 'string', description: '跨群发图: 图片本地路径或 http(s) URL, 随消息发到目标群(需 send_qq=true)' },
-            batch: { type: 'array', description: '批量模式(2026-09-10): 一次向多个会话各发不同文本。每项: {session_id 或 peer_id+scope, text, mode?, send_qq?, media?}。单发参数与 batch 二选一, batch 优先。', items: {
-                    type: 'object', additionalProperties: false, properties: {
-                        session_id: { type: 'string', description: '目标会话 id' },
-                        peer_id: { type: 'string', description: '或 peer 寻址: 群/私聊 openid' },
-                        scope: { type: 'string', enum: ['group', 'c2c'], description: 'peer 寻址范围' },
-                        text: { type: 'string', required: true, description: '该会话要发的消息内容' },
-                        mode: { type: 'string', enum: ['wake', 'append'], description: '默认 wake' },
-                        send_qq: { type: 'boolean', description: '默认 true' },
-                        media: { type: 'string', description: '该会话随消息发的图片' },
-                    },
-                } },
+            session_id: { type: 'string', description: promptText('qq/channel-tools/session_wake.description.6') },
+            peer_id: { type: 'string', description: promptText('qq/channel-tools/session_wake.description.7') },
+            scope: {
+                type: 'string',
+                enum: ['group', 'c2c'],
+                description: promptText('qq/channel-tools/session_wake.description.8')
+            },
+            text: { type: 'string', description: promptText('qq/channel-tools/session_wake.description.9') },
+            mode: {
+                type: 'string',
+                enum: ['wake', 'append'],
+                description: promptText('qq/channel-tools/session_wake.description.10')
+            },
+            send_qq: { type: 'boolean', description: promptText('qq/channel-tools/session_wake.description.11') },
+            media: { type: 'string', description: promptText('qq/channel-tools/session_wake.description.12') },
+            batch: {
+                type: 'array',
+                description: promptText('qq/channel-tools/session_wake.description.13'),
+                items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                        session_id: {
+                            type: 'string',
+                            description: promptText('qq/channel-tools/session_wake.description.14')
+                        },
+                        peer_id: {
+                            type: 'string',
+                            description: promptText('qq/channel-tools/session_wake.description.15')
+                        },
+                        scope: {
+                            type: 'string',
+                            enum: ['group', 'c2c'],
+                            description: promptText('qq/channel-tools/session_wake.description.16')
+                        },
+                        text: {
+                            type: 'string',
+                            required: true,
+                            description: promptText('qq/channel-tools/session_wake.description.17')
+                        },
+                        mode: {
+                            type: 'string',
+                            enum: ['wake', 'append'],
+                            description: promptText('qq/channel-tools/session_wake.description.18')
+                        },
+                        send_qq: {
+                            type: 'boolean',
+                            description: promptText('qq/channel-tools/session_wake.description.19')
+                        },
+                        media: {
+                            type: 'string',
+                            description: promptText('qq/channel-tools/session_wake.description.20')
+                        }
+                    }
+                }
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             // 来源标注(便于对方直接会话): 优先当前执行 agent 的 id(=会话 id); 再取当前会话记录;
@@ -1979,14 +2203,13 @@ export async function apply(ctx) {
             const from = (() => {
                 try {
                     const aid = exec.agent?.id;
-                    if (typeof aid === 'string' && aid.length >= 8)
-                        return aid.slice(0, 8) + '…';
+                    if (typeof aid === 'string' && aid.length >= 8) return aid.slice(0, 8) + '…';
                     const ch0 = channelOf(exec);
                     const src = findSessionRec(ch0, exec);
-                    if (src?.rec?.sessionId)
-                        return src.rec.sessionId.slice(0, 8) + '…';
+                    if (src?.rec?.sessionId) return src.rec.sessionId.slice(0, 8) + '…';
+                } catch {
+                    /* 忽略 */
                 }
-                catch { /* 忽略 */ }
                 return 'web';
             })();
             const map = {
@@ -1996,7 +2219,7 @@ export async function apply(ctx) {
                 'no-append': '❌ 该会话 agent 不支持上下文追加',
                 'no-agent': '❌ 找不到目标会话 agent',
                 busy: '⏳ 目标会话正忙(回合进行中且无安全注入通道)',
-                fail: '❌ 处理异常',
+                fail: '❌ 处理异常'
             };
             /** 单条发送(单发与 batch 共用): one={session_id?|peer_id?+scope?, text, mode?, send_qq?, media?} */
             const sendOne = async (one) => {
@@ -2008,21 +2231,18 @@ export async function apply(ctx) {
                 if (sid) {
                     // ① session_id 寻址: module 级注册表跨全部实例精确命中(重启后仍可查)
                     const manager = findManagerBySessionId(sid);
-                    if (!manager)
-                        return `❌ 会话不存在: ${sid.slice(0, 8)}…(不在任何已注册实例)`;
+                    if (!manager) return `❌ 会话不存在: ${sid.slice(0, 8)}…(不在任何已注册实例)`;
                     const mode = String(one.mode || 'wake');
                     let r;
                     if (mode === 'append') {
                         const rec0 = manager.findBySessionId(sid);
-                        const targetAgent = rec0?.agent
-                            ?? manager.findHostAgent(sid)?.agent
-                            ?? (await manager.resumeHostAgent(sid).catch(() => undefined))?.agent;
-                        if (!targetAgent)
-                            r = 'no-session';
-                        else
-                            r = await safeAppendUserMessage(targetAgent, body, loggerLike(exec));
-                    }
-                    else {
+                        const targetAgent =
+                            rec0?.agent ??
+                            manager.findHostAgent(sid)?.agent ??
+                            (await manager.resumeHostAgent(sid).catch(() => undefined))?.agent;
+                        if (!targetAgent) r = 'no-session';
+                        else r = await safeAppendUserMessage(targetAgent, body, loggerLike(exec));
+                    } else {
                         r = await wakeSessionAgent(manager, sid, loggerLike(exec), body);
                     }
                     let extra = '';
@@ -2041,8 +2261,9 @@ export async function apply(ctx) {
                                     qPeer = r2.peerId;
                                     break;
                                 }
+                            } catch {
+                                /* 单实例异常跳过 */
                             }
-                            catch { /* 单实例异常跳过 */ }
                         }
                         if (!ownerManager) {
                             for (const m of managersOf()) {
@@ -2057,21 +2278,28 @@ export async function apply(ctx) {
                                             break;
                                         }
                                     }
-                                    if (ownerManager)
-                                        break;
+                                    if (ownerManager) break;
+                                } catch {
+                                    /* 无注册表则跳过 */
                                 }
-                                catch { /* 无注册表则跳过 */ }
                             }
                         }
                         if (ownerManager && qScope && qPeer) {
-                            extra = await sendQQWithMedia(ownerManager, qScope, qPeer, body, String(one.media || ''), exec);
-                        }
-                        else {
+                            extra = await sendQQWithMedia(
+                                ownerManager,
+                                qScope,
+                                qPeer,
+                                body,
+                                String(one.media || ''),
+                                exec
+                            );
+                        } else {
                             const diag = `未找到目标会话的 QQ peer(findBySessionId 与群注册表均 miss, sid=${sid.slice(0, 8)}…)`;
                             try {
                                 loggerLike(exec).warn(`[session_wake] ${diag}`);
+                            } catch {
+                                /* */
                             }
-                            catch { /* */ }
                             extra = `；⚠️${diag}`;
                         }
                     }
@@ -2080,36 +2308,28 @@ export async function apply(ctx) {
                 // ② peer 寻址
                 const peer = String(one.peer_id || '');
                 const sc = String(one.scope || '');
-                if (!peer || !sc)
-                    return '请给 session_id, 或 scope+peer_id';
+                if (!peer || !sc) return '请给 session_id, 或 scope+peer_id';
                 let manager = findManagerByPeer(sc, peer);
                 if (!manager) {
                     const curCh = channelOf(exec);
-                    if (curCh?.manager && curCh.manager.findByPeer(sc, peer))
-                        manager = curCh.manager;
-                    else if (curCh?.manager)
-                        manager = curCh.manager;
+                    if (curCh?.manager && curCh.manager.findByPeer(sc, peer)) manager = curCh.manager;
+                    else if (curCh?.manager) manager = curCh.manager;
                 }
-                if (!manager)
-                    return '找不到会话管理器实例(无已注册实例)';
+                if (!manager) return '找不到会话管理器实例(无已注册实例)';
                 let rec = manager.findByPeer(sc, peer);
                 if (!rec) {
                     if (sc === 'c2c') {
                         return `❌ 未找到该私聊对象的真实会话(${peer.slice(0, 8)}…): 请先让对方主动私聊本 bot 一次(dock「💬聊天」里能直接发), 或用 session_id 寻址。原因: openid 按 bot 应用隔离, 乱建会话会发到错误实例`;
                     }
                     rec = await manager.getOrCreate(sc, peer, 'master', { scope: sc, targetId: peer });
-                    if (!rec)
-                        return `会话创建失败: ${sc} ${peer.slice(0, 8)}…`;
+                    if (!rec) return `会话创建失败: ${sc} ${peer.slice(0, 8)}…`;
                 }
                 const sid2 = rec.sessionId;
                 const mode2 = String(one.mode || 'wake');
                 let r;
                 if (mode2 === 'append') {
-                    r = rec.agent
-                        ? await safeAppendUserMessage(rec.agent, body, loggerLike(exec))
-                        : 'no-session';
-                }
-                else {
+                    r = rec.agent ? await safeAppendUserMessage(rec.agent, body, loggerLike(exec)) : 'no-session';
+                } else {
                     r = await wakeSessionAgent(manager, sid2, loggerLike(exec), body);
                 }
                 let extra = '';
@@ -2128,45 +2348,50 @@ export async function apply(ctx) {
                     }
                     try {
                         results.push(await sendOne(item));
-                    }
-                    catch (e) {
+                    } catch (e) {
                         results.push(`❌ 发送异常: ${String(e?.message || e)}`);
                     }
                 }
-                return { ok: results.every((x) => x.startsWith('✅')), msg: `批量 ${results.length} 条:\n` + results.map((x, i) => `${i + 1}. ${x}`).join('\n') };
+                return {
+                    ok: results.every((x) => x.startsWith('✅')),
+                    msg: `批量 ${results.length} 条:\n` + results.map((x, i) => `${i + 1}. ${x}`).join('\n')
+                };
             }
             const oneR = await sendOne(args);
             return { ok: oneR.startsWith('✅'), msg: oneR };
-        },
+        }
     });
     const muteStateTool = defineTool({
         name: 'group_mute_state',
-        description: '群管理(读): 查看当前群禁言状态(全员模式 + 正在禁言中的成员及到期时间)。仅主人要求时调用。',
+        description: promptText('qq/channel-tools/group_mute_state.description'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(**可选**：不填=当前会话所在的群；跨群操作才传)' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_mute_state.description.2') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
             const gid = String(args.gid ?? '').trim() || ga.gid || latestGroupId();
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
             const r = await ga.client.getMuteState(gid);
-            if (!r.ok)
-                return { ok: false, msg: r.err.human };
+            if (!r.ok) return { ok: false, msg: r.err.human };
             const mode = r.data.global_rule?.mode ?? 'none';
             const members = r.data.members ?? [];
-            const lines = members.map((m) => `${m.username ?? String(m.member_openid).slice(0, 10)}… 禁言至 ${m.mute_expire_at ?? '?'}`);
-            return { ok: true, msg: `全员禁言: ${mode === 'always' ? '开启' : mode === 'schedule' ? '定时' : '关闭'}\n禁言中 ${members.length} 人:\n${lines.length ? lines.join('\n') : '(无)'}` };
-        },
+            const lines = members.map(
+                (m) => `${m.username ?? String(m.member_openid).slice(0, 10)}… 禁言至 ${m.mute_expire_at ?? '?'}`
+            );
+            return {
+                ok: true,
+                msg: `全员禁言: ${mode === 'always' ? '开启' : mode === 'schedule' ? '定时' : '关闭'}\n禁言中 ${members.length} 人:\n${lines.length ? lines.join('\n') : '(无)'}`
+            };
+        }
     });
     /**
      * 撤回群消息（2026-10-20 主人需求）: 官方允许**群管理员撤回普通成员的消息**（窗口 2 分钟）。
@@ -2175,29 +2400,29 @@ export async function apply(ctx) {
      */
     const groupRecallTool = defineTool({
         name: 'group_recall',
-        description: '群管理(写,危险): 撤回群消息(机器人是群管理员时可撤**普通成员**的消息; 官方窗口 2 分钟)。'
-            + '\nmember=按成员 openid 撤其最近一条; 不传 member=撤群里最近一条; 也可直接给 msg_id。'
-            + '\nmsgId 来自入站内存缓冲(只记最近 2 分钟/50 条, 重启清空)。仅主人明确要求时调用。'
-            + '\n示例: {member:"<openid>"} / {msg_id:"ROBOT1.0_xxx"}',
+        description:
+            promptText('qq/channel-tools/group_recall.description') +
+            promptText('qq/channel-tools/group_recall.description.2') +
+            promptText('qq/channel-tools/group_recall.description.3') +
+            promptText('qq/channel-tools/group_recall.description.4'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(**可选**：不填=当前会话所在的群；只有要操作别的群(机器人也是那个群的管理员)时才传)' },
-            member: { type: 'string', description: '成员 openid(可选): 撤该成员最近一条' },
-            msg_id: { type: 'string', description: '直接指定 message_id(可选, 优先于 member)' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_recall.description.5') },
+            member: { type: 'string', description: promptText('qq/channel-tools/group_recall.description.6') },
+            msg_id: { type: 'string', description: promptText('qq/channel-tools/group_recall.description.7') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
             const gid = String(args.gid ?? '').trim() || ga.gid || latestGroupId();
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
             let msgId = String(args.msg_id ?? '').trim();
             let who = '';
             if (msgId === '') {
@@ -2208,17 +2433,16 @@ export async function apply(ctx) {
                         ok: false,
                         msg: member
                             ? '没找到该成员 2 分钟内的消息（msgId 只存在内存缓冲里，重启会清空；也可能超时了）'
-                            : '群里 2 分钟内没有记录到可撤回的消息',
+                            : '群里 2 分钟内没有记录到可撤回的消息'
                     };
                 }
                 msgId = rec.id;
                 who = rec.n || rec.s;
             }
             const r = await ga.client.recallMessage(gid, msgId, 'group');
-            if (!r.ok)
-                return { ok: false, msg: r.err.human };
+            if (!r.ok) return { ok: false, msg: r.err.human };
             return { ok: true, msg: `✅ 已撤回${who ? ` ${who} 的` : ''}消息（msg_id=${msgId.slice(0, 18)}…）` };
-        },
+        }
     });
     /**
      * 消息搜索（2026-10-20 主人需求）: 在「最近 2 分钟消息缓冲」里搜消息（**包含机器人自己发的**）。
@@ -2226,43 +2450,50 @@ export async function apply(ctx) {
      */
     const msgSearchTool = defineTool({
         name: 'group_msg_search',
-        description: '群管理(读): 在最近 2 分钟的消息缓冲里按关键词/类型搜消息（**含机器人自己发的**），返回 msg_id 供 group_recall_batch 批量撤回。'
-            + '\n缓冲不落盘、重启清空，只覆盖最近 2 分钟（官方撤回窗口）。',
+        description:
+            promptText('qq/channel-tools/group_msg_search.description') +
+            promptText('qq/channel-tools/group_msg_search.description.2'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(**可选**：不填=当前会话所在的群；只有要操作别的群(机器人也是那个群的管理员)时才传)' },
-            keyword: { type: 'string', description: '关键词(子串匹配正文; 不填=不筛)' },
-            kind: { type: 'string', enum: ['text', 'image', 'voice', 'video', 'file'], description: '消息类型筛选(可选)' },
-            from_self: { type: 'boolean', description: 'true=只搜机器人自己发的; false=只搜别人发的; 不填=都搜' },
-            limit: { type: 'integer', description: '最多返回条数(默认 20, 上限 50)' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_msg_search.description.3') },
+            keyword: { type: 'string', description: promptText('qq/channel-tools/group_msg_search.description.4') },
+            kind: {
+                type: 'string',
+                enum: ['text', 'image', 'voice', 'video', 'file'],
+                description: promptText('qq/channel-tools/group_msg_search.description.5')
+            },
+            from_self: { type: 'boolean', description: promptText('qq/channel-tools/group_msg_search.description.6') },
+            limit: { type: 'integer', description: promptText('qq/channel-tools/group_msg_search.description.7') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
             const gid = String(args.gid ?? '').trim() || ga.gid || latestGroupId();
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid' };
             const list = readMsgHistory('group', gid, {
                 keyword: args.keyword ? String(args.keyword) : undefined,
-                kind: (args.kind ? String(args.kind) : undefined),
+                kind: args.kind ? String(args.kind) : undefined,
                 fromSelf: typeof args.from_self === 'boolean' ? args.from_self : undefined,
-                limit: Number(args.limit) || 20,
+                limit: Number(args.limit) || 20
             });
             if (list.length === 0)
                 return { ok: true, msg: '台账里没有命中的消息（默认只查最近 2 小时）。' + historyDebug('group', gid) };
-            const lines = list.map((m, i) => `${i + 1}. ${m.me ? '🤖' : '👤'}${m.n || m.s} [${m.k ?? 'text'}] ${m.x || '(无正文)'}｜id=${String(m.id).slice(0, 16)}…｜${new Date(m.t).toLocaleTimeString('zh-CN')}`);
+            const lines = list.map(
+                (m, i) =>
+                    `${i + 1}. ${m.me ? '🤖' : '👤'}${m.n || m.s} [${m.k ?? 'text'}] ${m.x || '(无正文)'}｜id=${String(m.id).slice(0, 16)}…｜${new Date(m.t).toLocaleTimeString('zh-CN')}`
+            );
             return {
                 ok: true,
-                msg: `命中 ${list.length} 条（默认最近 2 小时）:\n${lines.join('\n')}\n→ 用 group_recall_batch 传 msg_ids 批量撤回（也可以直接给它 keyword/kind 让它自己挑）`,
+                msg: `命中 ${list.length} 条（默认最近 2 小时）:\n${lines.join('\n')}\n→ 用 group_recall_batch 传 msg_ids 批量撤回（也可以直接给它 keyword/kind 让它自己挑）`
             };
-        },
+        }
     });
     /**
      * 批量撤回 + 可选批量禁言（2026-10-20 主人需求）
@@ -2273,24 +2504,33 @@ export async function apply(ctx) {
      */
     const recallKeywordsTool = defineTool({
         name: 'recall_keywords',
-        description: '自动撤回关键词管理(写): 查看/添加/删除「命中即撤回(可顺带禁言)」的关键词。全局规则(不分群)。' +
-            '\naction: list(默认) / add(追加) / remove(删除) / set(整体替换) / clear(清空)' +
-            '\nwords: 关键词, 多个用逗号/顿号/换行分隔' +
-            '\nmuteSeconds/enable: 可选, 一起改「命中后禁言秒数」和「是否启用」；不传就不动' +
-            '\n改完立刻生效(live)，不需要重启。',
+        description:
+            promptText('qq/channel-tools/recall_keywords.description') +
+            promptText('qq/channel-tools/recall_keywords.description.2') +
+            promptText('qq/channel-tools/recall_keywords.description.3') +
+            promptText('qq/channel-tools/recall_keywords.description.4') +
+            promptText('qq/channel-tools/recall_keywords.description.5'),
         parameters: {
-            action: { type: 'string', description: 'list / add / remove / set / clear', enum: ['list', 'add', 'remove', 'set', 'clear'] },
-            words: { type: 'string', description: '关键词(多个用逗号/顿号/换行分隔)' },
-            muteSeconds: { type: 'integer', description: '可选: 命中后顺带禁言秒数(0=不禁言); 不传则不改' },
-            enable: { type: 'boolean', description: '可选: 同时开启/关闭自动撤回; 不传则不改' },
+            action: {
+                type: 'string',
+                description: promptText('qq/channel-tools/recall_keywords.description.6'),
+                enum: ['list', 'add', 'remove', 'set', 'clear']
+            },
+            words: { type: 'string', description: promptText('qq/channel-tools/recall_keywords.description.7') },
+            muteSeconds: { type: 'integer', description: promptText('qq/channel-tools/recall_keywords.description.8') },
+            enable: { type: 'boolean', description: promptText('qq/channel-tools/recall_keywords.description.9') }
         },
         output: {
             schema: {
                 type: 'object',
-                properties: { ok: { type: 'boolean' }, msg: { type: 'string' }, keywords: { type: 'array', items: { type: 'string' } } },
-                additionalProperties: false,
+                properties: {
+                    ok: { type: 'boolean' },
+                    msg: { type: 'string' },
+                    keywords: { type: 'array', items: { type: 'string' } }
+                },
+                additionalProperties: false
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? String(v.msg || '') : `失败: ${String(v.msg || '')}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? String(v.msg || '') : `失败: ${String(v.msg || '')}` }]
         },
         execute: async (args) => {
             try {
@@ -2298,98 +2538,107 @@ export async function apply(ctx) {
                 const base = join(homedir(), '.dsh', 'qqbot-settings', prof);
                 let file = join(base, 'im-qqbot-2.json');
                 if (!existsSync(file)) {
-                    const cands = existsSync(base) ? readdirSync(base).filter((f) => /^im-qqbot-.*\.json$/.test(f)) : [];
-                    if (cands.length === 0)
-                        return { ok: false, msg: '找不到设置文件: ' + base, keywords: [] };
+                    const cands = existsSync(base)
+                        ? readdirSync(base).filter((f) => /^im-qqbot-.*\.json$/.test(f))
+                        : [];
+                    if (cands.length === 0) return { ok: false, msg: '找不到设置文件: ' + base, keywords: [] };
                     cands.sort((a, b) => statSync(join(base, b)).mtimeMs - statSync(join(base, a)).mtimeMs);
                     file = join(base, String(cands[0]));
                 }
                 const raw = JSON.parse(readFileSync(file, 'utf8'));
-                const ga = (raw.groupAdmin = (raw.groupAdmin || {}));
-                const ar = (ga.autoRecall = Object.assign({ enabled: false, mode: 'keep', keywords: [], kinds: [], muteSeconds: 0, dryRun: false }, (ga.autoRecall || {})));
+                const ga = (raw.groupAdmin = raw.groupAdmin || {});
+                const ar = (ga.autoRecall = Object.assign(
+                    { enabled: false, mode: 'keep', keywords: [], kinds: [], muteSeconds: 0, dryRun: false },
+                    ga.autoRecall || {}
+                ));
                 let list = Array.isArray(ar.keywords) ? ar.keywords.map(String) : [];
                 const action = String(args.action || 'list');
-                const words = String(args.words || '').split(/[,，、\r\n]+/u).map((x) => x.trim()).filter(Boolean);
+                const words = String(args.words || '')
+                    .split(/[,，、\r\n]+/u)
+                    .map((x) => x.trim())
+                    .filter(Boolean);
                 if (action === 'add') {
-                    if (words.length === 0)
-                        return { ok: false, msg: 'add 需要 words', keywords: list };
+                    if (words.length === 0) return { ok: false, msg: 'add 需要 words', keywords: list };
                     const set = new Set(list);
-                    for (const w of words)
-                        set.add(w);
+                    for (const w of words) set.add(w);
                     list = Array.from(set);
-                }
-                else if (action === 'remove') {
-                    if (words.length === 0)
-                        return { ok: false, msg: 'remove 需要 words', keywords: list };
+                } else if (action === 'remove') {
+                    if (words.length === 0) return { ok: false, msg: 'remove 需要 words', keywords: list };
                     const rm = new Set(words);
                     list = list.filter((w) => !rm.has(w));
-                }
-                else if (action === 'set') {
+                } else if (action === 'set') {
                     list = words;
-                }
-                else if (action === 'clear') {
+                } else if (action === 'clear') {
                     list = [];
                 }
                 ar.keywords = list;
-                if (typeof args.muteSeconds === 'number')
-                    ar.muteSeconds = Math.max(0, Math.round(args.muteSeconds));
-                if (typeof args.enable === 'boolean')
-                    ar.enabled = args.enable;
+                if (typeof args.muteSeconds === 'number') ar.muteSeconds = Math.max(0, Math.round(args.muteSeconds));
+                if (typeof args.enable === 'boolean') ar.enabled = args.enable;
                 writeFileSync(file, JSON.stringify(raw, null, 2), 'utf8');
                 const head = action === 'list' ? '当前关键词' : '已更新';
                 return {
                     ok: true,
-                    msg: head + '(' + list.length + ' 个, 启用=' + String(ar.enabled === true) + ', 禁言=' + String(ar.muteSeconds || 0) + 's): ' + (list.join(' / ') || '(空)'),
-                    keywords: list,
+                    msg:
+                        head +
+                        '(' +
+                        list.length +
+                        ' 个, 启用=' +
+                        String(ar.enabled === true) +
+                        ', 禁言=' +
+                        String(ar.muteSeconds || 0) +
+                        's): ' +
+                        (list.join(' / ') || '(空)'),
+                    keywords: list
                 };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: '操作失败: ' + (e instanceof Error ? e.message : String(e)), keywords: [] };
             }
-        },
+        }
     });
     /** 踢人（2026-10-20：平台已开放「移除群成员」，主人实测授权后加的写工具） */
     const kickMemberTool = defineTool({
         name: 'group_kick',
-        description: '群管理(写,危险): 把成员移出群(踢人)，可批量 ≤20。需机器人是群管理员、且平台后台勾选了「移除群成员」。**仅主人明确要求时调用**。不填 gid = 当前会话所在的群。',
+        description: promptText('qq/channel-tools/group_kick.description'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(可选; 不填=当前会话所在的群)' },
-            member_openids: { type: 'array', items: { type: 'string' }, description: '要移出的成员 openid(≤20 个)' },
-            add_to_blacklist: { type: 'boolean', description: '同时加入成员黑名单(默认 false)' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_kick.description.2') },
+            member_openids: {
+                type: 'array',
+                items: { type: 'string' },
+                description: promptText('qq/channel-tools/group_kick.description.3')
+            },
+            add_to_blacklist: { type: 'boolean', description: promptText('qq/channel-tools/group_kick.description.4') }
         },
         output: {
             schema: {
                 type: 'object',
                 properties: { ok: { type: 'boolean' }, msg: { type: 'string' } },
-                additionalProperties: false,
+                additionalProperties: false
             },
-            render: (_a, v) => [
-                { type: 'text', text: v.ok ? String(v.msg || '') : '失败: ' + String(v.msg || '') },
-            ],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? String(v.msg || '') : '失败: ' + String(v.msg || '') }]
         },
         execute: async (args, exec) => {
             try {
                 const ga = groupAdminOf(exec);
-                if (!ga)
-                    return { ok: false, msg: '群管理未开启或非群会话' };
+                if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
                 const gid = String(args.gid ?? '').trim() || ga.gid || latestGroupId();
-                if (!gid)
-                    return { ok: false, msg: '当前不是群会话且未指定 gid' };
+                if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid' };
                 const ids = (Array.isArray(args.member_openids) ? args.member_openids : [])
                     .map((x) => String(x).trim())
                     .filter(Boolean)
                     .slice(0, 20);
-                if (ids.length === 0)
-                    return { ok: false, msg: 'member_openids 为空' };
+                if (ids.length === 0) return { ok: false, msg: 'member_openids 为空' };
                 // ApiResult 失败结构是 { ok:false, err:{ code, human } }
-                const r = (await ga.client.removeMembers(gid, ids, args.add_to_blacklist === true));
+                const r = await ga.client.removeMembers(gid, ids, args.add_to_blacklist === true);
                 if (r?.ok !== true) {
                     const code = String(r?.err?.code || '');
                     const human = String(r?.err?.human || '');
                     return {
                         ok: false,
-                        msg: '踢人失败: ' + (human || code || '(平台无返回)') + (code ? ' [code=' + code + ']' : '') +
-                            '（常见原因: 平台未勾选该权限 / 机器人非管理员 / 对方是群主或管理员）',
+                        msg:
+                            '踢人失败: ' +
+                            (human || code || '(平台无返回)') +
+                            (code ? ' [code=' + code + ']' : '') +
+                            '（常见原因: 平台未勾选该权限 / 机器人非管理员 / 对方是群主或管理员）'
                     };
                 }
                 const failN = Array.isArray(r.data?.add_to_member_blacklist_fail_openids)
@@ -2397,13 +2646,12 @@ export async function apply(ctx) {
                     : 0;
                 return {
                     ok: true,
-                    msg: '✅ 已提交移出 ' + ids.length + ' 人' + (failN > 0 ? '；加黑名单失败 ' + failN + ' 人' : ''),
+                    msg: '✅ 已提交移出 ' + ids.length + ' 人' + (failN > 0 ? '；加黑名单失败 ' + failN + ' 人' : '')
                 };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: '踢人异常: ' + (e instanceof Error ? e.message : String(e)) };
             }
-        },
+        }
     });
     /** 素材管理（2026-10-21 新接口 /v2/media-images/*：本地图 → qqbot-media:// 引用串） */
     function anyAdminOf(exec) {
@@ -2429,108 +2677,144 @@ export async function apply(ctx) {
     }
     const materialTool = defineTool({
         name: 'qq_material',
-        description: 'QQ 素材管理(Markdown 图片): 把**本地图片**传到 QQ 平台换 qqbot-media:// 引用串，可直接写进 markdown 消息（不再需要公网图床）。限制: 单张 ≤10MB、png/jpeg/gif/webp、单机器人最多 100 张、图片滑动过期 90 天(每次被引用顺延)。action=upload 传图 / list 看已传列表 / delete 删除释放配额。',
+        description: promptText('qq/channel-tools/qq_material.description'),
         parameters: {
-            action: { type: 'string', enum: ['upload', 'list', 'delete'], description: '默认 upload' },
-            image: { type: 'string', description: 'upload: 本地图片绝对路径' },
-            image_id: { type: 'string', description: 'delete: 图片 ID（list 里能看到）' },
-            cursor: { type: 'string', description: 'list: 翻页游标（首页不传）' },
+            action: {
+                type: 'string',
+                enum: ['upload', 'list', 'delete'],
+                description: promptText('qq/channel-tools/qq_material.description.2')
+            },
+            image: { type: 'string', description: promptText('qq/channel-tools/qq_material.description.3') },
+            image_id: { type: 'string', description: promptText('qq/channel-tools/qq_material.description.4') },
+            cursor: { type: 'string', description: promptText('qq/channel-tools/qq_material.description.5') }
         },
         output: {
             schema: {
                 type: 'object',
-                properties: { ok: { type: 'boolean' }, msg: { type: 'string' }, url: { type: 'string' }, markdown: { type: 'string' } },
-                additionalProperties: false,
+                properties: {
+                    ok: { type: 'boolean' },
+                    msg: { type: 'string' },
+                    url: { type: 'string' },
+                    markdown: { type: 'string' }
+                },
+                additionalProperties: false
             },
-            render: (_a, v) => [{ type: 'text', text: String(v.msg || (v.ok ? 'ok' : '失败')) }],
+            render: (_a, v) => [{ type: 'text', text: String(v.msg || (v.ok ? 'ok' : '失败')) }]
         },
         execute: async (args, exec) => {
             const mat = anyAdminOf(exec);
-            if (!mat)
-                return { ok: false, msg: '拿不到机器人实例（没有已连接的本）' };
+            if (!mat) return { ok: false, msg: '拿不到机器人实例（没有已连接的本）' };
             const target = { apiCall: mat.client.apiCall.bind(mat.client) };
             const action = String(args.action ?? 'upload').trim() || 'upload';
             if (action === 'upload') {
                 const r = await uploadMarkdownImage(target, String(args.image ?? '').trim());
-                if (!r.ok)
-                    return { ok: false, msg: '上传失败: ' + String(r.msg || '') };
-                const name = String(args.image ?? '').split(/[\\/]/).pop() || 'image';
+                if (!r.ok) return { ok: false, msg: '上传失败: ' + String(r.msg || '') };
+                const name =
+                    String(args.image ?? '')
+                        .split(/[\\/]/)
+                        .pop() || 'image';
                 const dim = r.width && r.height ? ' #' + r.width + 'px #' + r.height + 'px' : '';
                 const markdown = '![' + name + dim + '](' + String(r.url) + ')';
-                const head = (r.cached ? '✅ 命中本地缓存，未重复上传' : '✅ 已上传')
-                    + '（' + Math.round((r.bytes ?? 0) / 1024) + 'KB'
-                    + (r.width ? '，' + r.width + '×' + r.height : '') + '）';
+                const head =
+                    (r.cached ? '✅ 命中本地缓存，未重复上传' : '✅ 已上传') +
+                    '（' +
+                    Math.round((r.bytes ?? 0) / 1024) +
+                    'KB' +
+                    (r.width ? '，' + r.width + '×' + r.height : '') +
+                    '）';
                 return { ok: true, url: String(r.url), markdown, msg: head + '\n' + markdown };
             }
             if (action === 'list') {
                 const r = await listMarkdownImages(target, String(args.cursor ?? ''));
-                if (!r.ok)
-                    return { ok: false, msg: '查询失败: ' + String(r.msg || '') };
-                const d = (r.data ?? {});
+                if (!r.ok) return { ok: false, msg: '查询失败: ' + String(r.msg || '') };
+                const d = r.data ?? {};
                 const list = Array.isArray(d.images) ? d.images : [];
                 const lines = list.slice(0, 20).map((x, i) => {
-                    const exp = x.expires_at ? ' | 到期 ' + new Date(Number(x.expires_at) * 1000).toISOString().slice(0, 10) : '';
+                    const exp = x.expires_at
+                        ? ' | 到期 ' + new Date(Number(x.expires_at) * 1000).toISOString().slice(0, 10)
+                        : '';
                     return i + 1 + '. ' + String(x.file_name || '?') + ' | ' + String(x.image_id || '') + exp;
                 });
                 const more = d.next_cursor ? '（还有下一页，cursor=' + d.next_cursor + '）' : '';
                 return {
                     ok: true,
-                    msg: '共 ' + String(d.total ?? list.length) + ' 张' + more + (lines.length ? '\n' + lines.join('\n') : '\n（列表为空）'),
+                    msg:
+                        '共 ' +
+                        String(d.total ?? list.length) +
+                        ' 张' +
+                        more +
+                        (lines.length ? '\n' + lines.join('\n') : '\n（列表为空）')
                 };
             }
             if (action === 'delete') {
                 const id = String(args.image_id ?? '').trim();
-                if (!id)
-                    return { ok: false, msg: 'delete 需要 image_id' };
+                if (!id) return { ok: false, msg: 'delete 需要 image_id' };
                 const r = await deleteMarkdownImage(target, id);
                 return r.ok
                     ? { ok: true, msg: '✅ 已删除 ' + id + '（配额已释放；已发出的消息不受影响）' }
                     : { ok: false, msg: '删除失败: ' + String(r.msg || '') };
             }
             return { ok: false, msg: '未知 action: ' + action + '（可选 upload / list / delete）' };
-        },
+        }
     });
     const recallBatchTool = defineTool({
         name: 'group_recall_batch',
-        description: '群管理(写,危险): 批量撤回消息 + 可选批量禁言发送者。'
-            + '\n① msg_ids 直接给要撤的 id 列表; 或 ② 留空并给 keyword/kind，让它从 2 分钟缓冲里自己挑(最多 20 条)。'
-            + '\nmute_seconds>0 → 对涉及的**普通成员**批量禁言(机器人自己发的会跳过)。'
-            + '\ndry_run=true 只回显要撤哪些、不执行。仅主人明确要求时调用。',
+        description:
+            promptText('qq/channel-tools/group_recall_batch.description') +
+            promptText('qq/channel-tools/group_recall_batch.description.2') +
+            promptText('qq/channel-tools/group_recall_batch.description.3') +
+            promptText('qq/channel-tools/group_recall_batch.description.4'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(**可选**：不填=当前会话所在的群；只有要操作别的群(机器人也是那个群的管理员)时才传)' },
-            msg_ids: { type: 'array', items: { type: 'string' }, description: '要撤的 message_id 列表(可空: 空则按 keyword/kind 从缓冲挑)' },
-            keyword: { type: 'string', description: '按关键词挑(与 msg_ids 二选一)' },
-            kind: { type: 'string', enum: ['text', 'image', 'voice', 'video', 'file'], description: '按类型挑(可选)' },
-            mute_seconds: { type: 'integer', description: '同时禁言发送者的秒数(0/不填=不禁言)' },
-            dry_run: { type: 'boolean', description: 'true=只列出、不执行' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_recall_batch.description.5') },
+            msg_ids: {
+                type: 'array',
+                items: { type: 'string' },
+                description: promptText('qq/channel-tools/group_recall_batch.description.6')
+            },
+            keyword: { type: 'string', description: promptText('qq/channel-tools/group_recall_batch.description.7') },
+            kind: {
+                type: 'string',
+                enum: ['text', 'image', 'voice', 'video', 'file'],
+                description: promptText('qq/channel-tools/group_recall_batch.description.8')
+            },
+            mute_seconds: {
+                type: 'integer',
+                description: promptText('qq/channel-tools/group_recall_batch.description.9')
+            },
+            dry_run: { type: 'boolean', description: promptText('qq/channel-tools/group_recall_batch.description.10') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
             const gid = String(args.gid ?? '').trim() || ga.gid || latestGroupId();
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid' };
             const brief = (m) => `${m.me ? '🤖' : '👤'}${m.n || m.s} [${m.k ?? 'text'}] ${(m.x ?? '').slice(0, 24)}`;
             let ids = (Array.isArray(args.msg_ids) ? args.msg_ids : []).map((v) => String(v).trim()).filter(Boolean);
             let picked = [];
             if (ids.length === 0) {
                 picked = readMsgHistory('group', gid, {
                     keyword: args.keyword ? String(args.keyword) : undefined,
-                    kind: (args.kind ? String(args.kind) : undefined),
-                    limit: 20,
+                    kind: args.kind ? String(args.kind) : undefined,
+                    limit: 20
                 }).map((r) => ({ me: r.me, s: r.s, n: r.n, k: r.k, x: r.x, msgId: r.id }));
                 ids = picked.map((p) => p.msgId);
-            }
-            else {
-                const all = readMsgHistory('group', gid, { withinMs: 120_000, limit: 200 }).map((r) => ({ me: r.me, s: r.s, n: r.n, k: r.k, x: r.x, msgId: r.id }));
+            } else {
+                const all = readMsgHistory('group', gid, { withinMs: 120_000, limit: 200 }).map((r) => ({
+                    me: r.me,
+                    s: r.s,
+                    n: r.n,
+                    k: r.k,
+                    x: r.x,
+                    msgId: r.id
+                }));
                 picked = all.filter((p) => ids.includes(p.msgId));
             }
             ids = ids.slice(0, 20);
@@ -2539,24 +2823,29 @@ export async function apply(ctx) {
             if (args.dry_run === true) {
                 return {
                     ok: true,
-                    msg: `[dry-run] 将撤回 ${ids.length} 条:\n${picked.slice(0, 20).map((p, i) => `${i + 1}. ${brief(p)}`).join('\n') || ids.join('\n')}`
-                        + (Number(args.mute_seconds) > 0 ? `\n并禁言涉及成员 ${Number(args.mute_seconds)} 秒` : ''),
+                    msg:
+                        `[dry-run] 将撤回 ${ids.length} 条:\n${
+                            picked
+                                .slice(0, 20)
+                                .map((p, i) => `${i + 1}. ${brief(p)}`)
+                                .join('\n') || ids.join('\n')
+                        }` + (Number(args.mute_seconds) > 0 ? `\n并禁言涉及成员 ${Number(args.mute_seconds)} 秒` : '')
                 };
             }
             let ok = 0;
             const errs = [];
             for (const id of ids) {
                 const r = await ga.client.recallMessage(gid, id, 'group');
-                if (r.ok)
-                    ok++;
-                else
-                    errs.push(`…${id.slice(-6)}: ${r.err.human}`);
+                if (r.ok) ok++;
+                else errs.push(`…${id.slice(-6)}: ${r.err.human}`);
                 await new Promise((res) => setTimeout(res, 80));
             }
             let muteNote = '';
             const secs = Math.max(0, Math.round(Number(args.mute_seconds) || 0));
             if (secs > 0 && picked.length > 0) {
-                const senders = [...new Set(picked.filter((p) => !p.me && /^[0-9A-Za-z]{32}$/u.test(p.s)).map((p) => p.s))].slice(0, 20);
+                const senders = [
+                    ...new Set(picked.filter((p) => !p.me && /^[0-9A-Za-z]{32}$/u.test(p.s)).map((p) => p.s))
+                ].slice(0, 20);
                 if (senders.length > 0) {
                     const pad = (n) => String(n).padStart(2, '0');
                     const ex = new Date(Date.now() + secs * 1000);
@@ -2564,8 +2853,7 @@ export async function apply(ctx) {
                     let mOk = 0;
                     for (const sid of senders) {
                         const mr = await ga.client.setMemberMute(gid, sid, rfc);
-                        if (mr.ok)
-                            mOk++;
+                        if (mr.ok) mOk++;
                         await new Promise((res) => setTimeout(res, 120));
                     }
                     muteNote = `\n禁言: ${mOk}/${senders.length} 人成功(${secs} 秒)`;
@@ -2574,33 +2862,47 @@ export async function apply(ctx) {
             const head = `✅ 撤回 ${ok}/${ids.length} 条`;
             const failNote = errs.length ? `\n失败:\n${errs.slice(0, 5).join('\n')}` : '';
             return { ok: ok > 0, msg: `${head}${muteNote}${failNote}` };
-        },
+        }
     });
     const muteMemberTool = defineTool({
         name: 'group_mute_member',
-        description: '群管理(写,危险): 禁言/解除群成员(**可批量, 单次最多 20 人**)。action=mute 禁言(seconds 秒, 默认600); unmute=解除。只能禁普通成员(群主/管理员禁不了)。' +
-            '\n想按昵称禁言先用 id_lookup 拿 openid; 仅主人明确要求时调用。' +
-            '\n示例: {member_openids:["<openid>"], action:"mute", seconds:600}',
+        description:
+            promptText('qq/channel-tools/group_mute_member.description') +
+            promptText('qq/channel-tools/group_mute_member.description.2') +
+            promptText('qq/channel-tools/group_mute_member.description.3'),
         parameters: {
-            gid: { type: 'string', description: '目标群 openid(**可选**：不填=当前会话所在的群；跨群操作才传)' },
-            member_openids: { type: 'array', items: { type: 'string' }, required: true, description: '目标成员 openid 数组(只禁 1 个也传数组; ≤20 个; 可先用 id_lookup 按昵称查)' },
-            action: { type: 'string', required: true, enum: ['mute', 'unmute'], description: 'mute 禁言 / unmute 解除' },
-            seconds: { type: 'number', required: true, description: '禁言秒数(mute 时; 不需要可填 600)' },
+            gid: { type: 'string', description: promptText('qq/channel-tools/group_mute_member.description.4') },
+            member_openids: {
+                type: 'array',
+                items: { type: 'string' },
+                required: true,
+                description: promptText('qq/channel-tools/group_mute_member.description.5')
+            },
+            action: {
+                type: 'string',
+                required: true,
+                enum: ['mute', 'unmute'],
+                description: promptText('qq/channel-tools/group_mute_member.description.6')
+            },
+            seconds: {
+                type: 'number',
+                required: true,
+                description: promptText('qq/channel-tools/group_mute_member.description.7')
+            }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             const ga = groupAdminOf(exec);
-            if (!ga)
-                return { ok: false, msg: '群管理未开启或非群会话' };
+            if (!ga) return { ok: false, msg: '群管理未开启或非群会话' };
             const gid = String(args.gid ?? '').trim() || ga.gid || latestGroupId();
-            if (!gid)
-                return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
+            if (!gid) return { ok: false, msg: '当前不是群会话且未指定 gid, 无法确定目标群' };
             const secs = Math.max(1, Math.min(30 * 86400, Math.round(Number(args.seconds ?? 600))));
             const pad = (n) => String(n).padStart(2, '0');
             const expire = args.action === 'mute' ? new Date(Date.now() + secs * 1000) : null;
@@ -2608,34 +2910,31 @@ export async function apply(ctx) {
                 ? `${expire.getFullYear()}-${pad(expire.getMonth() + 1)}-${pad(expire.getDate())}T${pad(expire.getHours())}:${pad(expire.getMinutes())}:${pad(expire.getSeconds())}+08:00`
                 : null;
             const all = (Array.isArray(args.member_openids) ? args.member_openids : [])
-                .map((v) => String(v).trim()).filter(Boolean)
+                .map((v) => String(v).trim())
+                .filter(Boolean)
                 .map((v) => (v.startsWith('<@') && v.endsWith('>') ? v.slice(2, -1) : v)) // 容错: 直接贴 <@openid> 也认
                 .filter((v, i, arr) => arr.indexOf(v) === i);
-            if (all.length === 0)
-                return { ok: false, msg: 'member_openids 至少给一个 openid' };
+            if (all.length === 0) return { ok: false, msg: 'member_openids 至少给一个 openid' };
             const ids = all.slice(0, 20); // 官方单次 ≤20 人
             let okCount = 0;
             const errs = [];
             for (const id of ids) {
                 const rr = await ga.client.setMemberMute(gid, id, rfc);
-                if (rr.ok)
-                    okCount++;
-                else
-                    errs.push(`…${id.slice(-4)}: ${rr.err.human}`);
-                if (ids.length > 1)
-                    await new Promise((res) => setTimeout(res, 120)); // 略停, 别撞频控
+                if (rr.ok) okCount++;
+                else errs.push(`…${id.slice(-4)}: ${rr.err.human}`);
+                if (ids.length > 1) await new Promise((res) => setTimeout(res, 120)); // 略停, 别撞频控
             }
-            if (okCount === 0)
-                return { ok: false, msg: errs[0] ?? '禁言失败' };
+            if (okCount === 0) return { ok: false, msg: errs[0] ?? '禁言失败' };
             const over = all.length > 20 ? ` (超出 20 人的 ${all.length - 20} 个已忽略, 请分两次)` : '';
             const failNote = errs.length ? ` · 失败 ${errs.length} 人(${errs.slice(0, 3).join('; ')})` : '';
             return {
                 ok: true,
-                msg: args.action === 'mute'
-                    ? `✅ 已禁言 ${okCount}/${ids.length} 人, ${Math.round(secs / 60)} 分钟后自动解除${failNote}${over}`
-                    : `✅ 已解除禁言 ${okCount}/${ids.length} 人${failNote}${over}`,
+                msg:
+                    args.action === 'mute'
+                        ? `✅ 已禁言 ${okCount}/${ids.length} 人, ${Math.round(secs / 60)} 分钟后自动解除${failNote}${over}`
+                        : `✅ 已解除禁言 ${okCount}/${ids.length} 人${failNote}${over}`
             };
-        },
+        }
     });
     /**
      * 昵称/群名 → openid(2026-09-12 主人要求) —— AI 想**主动 @ 一个没 @ 过她的人**、或按名字禁言时,
@@ -2646,35 +2945,50 @@ export async function apply(ctx) {
      */
     const idLookupTool = defineTool({
         name: 'id_lookup',
-        description: '按**昵称/群名**查 openid(主动 @ 人、禁言、跨群发消息前用它拿 id)。**支持一次查多个名字**。' +
-            '\n数据源: 群注册表(群名) + 本地群成员台账(在群里发过言/申请过入群的人)。' +
-            '\n⚠️ 从没发过言、没申请过入群的人查不到(官方群成员列表接口未开放)。' +
-            '\n示例: {names:["小云","阿水"]} · {names:["小云"], gid:"<群openid>"} · {names:["测试群"], kind:"group"}',
+        description:
+            promptText('qq/channel-tools/id_lookup.description') +
+            promptText('qq/channel-tools/id_lookup.description.2') +
+            promptText('qq/channel-tools/id_lookup.description.3') +
+            promptText('qq/channel-tools/id_lookup.description.4'),
         parameters: {
-            names: { type: 'array', items: { type: 'string' }, required: true, description: '一个或多个昵称/群名片段(最多 10 个; 单个也传数组; 空格分隔=多词全命中)' },
-            gid: { type: 'string', description: '限定某个群的成员(可选; 不填=查全部已知群)' },
-            kind: { type: 'string', enum: ['member', 'group', 'all'], description: 'member=只查人(默认) / group=只查群 / all=都查' },
-            limit: { type: 'number', description: '**每个**名字最多返回几条(1~10, 默认 3)' },
+            names: {
+                type: 'array',
+                items: { type: 'string' },
+                required: true,
+                description: promptText('qq/channel-tools/id_lookup.description.5')
+            },
+            gid: { type: 'string', description: promptText('qq/channel-tools/id_lookup.description.6') },
+            kind: {
+                type: 'string',
+                enum: ['member', 'group', 'all'],
+                description: promptText('qq/channel-tools/id_lookup.description.7')
+            },
+            limit: { type: 'number', description: promptText('qq/channel-tools/id_lookup.description.8') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(args) {
             const raw = Array.isArray(args.names) ? args.names : (args.names ?? args.name);
             const kws = (Array.isArray(raw) ? raw : [raw])
-                .map((v) => String(v ?? '').trim().toLowerCase()).filter(Boolean).slice(0, 10);
-            if (kws.length === 0)
-                return { ok: false, msg: 'names 至少给一个昵称' };
+                .map((v) =>
+                    String(v ?? '')
+                        .trim()
+                        .toLowerCase()
+                )
+                .filter(Boolean)
+                .slice(0, 10);
+            if (kws.length === 0) return { ok: false, msg: 'names 至少给一个昵称' };
             const wantGid = String(args.gid ?? '').trim();
             const kind = String(args.kind ?? 'member');
             const limit = Math.max(1, Math.min(10, Math.round(Number(args.limit ?? 3))));
             const roots = new Set();
-            for (const m of managersOf())
-                roots.add(m.dataRoot);
+            for (const m of managersOf()) roots.add(m.dataRoot);
             // 群注册表(gid → 群名/最近活跃): 多个 dataRoot 聚合, lastAt 新者胜
             const groups = new Map();
             for (const root of roots) {
@@ -2684,11 +2998,11 @@ export async function apply(ctx) {
                         const name = String(v?.name ?? '');
                         const lastAt = Number(v?.lastAt ?? 0);
                         const cur = groups.get(gid);
-                        if (!cur || lastAt > cur.lastAt)
-                            groups.set(gid, { name: name || cur?.name || '', lastAt });
+                        if (!cur || lastAt > cur.lastAt) groups.set(gid, { name: name || cur?.name || '', lastAt });
                     }
+                } catch {
+                    /* 该 root 没有注册表 */
                 }
-                catch { /* 该 root 没有注册表 */ }
             }
             // 台账只读一次(按词重复读纯浪费), 按 openid 合并群列表
             const people = new Map();
@@ -2698,19 +3012,24 @@ export async function apply(ctx) {
                         for (const m of readGroupMembers(join(root, '表情包'), wantGid || undefined)) {
                             const cur = people.get(m.mid);
                             if (!cur) {
-                                people.set(m.mid, { name: m.name ?? '', gids: new Set([m.gid]), lastSeen: m.lastSeen, count: m.count });
+                                people.set(m.mid, {
+                                    name: m.name ?? '',
+                                    gids: new Set([m.gid]),
+                                    lastSeen: m.lastSeen,
+                                    count: m.count
+                                });
                                 continue;
                             }
                             cur.gids.add(m.gid);
                             if (m.lastSeen > cur.lastSeen) {
                                 cur.lastSeen = m.lastSeen;
-                                if (m.name)
-                                    cur.name = m.name;
+                                if (m.name) cur.name = m.name;
                             }
                             cur.count += m.count;
                         }
+                    } catch {
+                        /* 无台账则跳过 */
                     }
-                    catch { /* 无台账则跳过 */ }
                 }
             }
             const gName = (gid) => groups.get(gid)?.name || `群…${gid.slice(-4)}`;
@@ -2729,45 +3048,41 @@ export async function apply(ctx) {
                 }
                 if (kind !== 'member') {
                     for (const [gid, v] of groups) {
-                        if (hit >= limit)
-                            break;
-                        if (!v.name.toLowerCase().includes(kw))
-                            continue;
+                        if (hit >= limit) break;
+                        if (!v.name.toLowerCase().includes(kw)) continue;
                         out.push(`群 ${v.name} ${gid}`);
                         hit++;
                     }
                 }
-                if (hit === 0)
-                    out.push(`${kw} → 没查到(台账只记发过言 / 申请过入群的人)`);
+                if (hit === 0) out.push(`${kw} → 没查到(台账只记发过言 / 申请过入群的人)`);
             }
             return { ok: true, msg: out.join('\n') };
-        },
+        }
     });
     // tools_reload: 热刷新 QQ 通道工具(2026-09-08, 主人建议)——AI 自己写完扩展工具后,
     // 调本工具即可让新扩展注册进当前会话(等价于 /tools-reload 斜杠), 不再依赖主人手发。
     const toolsReloadTool = defineTool({
         name: 'tools_reload',
-        description: '热刷新 QQ 通道工具与扩展命令: 重新扫描扩展目录(.qqbot-extensions 的 tools 与 commands)并重载内置工具。写完/更新扩展工具或扩展命令后调用一次, 下条消息即可用新工具(等价于 /tools-reload)。开发/装配用, 平时不需要调。',
+        description: promptText('qq/channel-tools/tools_reload.description'),
         parameters: {},
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
         },
         async execute(_args, exec) {
             const sess = findSessionRec(channelOf(exec), exec);
-            if (!sess)
-                return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
+            if (!sess) return { ok: false, msg: '未找到当前 QQ 会话(通道未就绪), 请稍后重试' };
             try {
                 const summary = await sess.ch.manager.reloadAllChannelTools();
                 return { ok: true, msg: summary };
-            }
-            catch (e) {
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     // quote_view: 查看引用内容(2026-09-13 主人定, 省 token) ——
     //   引用原文超过 60 字时, 入站上下文只给**前 60 字**, 全文落在
@@ -2775,22 +3090,21 @@ export async function apply(ctx) {
     //   ⚠️ 工具描述**刻意写四个字**(主人要求): 描述进 system prompt, 越短越省。
     const quoteViewTool = defineTool({
         name: 'quote_view',
-        description: '查看引用内容',
+        description: promptText('qq/channel-tools/quote_view.description'),
         parameters: {
-            idx: { type: 'integer', description: '引用编号(默认最新一条)' },
+            idx: { type: 'integer', description: promptText('qq/channel-tools/quote_view.description.2') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
+                type: 'object',
+                additionalProperties: false,
                 properties: {
                     ok: { type: 'boolean', required: true },
                     msg: { type: 'string', required: true },
-                    text: { type: 'string' },
-                },
+                    text: { type: 'string' }
+                }
             },
-            render: (_a, v) => [
-                { type: 'text', text: v.ok ? (v.text || '') : `查询失败: ${v.msg}` },
-            ],
+            render: (_a, v) => [{ type: 'text', text: v.ok ? v.text || '' : `查询失败: ${v.msg}` }]
         },
         async execute(args, exec) {
             try {
@@ -2798,36 +3112,43 @@ export async function apply(ctx) {
                 const mgr = s?.ch?.manager;
                 const rec = s?.rec;
                 const dataRoot = String(mgr?.dataRoot || '');
-                if (!dataRoot || !rec?.scope || !rec?.peerId)
-                    return { ok: false, msg: '未找到当前 QQ 会话' };
+                if (!dataRoot || !rec?.scope || !rec?.peerId) return { ok: false, msg: '未找到当前 QQ 会话' };
                 const rawIdx = args.idx;
                 const idx = typeof rawIdx === 'number' && Number.isFinite(rawIdx) ? rawIdx : undefined;
                 const e = getQuote(dataRoot, `${rec.scope}:${rec.peerId}`, idx);
                 if (!e)
                     return { ok: false, msg: '没有缓存的引用(短引用不缓存; 或这条引用是更早的、已被 10 条上限挤掉)' };
-                return { ok: true, msg: `引用#${e.id}`, text: `引用#${e.id}${e.sender ? `（${e.sender}）` : ''}: ${e.text}` };
-            }
-            catch (err) {
+                return {
+                    ok: true,
+                    msg: `引用#${e.id}`,
+                    text: `引用#${e.id}${e.sender ? `（${e.sender}）` : ''}: ${e.text}`
+                };
+            } catch (err) {
                 return { ok: false, msg: err instanceof Error ? err.message : String(err) };
             }
-        },
+        }
     });
     // people_memo: 群友小传（2026-09-13 主人定）—— 文字版好感度的本体。
     //   记一行(同一人一天最多一条) / 查看 / 删除（群里一句"别记人家"就删）。描述刻意写短。
     const peopleMemoTool = defineTool({
         name: 'people_memo',
-        description: '群友小传: 记一行/查看/删除。当群友说出自己的喜好/经历/身份等"旁人能复述的事实"时, 顺手记一条(同一人一天最多 3 条); 想归到八栏就带前缀, 如"喜好：最近在玩XX"(不带前缀则进记事区); 只写事实, 不写评价与猜测',
+        description: promptText('qq/channel-tools/people_memo.description'),
         parameters: {
-            who: { type: 'string', required: true, description: '群友昵称或 openid' },
-            line: { type: 'string', description: '要记的一行; 不传=只看' },
-            del: { type: 'boolean', description: 'true=删掉这个人的小传' },
+            who: {
+                type: 'string',
+                required: true,
+                description: promptText('qq/channel-tools/people_memo.description.2')
+            },
+            line: { type: 'string', description: promptText('qq/channel-tools/people_memo.description.3') },
+            del: { type: 'boolean', description: promptText('qq/channel-tools/people_memo.description.4') }
         },
         output: {
             schema: {
-                type: 'object', additionalProperties: false,
-                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
             },
-            render: (_a, v) => [{ type: 'text', text: v.msg }],
+            render: (_a, v) => [{ type: 'text', text: v.msg }]
         },
         async execute(args, exec) {
             try {
@@ -2836,19 +3157,20 @@ export async function apply(ctx) {
                 const mgr = s?.ch?.manager;
                 const rec = s?.rec;
                 const dataRoot = String(mgr?.dataRoot || '');
-                if (!dataRoot)
-                    return { ok: false, msg: '未找到当前会话的数据根' };
+                if (!dataRoot) return { ok: false, msg: '未找到当前会话的数据根' };
                 // who → openid: 优先在群成员台账里按昵称找
                 let key = String(a.who || '').trim();
                 if (!/^[0-9A-Fa-f]{16,}$/.test(key) && rec?.scope === 'group' && rec.peerId) {
                     try {
                         const dataDir = join(dataRoot, '表情包');
                         const mems = readGroupMembers(dataDir, rec.peerId) || [];
-                        const hit = mems.find((m) => m && m.name === key) || mems.find((m) => m && typeof m.name === 'string' && m.name.includes(key));
-                        if (hit && hit.mid)
-                            key = hit.mid;
+                        const hit =
+                            mems.find((m) => m && m.name === key) ||
+                            mems.find((m) => m && typeof m.name === 'string' && m.name.includes(key));
+                        if (hit && hit.mid) key = hit.mid;
+                    } catch {
+                        /* 用昵称兜底当 key */
                     }
-                    catch { /* 用昵称兜底当 key */ }
                 }
                 if (a.del) {
                     const r = deleteMemo(dataRoot, key);
@@ -2859,15 +3181,25 @@ export async function apply(ctx) {
                     return { ok: r.ok, msg: r.ok ? '记下了: ' + a.line.slice(0, 60) : r.msg };
                 }
                 const cur = readMemo(dataRoot, key);
-                if (cur)
-                    return { ok: true, msg: cur.slice(0, 1200) };
+                if (cur) return { ok: true, msg: cur.slice(0, 1200) };
                 const all = listMemos(dataRoot);
-                return { ok: true, msg: '还没有 ' + a.who + ' 的小传。现有 ' + all.length + ' 份: ' + all.slice(0, 8).map((x) => x.key).join(', ') };
-            }
-            catch (e) {
+                return {
+                    ok: true,
+                    msg:
+                        '还没有 ' +
+                        a.who +
+                        ' 的小传。现有 ' +
+                        all.length +
+                        ' 份: ' +
+                        all
+                            .slice(0, 8)
+                            .map((x) => x.key)
+                            .join(', ')
+                };
+            } catch (e) {
                 return { ok: false, msg: e instanceof Error ? e.message : String(e) };
             }
-        },
+        }
     });
     // 逐个注册并记录结果(便于线上定位是哪个工具失败)
     // 供 syncContextTools 动态挂载用（apply 早于 pre-step，填好即可）
@@ -3057,14 +3389,18 @@ export async function apply(ctx) {
                 }
                 const tool = defineTool({
                     name: scopedName,
-                    description: def.description + ' (用户扩展工具)',
+                    description: def.description + promptText('qq/channel-tools/description'),
                     parameters: def.inputSchema,
                     output: {
                         schema: {
-                            type: 'object', additionalProperties: false,
-                            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                            type: 'object',
+                            additionalProperties: false,
+                            properties: {
+                                ok: { type: 'boolean', required: true },
+                                msg: { type: 'string', required: true }
+                            }
                         },
-                        render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }],
+                        render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : `失败: ${v.msg}` }]
                     },
                     async execute(args, exec) {
                         const sess = findSessionRec(channelOf(exec), exec);
@@ -3083,14 +3419,14 @@ export async function apply(ctx) {
                             //   安全性：与内置工具同等权限（同源于插件自身的 ctx），
                             //   且只对本机文件系统里的 .qqbot-extensions/tools/*.mjs 生效 —— 即"主人自己写的代码"。
                             ctx,
-                            logger: ctx.logger,
+                            logger: ctx.logger
                         };
                         // ★ 2026-10-06 统一能力包（见 features/ext-capabilities.ts）：
                         //   把「发消息 / 官方 API / 持久化 / 上下文 / 身份」这套**成品能力**也交给扩展工具，
                         //   免得作者为了发一张 markdown 还得专门写一个工具（历史上的 send_md.mjs 就是这个）。
                         //   ⚠️ 只补不覆盖：cwd/manager/sender/replyTarget/exec/ctx/logger 保持原样。
                         try {
-                            const mgr = (sess?.ch.manager ?? qqCh?.manager ?? bridgeCh?.manager);
+                            const mgr = sess?.ch.manager ?? qqCh?.manager ?? bridgeCh?.manager;
                             const recAny = sess?.rec;
                             const ga = mgr?.groupAdmin;
                             const caps = makeExtCaps({
@@ -3100,28 +3436,26 @@ export async function apply(ctx) {
                                 appSecret: mgr?.config?.appSecret,
                                 owners: mgr?.config?.owners,
                                 sender: sess?.ch.sender,
-                                replyTarget: (recAny?.replyTarget ?? sess?.rec.replyTarget),
+                                replyTarget: recAny?.replyTarget ?? sess?.rec.replyTarget,
                                 agent: recAny?.agent,
                                 scope: recAny?.scope,
                                 peerId: recAny?.peerId,
                                 actorOpenid: recAny?.senderId,
-                                apiCall: typeof ga?.apiCall === 'function'
-                                    ? ((mm, p, b) => ga.apiCall(mm, p, b))
-                                    : undefined,
+                                apiCall:
+                                    typeof ga?.apiCall === 'function' ? (mm, p, b) => ga.apiCall(mm, p, b) : undefined,
                                 selfName: def.name,
                                 kind: 'tools',
                                 // ★ 内核句柄：把插件的 cordis ctx 原样交给扩展（"遥控器"）
-                                kernel: ctx,
+                                kernel: ctx
                             });
-                            for (const [k, v] of Object.entries(caps))
-                                if (!(k in env))
-                                    env[k] = v;
+                            for (const [k, v] of Object.entries(caps)) if (!(k in env)) env[k] = v;
                             env.caps = caps;
                             // 注：expose:'all' 的工具带 env.qq 的那份在 ensureExtToolsGlobal 里全局注册
                             //     （非 QQ 会话只有继承到那一份才能用），这里不再重复注入。
-                        }
-                        catch (err) {
-                            extDiag(`能力包构造失败(不影响工具本身): ${err instanceof Error ? err.message : String(err)}`);
+                        } catch (err) {
+                            extDiag(
+                                `能力包构造失败(不影响工具本身): ${err instanceof Error ? err.message : String(err)}`
+                            );
                         }
                         try {
                             const r = await def.run(args, env);
@@ -3135,11 +3469,10 @@ export async function apply(ctx) {
                                 return { ok: okFlag, msg: String(text) };
                             }
                             return { ok: true, msg: r === undefined || r === null ? 'done' : String(r) };
-                        }
-                        catch (err) {
+                        } catch (err) {
                             return { ok: false, msg: err instanceof Error ? err.message : String(err) };
                         }
-                    },
+                    }
                 });
                 const dispose = ctx.tools.register(tool);
                 // 收下 disposer —— 下次(热刷/重装配)靠它做同名替换，不然只能重启宿主
@@ -3208,12 +3541,12 @@ export async function askAiToWriteSamples(ns, scope, peerId) {
         }
     })();
     const prompt = [
-        '【样例库维护】主人点了面板上的「让ai写(有聊天记录最好)」, 请你来维护本地小模型的"开口标准"样例库。',
-        `· 样例库(你要写的): ${root}/.qqbot/value-samples.jsonl —— 一行一条 {"m":"群消息文本","y":1} / y=0; 1=你会想接话, 0=你不会理`,
-        `· 评分记录(你来读): ${root}/.qqbot/value-scores.jsonl —— 一行一行 JSON, 字段: text=消息原文, score=本地小模型给的分, worth=是否判值得接, min=本会话门槛, gate=当时生效的模式(block=低分不唤醒/log=只记录不拦), conf=置信度(越接近1越有把握), mention=是否被@, top=最近邻样例, agg=聚合条数`,
-        '做法: ①读评分记录最近 100~200 条(用文件工具) ②挑出标注可疑的 —— 尤其 conf<0.5(地图上没这类样本)、mention=true 却 worth=false(被点名却没打算回)、内容与分数明显不符的',
-        '③对照真人群聊语境, 提炼 20~40 条新样例 ④用文件工具把它们**追加**写入样例库(不要覆盖整库) ⑤回报加了几条、都补了哪类。',
-        '样例写法(一行一条 JSON): {"m":"消息文本","y":1或0} —— y=1 她会想接话(提问/求助/@她/她接得住的梗) / y=0 她不会理(群友互聊/短应答/表情)。',
+        promptText('qq/channel-tools/prompt'),
+        renderPrompt('qq/channel-tools/prompt.2', { p0: root }),
+        renderPrompt('qq/channel-tools/prompt.3', { p0: root }),
+        promptText('qq/channel-tools/prompt.4'),
+        promptText('qq/channel-tools/prompt.5'),
+        promptText('qq/channel-tools/prompt.6')
     ].join('\n');
     return askAiToWriteFakeMsg(ns, scope, peerId, '样例库维护', prompt);
 }
@@ -3238,7 +3571,7 @@ export async function askAiToWriteFakeMsg(ns, scope, peerId, senderName, prompt)
         if (!mgr)
             return { ok: false, msg: '找不到该机器人实例' };
         if (!peerId)
-            return { ok: false, msg: '请先在面板上方选一个群/私聊目标' };
+            return { ok: false, msg: promptText('qq/channel-tools/msg.21') };
         const cfg = mgr.config;
         if (!cfg)
             return { ok: false, msg: '该实例配置未就绪' };
@@ -3311,119 +3644,141 @@ const ctxToolDisposers = new WeakMap();
 /** 三个上下文工具定义（在 apply() 里赋值 —— 那里才拿得到 defineTool 的产物） */
 var contextMemoTool = defineTool({
     name: 'context_memo',
-    description: '查看/追加/修改/删除/清空「你自己的备忘」。备忘存在独立文件里，压缩或丢弃历史时**永远不会被丢**；'
-        + '用来长期留着跨话题需要记住的事（对方偏好、未完成的事、之前聊过什么）。',
+    description:
+        promptText('qq/channel-tools/context_memo.description') +
+        promptText('qq/channel-tools/context_memo.description.2'),
     parameters: {
         action: {
             type: 'string',
             required: true,
             enum: ['list', 'append', 'edit', 'delete', 'clear'],
-            description: 'list=查看全部 / append=追加一条 / edit=改某条 / delete=删某条 / clear=全清',
+            description: promptText('qq/channel-tools/context_memo.description.3')
         },
-        text: { type: 'string', description: 'append/edit 时的内容（要留下的要点）' },
-        id: { type: 'string', description: 'edit/delete 时的条目 id（先 list 拿到）' },
+        text: { type: 'string', description: promptText('qq/channel-tools/context_memo.description.4') },
+        id: { type: 'string', description: promptText('qq/channel-tools/context_memo.description.5') }
     },
     output: {
         schema: {
             type: 'object',
             additionalProperties: true,
-            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
         },
-        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }],
+        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }]
     },
     async execute(args, exec) {
         const r = await resolveCtxMemoEnv(exec);
-        if (!r)
-            return { ok: false, msg: '未找到当前会话，无法读写备忘' };
-        const a = (args ?? {});
+        if (!r) return { ok: false, msg: promptText('qq/channel-tools/msg.2') };
+        const a = args ?? {};
         const action = String(a.action || 'list');
         try {
             if (action === 'list') {
                 const items = listContextMemo(r.dataRoot, r.sessionKey);
                 return {
                     ok: true,
-                    msg: items.length ? items.map((x) => '[' + x.id + '] ' + x.text).join('\n') : '(备忘是空的)',
+                    msg: items.length
+                        ? items.map((x) => '[' + x.id + '] ' + x.text).join('\n')
+                        : promptText('qq/channel-tools/msg.3')
                 };
             }
             if (action === 'append') {
                 const it = appendContextMemo(r.dataRoot, r.sessionKey, String(a.text || ''));
-                return it ? { ok: true, msg: '已追加备忘 [' + it.id + ']' } : { ok: false, msg: 'text 不能为空' };
+                return it
+                    ? { ok: true, msg: promptText('qq/channel-tools/msg.4') + it.id + ']' }
+                    : { ok: false, msg: promptText('qq/channel-tools/msg.5') };
             }
             if (action === 'edit') {
                 const ok = editContextMemo(r.dataRoot, r.sessionKey, String(a.id || ''), String(a.text || ''));
-                return { ok, msg: ok ? '已修改 [' + String(a.id) + ']' : '没找到该 id，或 text 为空' };
+                return {
+                    ok,
+                    msg: ok
+                        ? promptText('qq/channel-tools/msg.6') + String(a.id) + ']'
+                        : promptText('qq/channel-tools/msg.7')
+                };
             }
             if (action === 'delete') {
                 const ok = deleteContextMemo(r.dataRoot, r.sessionKey, String(a.id || ''));
-                return { ok, msg: ok ? '已删除 [' + String(a.id) + ']' : '没找到该 id' };
+                return {
+                    ok,
+                    msg: ok
+                        ? promptText('qq/channel-tools/msg.8') + String(a.id) + ']'
+                        : promptText('qq/channel-tools/msg.9')
+                };
             }
             if (action === 'clear') {
                 const cnt = clearContextMemo(r.dataRoot, r.sessionKey);
-                return { ok: true, msg: '已清空 ' + cnt + ' 条' };
+                return {
+                    ok: true,
+                    msg: promptText('qq/channel-tools/msg.10') + cnt + promptText('qq/channel-tools/msg.11')
+                };
             }
-            return { ok: false, msg: '未知 action' };
-        }
-        catch (e) {
+            return { ok: false, msg: promptText('qq/channel-tools/msg.12') };
+        } catch (e) {
             return { ok: false, msg: String(e?.message ?? e) };
         }
-    },
+    }
 });
 var contextCompactTool = defineTool({
     name: 'context_compact',
-    description: '压缩本会话的上下文：把旧历史压掉、只留最近几条，真正释放 token。'
-        + '本工具只**登记**，会在下一个回合开始时执行（回合内无法直接压）。'
-        + 'note 参数用来写「压缩后仍然需要记住的要点」——它存进你的备忘，压缩碰不到。',
+    description:
+        promptText('qq/channel-tools/context_compact.description') +
+        promptText('qq/channel-tools/context_compact.description.2') +
+        promptText('qq/channel-tools/context_compact.description.3'),
     parameters: {
-        note: { type: 'string', description: '要点：压缩后仍需要记住的信息（会存进备忘）' },
-        keep: { type: 'number', description: '保留最近几条消息（默认 3；0 = 全清）' },
+        note: { type: 'string', description: promptText('qq/channel-tools/context_compact.description.4') },
+        keep: { type: 'number', description: promptText('qq/channel-tools/context_compact.description.5') }
     },
     output: {
         schema: {
             type: 'object',
             additionalProperties: true,
-            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
         },
-        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }],
+        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }]
     },
     async execute(args, exec) {
         const r = await resolveCtxMemoEnv(exec);
-        if (!r)
-            return { ok: false, msg: '未找到当前会话' };
-        const a = (args ?? {});
-        if (a.note)
-            appendContextMemo(r.dataRoot, r.sessionKey, String(a.note));
+        if (!r) return { ok: false, msg: promptText('qq/channel-tools/msg.13') };
+        const a = args ?? {};
+        if (a.note) appendContextMemo(r.dataRoot, r.sessionKey, String(a.note));
         writeContextPending(r.dataRoot, r.sessionKey, { mode: 'compact', keep: Number(a.keep) || 3, at: Date.now() });
-        return { ok: true, msg: '已登记压缩：下一个回合开始时执行'
-                + (a.note ? '（要点已存进你的备忘）' : '（本次没写要点；若压缩后有需要记住的，请带上 note）') };
-    },
+        return {
+            ok: true,
+            msg:
+                promptText('qq/channel-tools/msg.14') +
+                (a.note ? promptText('qq/channel-tools/msg.15') : promptText('qq/channel-tools/msg.16'))
+        };
+    }
 });
 var contextDropTool = defineTool({
     name: 'context_drop',
-    description: '丢弃本会话的历史上下文（只留下你自己写的备忘）。话题彻底结束、不再需要原文时用它。'
-        + '本工具只**登记**，会在下一个回合开始时执行（回合内无法直接压）。'
-        + '调用前请用 note 参数写下要点——它存进你的备忘，丢弃碰不到。',
+    description:
+        promptText('qq/channel-tools/context_drop.description') +
+        promptText('qq/channel-tools/context_drop.description.2') +
+        promptText('qq/channel-tools/context_drop.description.3'),
     parameters: {
-        note: { type: 'string', description: '要点：丢弃后仍需要记住的信息（会存进备忘）' },
+        note: { type: 'string', description: promptText('qq/channel-tools/context_drop.description.4') }
     },
     output: {
         schema: {
             type: 'object',
             additionalProperties: true,
-            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+            properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } }
         },
-        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }],
+        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }]
     },
     async execute(args, exec) {
         const r = await resolveCtxMemoEnv(exec);
-        if (!r)
-            return { ok: false, msg: '未找到当前会话' };
-        const a = (args ?? {});
-        if (a.note)
-            appendContextMemo(r.dataRoot, r.sessionKey, String(a.note));
+        if (!r) return { ok: false, msg: promptText('qq/channel-tools/msg.17') };
+        const a = args ?? {};
+        if (a.note) appendContextMemo(r.dataRoot, r.sessionKey, String(a.note));
         writeContextPending(r.dataRoot, r.sessionKey, { mode: 'drop', keep: 0, at: Date.now() });
-        return { ok: true, msg: '已登记丢弃：下一个回合开始时执行'
-                + (a.note ? '（要点已存进你的备忘）' : '（本次没写要点；丢弃后这些历史就找不回来了，建议带 note）') };
-    },
+        return {
+            ok: true,
+            msg:
+                promptText('qq/channel-tools/msg.18') +
+                (a.note ? promptText('qq/channel-tools/msg.19') : promptText('qq/channel-tools/msg'))
+        };
+    }
 });
 /**
  * QQ 群管理工具 —— 用主人自己的 QQ 号管理「我创建 / 我管理」的群。
@@ -3432,21 +3787,22 @@ var contextDropTool = defineTool({
  */
 var qunAdminTool = defineTool({
     name: 'qq_group_admin',
-    description: '用主人自己的 QQ 号管理群（我创建/我管理的群）：登录、看群列表、查群成员、踢人。'
-        + '登录用 action=login —— 会自动开一个隐藏的浏览器去「点头像授权」，有 QQ 登录态时**免扫码直接登**；'
-        + '若这台机器上还没有 QQ 登录态，它会出一张二维码，你立刻用 send_media 发给主人扫，再调 action=status 等结果（一次最多等 20 秒，没等到再调）。'
-        + '⚠️ 踢人前必须先跟主人确认「哪个群、哪个人」，确认无误后才带 confirmed=true 调用；绝不自己决定踢谁。',
+    description:
+        promptText('qq/channel-tools/qq_group_admin.description') +
+        promptText('qq/channel-tools/qq_group_admin.description.2') +
+        promptText('qq/channel-tools/qq_group_admin.description.3') +
+        promptText('qq/channel-tools/qq_group_admin.description.4'),
     parameters: {
         action: {
             type: 'string',
             required: true,
             enum: ['status', 'login', 'groups', 'members', 'kick'],
-            description: 'status=登录状态/继续等扫码 / login=出二维码 / groups=群列表 / members=查成员 / kick=踢人',
+            description: promptText('qq/channel-tools/qq_group_admin.description.5')
         },
-        group: { type: 'string', description: '群号或群名（members/kick 必填；群名支持模糊匹配）' },
-        keyword: { type: 'string', description: 'members 用：uin（精确查）或昵称片段' },
-        uins: { type: 'string', description: 'kick 用：要踢的 uin，多个用逗号分隔' },
-        confirmed: { type: 'boolean', description: 'kick 用：主人已明确同意踢这些人时才传 true' },
+        group: { type: 'string', description: promptText('qq/channel-tools/qq_group_admin.description.6') },
+        keyword: { type: 'string', description: promptText('qq/channel-tools/qq_group_admin.description.7') },
+        uins: { type: 'string', description: promptText('qq/channel-tools/qq_group_admin.description.8') },
+        confirmed: { type: 'boolean', description: promptText('qq/channel-tools/qq_group_admin.description.9') }
     },
     output: {
         schema: {
@@ -3454,17 +3810,16 @@ var qunAdminTool = defineTool({
             additionalProperties: true,
             properties: {
                 ok: { type: 'boolean', required: true },
-                msg: { type: 'string', required: true },
-            },
+                msg: { type: 'string', required: true }
+            }
         },
-        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }],
+        render: (_a, v) => [{ type: 'text', text: String(v?.msg ?? '') }]
     },
     async execute(args, exec) {
         // 群管理只认数据目录（不要 sessionKey —— pre-step 里它经常是空的）
         const dataRoot = await resolveCtxDataRoot(exec);
-        if (!dataRoot)
-            return { ok: false, msg: '没找到会话的数据目录，无法读写 QQ 登录凭据' };
-        const a = (args ?? {});
+        if (!dataRoot) return { ok: false, msg: '没找到会话的数据目录，无法读写 QQ 登录凭据' };
+        const a = args ?? {};
         const action = String(a.action || 'status');
         try {
             // ── 登录状态 / 继续等扫码 ──
@@ -3474,7 +3829,10 @@ var qunAdminTool = defineTool({
                     const w = await qunBrowserLoginWait(dataRoot, 20000);
                     if (w.cookie) {
                         saveQunCookie(dataRoot, { ...w.cookie, at: Date.now() });
-                        return { ok: true, msg: `登录成功（浏览器头像授权），uin=${w.cookie.uin}。可以直接 groups / members / kick 了。` };
+                        return {
+                            ok: true,
+                            msg: `登录成功（浏览器头像授权），uin=${w.cookie.uin}。可以直接 groups / members / kick 了。`
+                        };
                     }
                     return { ok: w.ok, msg: w.msg };
                 }
@@ -3484,8 +3842,7 @@ var qunAdminTool = defineTool({
                 }
                 if (qunLoginPending(dataRoot)) {
                     const p = await qunLoginPoll(dataRoot, 20000);
-                    if (p.done)
-                        return { ok: true, msg: p.msg };
+                    if (p.done) return { ok: true, msg: p.msg };
                     return { ok: p.ok, msg: p.msg + '（还没确认就再调一次 status；二维码 3 分钟有效）' };
                 }
                 return { ok: false, msg: '还没登录。请调 action=login。' };
@@ -3497,7 +3854,7 @@ var qunAdminTool = defineTool({
                     saveQunCookie(dataRoot, { ...b.cookie, at: Date.now() });
                     return {
                         ok: true,
-                        msg: `免扫码登录成功（静默点头像授权，全程没弹窗口），uin=${b.cookie.uin}。可以直接用 groups / members / kick 了。`,
+                        msg: `免扫码登录成功（静默点头像授权，全程没弹窗口），uin=${b.cookie.uin}。可以直接用 groups / members / kick 了。`
                     };
                 }
                 // ⚠️ 需要人扫码时**不要试图弹浏览器窗口**：实测宿主 spawn 的浏览器窗口根本到不了用户桌面
@@ -3506,22 +3863,27 @@ var qunAdminTool = defineTool({
                 if (b.qrPath) {
                     return {
                         ok: true,
-                        msg: '需要扫一次码。二维码已经生成到本地文件：\n'
-                            + '  ' + b.qrPath + '\n'
-                            + '请在**电脑上打开这张图片**（双击它、或用看图软件），然后用手机 QQ 的「扫一扫」，'
-                            + '**摄像头对着电脑屏幕**扫 —— 腾讯只认摄像头，用相册或长按识别会被拒绝。'
-                            + '扫完调 action=status 等结果。',
+                        msg:
+                            '需要扫一次码。二维码已经生成到本地文件：\n' +
+                            '  ' +
+                            b.qrPath +
+                            '\n' +
+                            promptText('qq/channel-tools/msg.22') +
+                            '**摄像头对着电脑屏幕**扫 —— 腾讯只认摄像头，用相册或长按识别会被拒绝。' +
+                            '扫完调 action=status 等结果。'
                     };
                 }
                 // ③ 浏览器这条路不通（没装/起不来）→ 退回纯网络二维码（也是同一个本地文件路径）
                 const s = await qunLoginStart(dataRoot);
-                if (!s.ok || !s.qrPath)
-                    return { ok: false, msg: '登录失败：' + b.msg + ' ／ ' + s.msg };
+                if (!s.ok || !s.qrPath) return { ok: false, msg: '登录失败：' + b.msg + ' ／ ' + s.msg };
                 return {
                     ok: true,
-                    msg: '（浏览器方式不可用，已改用纯网络二维码）二维码已生成到本地文件：\n'
-                        + '  ' + s.qrPath + '\n'
-                        + '在电脑上打开这张图，用手机 QQ 摄像头对着屏幕扫，然后调 action=status 等结果。',
+                    msg:
+                        '（浏览器方式不可用，已改用纯网络二维码）二维码已生成到本地文件：\n' +
+                        '  ' +
+                        s.qrPath +
+                        '\n' +
+                        '在电脑上打开这张图，用手机 QQ 摄像头对着屏幕扫，然后调 action=status 等结果。'
                 };
             }
             // 以下都要已登录
@@ -3531,55 +3893,65 @@ var qunAdminTool = defineTool({
             // ── 群列表 ──
             if (action === 'groups') {
                 const gs = await qunGroups(dataRoot);
-                if (!gs.length)
-                    return { ok: true, msg: '我名下没有「我创建/我管理」的群。' };
+                if (!gs.length) return { ok: true, msg: '我名下没有「我创建/我管理」的群。' };
                 return {
                     ok: true,
-                    msg: `共 ${gs.length} 个群（群号\t群名\t身份）：\n` + gs.map((g) => `${g.gc}\t${g.gn}\t[${g.role}]`).join('\n'),
+                    msg:
+                        `共 ${gs.length} 个群（群号\t群名\t身份）：\n` +
+                        gs.map((g) => `${g.gc}\t${g.gn}\t[${g.role}]`).join('\n')
                 };
             }
             // ── 查成员 ──
             if (action === 'members') {
                 const res = await qunResolveGc(dataRoot, String(a.group || ''));
-                if (!res.ok)
-                    return { ok: false, msg: res.msg };
+                if (!res.ok) return { ok: false, msg: res.msg };
                 const kw = String(a.keyword || '').trim();
                 const m = await qunMembers(dataRoot, res.gc, kw || undefined);
-                const head = `群 ${res.gc}${res.gn ? '(' + res.gn + ')' : ''} 共 ${m.count ?? '?'} 人`
-                    + (kw ? `，命中 ${m.members.length} 人` : `，本次取回 ${m.members.length} 人`) + (m.note || '') + '：';
+                const head =
+                    `群 ${res.gc}${res.gn ? '(' + res.gn + ')' : ''} 共 ${m.count ?? '?'} 人` +
+                    (kw ? `，命中 ${m.members.length} 人` : `，本次取回 ${m.members.length} 人`) +
+                    (m.note || '') +
+                    '：';
                 const show = m.members.slice(0, 80);
                 const body = show.map((x) => `${x.uin}\t${x.nick}`).join('\n');
-                const tail = m.members.length > show.length ? `\n…（还有 ${m.members.length - show.length} 人，建议加 keyword 精确查）` : '';
+                const tail =
+                    m.members.length > show.length
+                        ? `\n…（还有 ${m.members.length - show.length} 人，建议加 keyword 精确查）`
+                        : '';
                 return { ok: true, msg: m.members.length ? head + '\n' + body + tail : head + '\n(无匹配)' };
             }
             // ── 踢人 ──
             if (action === 'kick') {
-                const list = String(a.uins || '').split(/[,，\s]+/).map((x) => x.trim()).filter(Boolean);
-                if (!list.length)
-                    return { ok: false, msg: '请给要踢的 uin（uins 参数，多个用逗号分隔）' };
+                const list = String(a.uins || '')
+                    .split(/[,，\s]+/)
+                    .map((x) => x.trim())
+                    .filter(Boolean);
+                if (!list.length) return { ok: false, msg: '请给要踢的 uin（uins 参数，多个用逗号分隔）' };
                 if (a.confirmed !== true) {
-                    return { ok: false, msg: `还没确认：准备踢 ${list.join('、')}。请先跟主人核对「群 + 人」，主人明确同意后再带 confirmed=true 调用。` };
+                    return {
+                        ok: false,
+                        msg: `还没确认：准备踢 ${list.join('、')}。请先跟主人核对「群 + 人」，主人明确同意后再带 confirmed=true 调用。`
+                    };
                 }
                 const res = await qunResolveGc(dataRoot, String(a.group || ''));
-                if (!res.ok)
-                    return { ok: false, msg: res.msg };
+                if (!res.ok) return { ok: false, msg: res.msg };
                 const rs = await qunKick(dataRoot, res.gc, list);
                 const okCnt = rs.filter((x) => x.ec === 0).length;
                 return {
                     ok: okCnt > 0,
-                    msg: `群 ${res.gc}${res.gn ? '(' + res.gn + ')' : ''} 踢人结果（成功 ${okCnt}/${rs.length}）：\n`
-                        + rs.map((x) => `${x.uin}\t${x.ec === 0 ? '✅' : '❌'} ${x.msg}`).join('\n'),
+                    msg:
+                        `群 ${res.gc}${res.gn ? '(' + res.gn + ')' : ''} 踢人结果（成功 ${okCnt}/${rs.length}）：\n` +
+                        rs.map((x) => `${x.uin}\t${x.ec === 0 ? '✅' : '❌'} ${x.msg}`).join('\n')
                 };
             }
             return { ok: false, msg: '未知 action：' + action };
-        }
-        catch (e) {
+        } catch (e) {
             const msg = String(e?.message ?? e);
             if (msg.includes('NOT_LOGGED_IN'))
                 return { ok: false, msg: '登录已失效，请重新调 action=login 出二维码。' };
             return { ok: false, msg: '出错：' + msg.slice(0, 200) };
         }
-    },
+    }
 });
 // 模块级直接拿（不依赖 apply —— apply 只在会话首建时跑，agent 重建后不会重跑）
 //   注意：三个工具定义在同文件下方（var 声明，有提升），故这里用取值函数避免 TDZ。
@@ -3827,22 +4199,29 @@ export function ensureExtToolsGlobal(globalCtx) {
                     try {
                         const tool = defineTool({
                             name: full,
-                            description: def.description + ' (用户扩展工具 · ' + inst.tag + ')',
+                            description:
+                                def.description +
+                                promptText('qq/channel-tools/description.2') +
+                                inst.tag +
+                                promptText('qq/channel-tools/description.3'),
                             parameters: def.inputSchema,
                             output: {
                                 schema: {
-                                    type: 'object', additionalProperties: false,
-                                    properties: { ok: { type: 'boolean', required: true }, msg: { type: 'string', required: true } },
+                                    type: 'object',
+                                    additionalProperties: false,
+                                    properties: {
+                                        ok: { type: 'boolean', required: true },
+                                        msg: { type: 'string', required: true }
+                                    }
                                 },
-                                render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : ('失败: ' + v.msg) }],
+                                render: (_a, v) => [{ type: 'text', text: v.ok ? v.msg : '失败: ' + v.msg }]
                             },
                             async execute(args, exec) {
                                 // 账号包：按注册名里的 tag 反查（这就是"名字即归属"）
                                 let pack;
                                 try {
                                     pack = buildWorkspaceQqPack(inst.tag, inst.dataRoot);
-                                }
-                                catch {
+                                } catch {
                                     pack = undefined;
                                 }
                                 const env = {
@@ -3850,7 +4229,7 @@ export function ensureExtToolsGlobal(globalCtx) {
                                     exec,
                                     ctx: globalCtx,
                                     logger: gctx.logger,
-                                    qq: pack,
+                                    qq: pack
                                 };
                                 // 若这一次调用恰好来自 QQ 会话，则会话级上下文优先（sender/replyTarget/manager 用当前会话的）
                                 try {
@@ -3859,22 +4238,21 @@ export function ensureExtToolsGlobal(globalCtx) {
                                         env.manager = sess.ch.manager;
                                         env.sender = sess.ch.sender;
                                         env.replyTarget = sess.rec.replyTarget;
-                                    }
-                                    else if (pack) {
+                                    } else if (pack) {
                                         env.sender = pack.sender;
                                     }
+                                } catch {
+                                    /* ignore */
                                 }
-                                catch { /* ignore */ }
                                 try {
                                     const r = await def.run(args, env);
                                     if (r && typeof r === 'object')
                                         return { ok: r.ok === true, msg: String(r.msg ?? 'done') };
                                     return { ok: true, msg: r === undefined || r === null ? 'done' : String(r) };
-                                }
-                                catch (err) {
+                                } catch (err) {
                                     return { ok: false, msg: err instanceof Error ? err.message : String(err) };
                                 }
-                            },
+                            }
                         });
                         const d = toolsObj.register.call(toolsObj, tool);
                         if (typeof d === 'function')

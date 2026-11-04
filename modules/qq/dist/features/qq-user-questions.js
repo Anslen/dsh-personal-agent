@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { join } from 'node:path';
 import { readGroupMembers } from './chat-ledger.js';
@@ -386,8 +387,8 @@ export class QqUserQuestionsController {
                 answers: parsed.map((q) => ({
                     id: q.qid,
                     selected: [],
-                    custom: '（已发出提问卡片，正在等对方作答；答案稍后会自动送回来，你可以先继续手上的事，不要重复发问）',
-                })),
+                    custom: promptText('qq/features/qq-user-questions/custom')
+                }))
             };
         }
         return answer;
@@ -477,7 +478,7 @@ export class QqUserQuestionsController {
             if (!target)
                 return { ok: false, msg: `没有第 ${want} 个待答提问(当前共 ${items.length} 个)。` };
             if (body === '')
-                return { ok: false, msg: '请在 #N 后面写上你的选择' };
+                return { ok: false, msg: promptText('qq/features/qq-user-questions/msg') };
         }
         else {
             target = items.slice().sort((a, b) => a.index - b.index)[0];

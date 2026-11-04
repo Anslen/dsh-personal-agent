@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * 会话列表.mjs — `/会话列表` 斜杠命令（扩展命令第五套）
  *
@@ -674,83 +675,100 @@ async function advance(ctx, st) {
 }
 
 export default {
-  name: ['会话列表', 'sessionlist', 'sessions'],
-  description: '三步向导（工作区 → 该区会话 → 回灌模式）绑定任意已有会话，并给出可复制的路由模板',
-  usage: '/会话列表',
+    name: ['会话列表', 'sessionlist', 'sessions'],
+    description: promptText('qq/dshqqbot/.qqbot-extensions/commands/session-list/description'),
+    usage: '/会话列表',
 
-  async handler(ctx) {
-    KERNEL = ctx?.caps?.kernel ?? ctx?.kernel ?? KERNEL;
-    CTX_CACHE.sender = ctx?.sender ?? ctx?.caps?.sender ?? CTX_CACHE.sender;
-    CTX_CACHE.replyTarget = ctx?.replyTarget ?? ctx?.caps?.replyTarget ?? CTX_CACHE.replyTarget;
-    try {
-      const caps = ctx?.caps ?? {};
-      const psid = String(caps.peerSessionId ?? '');
-      if (psid) { CTX_CACHE.agentId = psid; CTX_CACHE.sessionId = psid; }
-      if (!CTX_CACHE.sender) CTX_CACHE.sender = ctx?.bot ?? caps.sender ?? null;
-      // ★ 把回调侧要用的一切**推给共享位**（回调可能是另一个模块实例，见文件头 SLOT 注释）
-      publishShared({
-        kernel: KERNEL,
-        sender: CTX_CACHE.sender,
-        replyTarget: CTX_CACHE.replyTarget,
-        parentId: CTX_CACHE.agentId || CTX_CACHE.sessionId || '',
-        dataRoot: dataRootOf(ctx),
-      });
-      void diag(`[handler] kernel=${!!KERNEL} sender=${!!CTX_CACHE.sender} rt=${!!CTX_CACHE.replyTarget} peerSessionId=${psid || '-'}`);
-    } catch { /* ignore */ }
+    async handler(ctx) {
+        KERNEL = ctx?.caps?.kernel ?? ctx?.kernel ?? KERNEL;
+        CTX_CACHE.sender = ctx?.sender ?? ctx?.caps?.sender ?? CTX_CACHE.sender;
+        CTX_CACHE.replyTarget = ctx?.replyTarget ?? ctx?.caps?.replyTarget ?? CTX_CACHE.replyTarget;
+        try {
+            const caps = ctx?.caps ?? {};
+            const psid = String(caps.peerSessionId ?? '');
+            if (psid) {
+                CTX_CACHE.agentId = psid;
+                CTX_CACHE.sessionId = psid;
+            }
+            if (!CTX_CACHE.sender) CTX_CACHE.sender = ctx?.bot ?? caps.sender ?? null;
+            // ★ 把回调侧要用的一切**推给共享位**（回调可能是另一个模块实例，见文件头 SLOT 注释）
+            publishShared({
+                kernel: KERNEL,
+                sender: CTX_CACHE.sender,
+                replyTarget: CTX_CACHE.replyTarget,
+                parentId: CTX_CACHE.agentId || CTX_CACHE.sessionId || '',
+                dataRoot: dataRootOf(ctx)
+            });
+            void diag(
+                `[handler] kernel=${!!KERNEL} sender=${!!CTX_CACHE.sender} rt=${!!CTX_CACHE.replyTarget} peerSessionId=${psid || '-'}`
+            );
+        } catch {
+            /* ignore */
+        }
 
-    const st = {
-      picked: {},
-      stepIdx: 0,
-      step: STEPS[0],
-      page: 0,
-      options: [],
-      cardId: '',
-      error: '',
-      parentId: CTX_CACHE.agentId || CTX_CACHE.sessionId || '',
-      startedAt: Date.now(),
-    };
-    W.set('pending', st);
-    await paint(ctx, st);
-    W.delete('pending');
-    W.set(st.cardId, st);
-    return '';
-  },
+        const st = {
+            picked: {},
+            stepIdx: 0,
+            step: STEPS[0],
+            page: 0,
+            options: [],
+            cardId: '',
+            error: '',
+            parentId: CTX_CACHE.agentId || CTX_CACHE.sessionId || '',
+            startedAt: Date.now()
+        };
+        W.set('pending', st);
+        await paint(ctx, st);
+        W.delete('pending');
+        W.set(st.cardId, st);
+        return '';
+    },
 
-  async onInteraction(ctx, info) {
-    const cardId = cn(info?.cardId);
-    const bid = cn(info?.buttonId);
-    adoptShared(ctx);
-    let st = W.get(cardId);
-    if (!st) {
-      // ★ 命令侧与回调侧可能是**两个模块实例**（各自的 W 是空的）⇒ 回落到磁盘状态
-      st = await loadState(ctx, cardId);
-      if (st) W.set(cardId, st);
+    async onInteraction(ctx, info) {
+        const cardId = cn(info?.cardId);
+        const bid = cn(info?.buttonId);
+        adoptShared(ctx);
+        let st = W.get(cardId);
+        if (!st) {
+            // ★ 命令侧与回调侧可能是**两个模块实例**（各自的 W 是空的）⇒ 回落到磁盘状态
+            st = await loadState(ctx, cardId);
+            if (st) W.set(cardId, st);
+        }
+        void diag(
+            `[onInteraction] card=${cardId} btn=${bid} 命中=${!!st} keys=[${[...W.keys()].join(',')}] kernel=${!!kernelOf(ctx)}`
+        );
+        if (!st) return '这个向导已经过期了，重新发一次 /会话列表 吧～';
+        if (st.startedAt && Date.now() - st.startedAt > MAX_PAGE_MS) {
+            W.delete(cardId);
+            void dropState(ctx, cardId);
+            return '向导放太久了，重新发一次吧～';
+        }
+        st.startedAt = st.startedAt ?? Date.now();
+
+        if (bid === 'cancel') {
+            W.delete(cardId);
+            void dropState(ctx, cardId);
+            return '已取消，没有绑定任何会话。';
+        }
+        if (bid === 'noop') return '';
+        if (bid === 'prev' || bid === 'next') {
+            st.page = Math.max(0, st.page + (bid === 'next' ? 1 : -1));
+            const ok = await paint(ctx, st);
+            W.delete(cardId);
+            W.set(st.cardId, st);
+            void dropState(ctx, cardId);
+            return ok ? `已翻到第 ${st.page + 1} 页 ✅（新卡片在上面）` : `翻页失败（第 ${st.page + 1} 页）`;
+        }
+        if (/^p\d+$/.test(bid)) {
+            const idx = Number(bid.slice(1));
+            const opt = st.options[idx];
+            if (!opt) return '这个选项没了，翻一页再选～';
+            st.picked[st.step] = opt;
+            st.stepIdx += 1;
+            void dropState(ctx, cardId);
+            const done = await advance(ctx, st);
+            return done || '';
+        }
+        return '';
     }
-    void diag(`[onInteraction] card=${cardId} btn=${bid} 命中=${!!st} keys=[${[...W.keys()].join(',')}] kernel=${!!kernelOf(ctx)}`);
-    if (!st) return '这个向导已经过期了，重新发一次 /会话列表 吧～';
-    if (st.startedAt && Date.now() - st.startedAt > MAX_PAGE_MS) { W.delete(cardId); void dropState(ctx, cardId); return '向导放太久了，重新发一次吧～'; }
-    st.startedAt = st.startedAt ?? Date.now();
-
-    if (bid === 'cancel') { W.delete(cardId); void dropState(ctx, cardId); return '已取消，没有绑定任何会话。'; }
-    if (bid === 'noop') return '';
-    if (bid === 'prev' || bid === 'next') {
-      st.page = Math.max(0, st.page + (bid === 'next' ? 1 : -1));
-      const ok = await paint(ctx, st);
-      W.delete(cardId);
-      W.set(st.cardId, st);
-      void dropState(ctx, cardId);
-      return ok ? `已翻到第 ${st.page + 1} 页 ✅（新卡片在上面）` : `翻页失败（第 ${st.page + 1} 页）`;
-    }
-    if (/^p\d+$/.test(bid)) {
-      const idx = Number(bid.slice(1));
-      const opt = st.options[idx];
-      if (!opt) return '这个选项没了，翻一页再选～';
-      st.picked[st.step] = opt;
-      st.stepIdx += 1;
-      void dropState(ctx, cardId);
-      const done = await advance(ctx, st);
-      return done || '';
-    }
-    return '';
-  },
 };

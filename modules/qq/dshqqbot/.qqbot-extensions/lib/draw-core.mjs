@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * draw-core.mjs — 本地文生图（sd-turbo，走常驻 python 微服务）
  *
@@ -324,8 +325,8 @@ export async function translatePrompt(zh, cfg) {
   if (!ZH_RE.test(text)) return { ok: true, prompt: text, translated: false };
 
   const c = cfg || loadConfig();
-  const SYS1 = 'You translate Chinese image requests into ONE short English Stable Diffusion prompt. Output only the prompt: subject, action, style, colors. No quotes, no explanation, no Chinese.';
-  const SYS2 = 'Translate to English keywords for image generation. Reply with English words and commas ONLY. Never output Chinese characters. No labels, no explanation.';
+  const SYS1 = promptText('qq/dshqqbot/.qqbot-extensions/lib/draw-core/SYS1');
+  const SYS2 = promptText('qq/dshqqbot/.qqbot-extensions/lib/draw-core/SYS2');
   try {
     const llm = await import('./local-llm.mjs');
     const lcfg = llm.loadConfig(dataRootOf(c));

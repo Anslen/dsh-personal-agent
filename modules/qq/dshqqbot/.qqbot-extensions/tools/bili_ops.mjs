@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/bili_ops.mjs — B 站账号运营工具
  *
@@ -24,63 +25,121 @@ export const description =
  * 所以这里和 `memory.mjs` 一样用扁平形状；必填项写在字段的 required 上。
  */
 export const inputSchema = {
-  action: {
-    type: 'string',
-    required: true,
-    enum: ['plan', 'draft', 'list', 'show', 'approve', 'reject', 'publish', 'rename', 'comment', 'apologize', 'engage', 'records', 'status'],
-    description: 'plan=生成视频草稿；draft=文稿草稿箱（灵感随手记/改思路/一键转视频任务）；approve=审核通过并自动上传；comment 生成/发送评论；apologize=对指定评论追加道歉并挂动态；engage=拉数据并生成建议回复',
-  },
-  op: { type: 'string', enum: ['save', 'list', 'get', 'del', 'submit'], description: 'draft 子操作：save=存/改（有 draftId=改）、list=列表、get=取全文、del=删、submit=转成视频任务进渲染管线' },
-  draftId: { type: 'string', description: '文稿草稿 id（draft get/del/submit；comment 里是评论草稿 id）' },
-  draftTitle: { type: 'string', description: '文稿草稿标题（draft save，可省略自动取首句）' },
-  draftText: { type: 'string', description: '文稿草稿内容（draft save）：灵感几句话或整篇分镜文案都行' },
-  dubbing: { type: 'string', enum: ['gsv', 'breeze', 'index'], description: '本任务的配音引擎（plan/comments_video 可选）：gsv=快（默认）、breeze=自然较慢、index=情感最足最慢；离线出片推荐 breeze/index' },
-  pullSort: { type: 'string', enum: ['latest', 'hot'], description: '拉评论排序：latest=按时间（默认，利于抢前排）、hot=按热度' },
-  maxAgeHours: { type: 'number', description: '拉评论时间窗（小时）：只看最近 N 小时的评论，0=不限；定向捞新评论抢占前排' },
-  topic: { type: 'string', description: '视频选题（plan）' },
-  scriptJson: {
-    type: 'string',
-    description:
-      '可选：完整脚本 JSON 字符串 {"title","desc","tags":[],"panels":[{"narration","imagePrompt"}]}。'
-      + '⚠️ 一般别传——直传会跳过管线的质量闸（黑话拒稿/自动重写）。只在主人明确给了整份脚本时才传。',
-  },
-  scriptHint: {
-    type: 'string',
-    description:
-      '可选：主人的选题要求/质量红线/结构提示（如「必须讲到的数据」「开头用小事故」）。'
-      + '会原样交给写稿模型当硬约束（不传 scriptJson 时生效，推荐用法：只传 topic + scriptHint，让管线写稿）。',
-  },
-  style: { type: 'string', enum: ['default', 'funny', 'warm', 'sharp'], description: '风格' },
-  panels: { type: 'number', description: '分镜数量 2~12，默认取配置' },
-  seconds: { type: 'number', description: '目标时长（秒）' },
-  orientation: {
-    type: 'string',
-    enum: ['horizontal', 'vertical'],
-    description: '成片方向：vertical=竖屏 1080×1920（B 站/抖音），horizontal=横屏 1280×720（默认）',
-  },
-  jobId: { type: 'string', description: '任务 id（show/approve/reject/publish）' },
-  mode: { type: 'string', enum: ['web', 'manual'], description: 'publish 模式：web=自动投稿，manual=只给成片包' },
-  uname: { type: 'string', description: '新昵称（rename）' },
-  bvid: { type: 'string', description: '稿件 BV 号（comment/engage/comments_video：要读哪条视频的评论）' },
-  intro: { type: 'string', description: 'comments_video 可选：开场白（默认自动）' },
-  outro: { type: 'string', description: 'comments_video 可选：结尾句（默认三连号召）' },
-  message: { type: 'string', description: '指定评论文案（comment，可不填让 AI 写）' },
-  intent: { type: 'string', description: '评论意图/角度（comment）' },
-  tags: { type: 'string', description: 'comments_video 可选：逗号分隔标签，默认「评论区,热评,解说」' },
-  draftId: { type: 'string', description: '评论草稿 id（comment approve）' },
-  rpid: { type: 'string', description: '要道歉的那条评论 rpid（apologize；comments/engage 可查）' },
-  root: { type: 'string', description: 'apologize 可选：楼中楼的根评论 rpid' },
-  reason: { type: 'string', description: '道歉原因（apologize，会写进评论和动态）' },
-  dynamic: { type: 'boolean', description: 'apologize 是否同时挂一条道歉动态（默认 true）' },
-  dynamicText: { type: 'string', description: 'apologize 可选：自定义动态正文' },
-  generate: { type: 'boolean', description: 'comment：只生成草稿不发送' },
-  approve: { type: 'boolean', description: 'comment：发送已审核草稿（需 draftId）' },
-  suggestion: { type: 'string', description: 'comment：给本地模型的修改建议（需 draftId；只改写不发）' },
-  reject: { type: 'boolean', description: 'comment：拒绝并丢弃草稿（需 draftId）' },
-  limit: { type: 'number', description: 'list/records 返回条数' },
-  q: { type: 'string', description: 'records 检索词（整条记录里模糊匹配）' },
-  kind: { type: 'string', description: 'records 过滤类型，如 plan/publish/comment/rename/engage（不要用 type，宿主会把它当 schema 类型）' },
-  since: { type: 'number', description: 'records 起始时间戳（毫秒）' },
+    action: {
+        type: 'string',
+        required: true,
+        enum: [
+            'plan',
+            'draft',
+            'list',
+            'show',
+            'approve',
+            'reject',
+            'publish',
+            'rename',
+            'comment',
+            'apologize',
+            'engage',
+            'records',
+            'status'
+        ],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description')
+    },
+    op: {
+        type: 'string',
+        enum: ['save', 'list', 'get', 'del', 'submit'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.2')
+    },
+    draftId: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.3') },
+    draftTitle: {
+        type: 'string',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.4')
+    },
+    draftText: {
+        type: 'string',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.5')
+    },
+    dubbing: {
+        type: 'string',
+        enum: ['gsv', 'breeze', 'index'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.6')
+    },
+    pullSort: {
+        type: 'string',
+        enum: ['latest', 'hot'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.7')
+    },
+    maxAgeHours: {
+        type: 'number',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.8')
+    },
+    topic: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.9') },
+    scriptJson: {
+        type: 'string',
+        description:
+            promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.10') +
+            promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.11')
+    },
+    scriptHint: {
+        type: 'string',
+        description:
+            promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.12') +
+            promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.13')
+    },
+    style: {
+        type: 'string',
+        enum: ['default', 'funny', 'warm', 'sharp'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.14')
+    },
+    panels: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.15') },
+    seconds: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.16') },
+    orientation: {
+        type: 'string',
+        enum: ['horizontal', 'vertical'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.17')
+    },
+    jobId: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.18') },
+    mode: {
+        type: 'string',
+        enum: ['web', 'manual'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.19')
+    },
+    uname: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.20') },
+    bvid: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.21') },
+    intro: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.22') },
+    outro: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.23') },
+    message: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.24') },
+    intent: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.25') },
+    tags: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.26') },
+    draftId: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.27') },
+    rpid: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.28') },
+    root: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.29') },
+    reason: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.30') },
+    dynamic: {
+        type: 'boolean',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.31')
+    },
+    dynamicText: {
+        type: 'string',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.32')
+    },
+    generate: {
+        type: 'boolean',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.33')
+    },
+    approve: {
+        type: 'boolean',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.34')
+    },
+    suggestion: {
+        type: 'string',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.35')
+    },
+    reject: { type: 'boolean', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.36') },
+    limit: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.37') },
+    q: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.38') },
+    kind: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.39') },
+    since: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.40') }
 };
 
 function rootOf(env) {

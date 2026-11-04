@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/accounts.mjs —— 账号管理（B 站 + 抖音 一个入口）
  *
@@ -135,12 +136,16 @@ export const description =
   'douyin-follows 看关注/互关的人；bili 看 B 站状态/二维码。' +
   '所有写操作都过 pacing（随机 45s~4min、日配额、风控冷却），不做批量刷的行为。';
 export const inputSchema = {
-  action: { type: 'string', required: true, description: 'status | douyin | douyin-cookie | douyin-upload | douyin-like | douyin-follows | bili' },
-  link: { type: 'string', description: 'douyin-like 必填：抖音视频链接（v.douyin.com 短链 / douyin.com/video/<id> / 纯数字 id）' },
-  awemeId: { type: 'string', description: 'douyin-like 可选：直接给视频 ID（给了就不用 link）' },
-  like: { type: 'string', description: 'douyin-like 可选：on（默认）或 off（取消赞）' },
-  cookie: { type: 'string', description: 'douyin-cookie 必填：浏览器里 Cookie 那一整行' },
-  note: { type: 'string', description: 'douyin-cookie 可选：备注' },
-  path: { type: 'string', description: 'douyin-upload 可选：要上传的成片路径（只用于提示）' },
+    action: {
+        type: 'string',
+        required: true,
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description')
+    },
+    link: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description.2') },
+    awemeId: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description.3') },
+    like: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description.4') },
+    cookie: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description.5') },
+    note: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description.6') },
+    path: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/accounts/description.7') }
 };
 export { run };

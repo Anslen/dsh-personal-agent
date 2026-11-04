@@ -1,8 +1,9 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { getScopePeer, sendMarkdownChunked } from '../shared/index.js';
 export function modelCommand({ manager, config }) {
     return {
         name: 'bot-model',
-        description: '查看或切换模型（用法: /bot-model [provider/model]）',
+        description: promptText('qq/commands/model/bot-model.description'),
         handler: async (cmdCtx) => {
             const { scope, peerId } = getScopePeer(cmdCtx);
             const args = (cmdCtx.command?.raw ?? '').trim();
@@ -19,17 +20,15 @@ export function modelCommand({ manager, config }) {
                     const matched = models.find((m) => m.provider === current.provider && m.id === current.model);
                     currentDisplay = matched?.name ?? `${current.provider}/${current.model}`;
                 }
-                const lines = [
-                    '### 🤖 模型配置',
-                    '',
-                    `**当前模型:** ${currentDisplay}`,
-                ];
+                const lines = ['### 🤖 模型配置', '', `**当前模型:** ${currentDisplay}`];
                 if (models.length > 0) {
                     lines.push('', '**可用模型（点击切换）:**');
                     for (const m of models) {
                         const modelPath = `${m.provider}/${m.id}`;
                         const displayName = m.name ? `${m.name}` : modelPath;
-                        lines.push(`<qqbot-cmd-input text="/bot-model ${modelPath}" show="/bot-model ${displayName}"/>`);
+                        lines.push(
+                            `<qqbot-cmd-input text="/bot-model ${modelPath}" show="/bot-model ${displayName}"/>`
+                        );
                     }
                 }
                 lines.push('', '手动指定: `/bot-model provider/model`');
@@ -43,8 +42,7 @@ export function modelCommand({ manager, config }) {
                 const parts = args.split('/');
                 provider = parts[0] ?? '';
                 model = parts.slice(1).join('/');
-            }
-            else {
+            } else {
                 // 仅指定 model 名，provider 从当前路由继承
                 const current = manager.getEffectiveModel(scope, peerId);
                 provider = current?.provider ?? 'deepseek-official';
@@ -55,12 +53,12 @@ export function modelCommand({ manager, config }) {
             }
             await manager.setModelOverride(scope, peerId, { provider, model });
             return `✅ 模型已切换: ${provider}/${model}\n立即生效，对话上下文保留。`;
-        },
+        }
     };
 }
 /** /model 简写别名: 复用 /bot-model 同一 handler */
 export function modelAliasCommand(deps) {
     const base = modelCommand(deps);
-    return { name: 'model', description: '查看或切换模型(简写, 同 /bot-model)', handler: base.handler };
+    return { name: 'model', description: promptText('qq/commands/model/model.description'), handler: base.handler };
 }
 //# sourceMappingURL=model.js.map

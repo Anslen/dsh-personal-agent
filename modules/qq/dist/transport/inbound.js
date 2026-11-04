@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { receive as receiveExternal } from "../../../../src/qq-transport.mjs";
 import { createUserMessage } from "@deepseek-ai/dsh-llm";
 import { createHash } from "node:crypto";
@@ -688,11 +689,11 @@ export async function handleInbound(rawMsg, manager, config, logger, state) {
           const lb = libItem;
           const tg = (lb?.tags ?? []).join("/") || "无";
           const hint =
-            lb?.layer === "library"
-              ? `\n[这张图你已收藏过(标签: ${tg}) —— 不用再收藏]`
-              : lb?.layer === "trash"
-                ? "\n[这张图在回收站里(之前清掉的) —— 想用就还原它]"
-                : "";
+              lb?.layer === 'library'
+                  ? renderPrompt('qq/transport/inbound/hint', { p0: tg })
+                  : lb?.layer === 'trash'
+                    ? promptText('qq/transport/inbound/hint.2')
+                    : '';
           if (hint) {
             agentBody = `${agentBody}${hint}`;
             // ⚠️ 提示是在 message 创建之后追加的 → 必须重建 message, 否则这句进不了上下文(2026-09-13 修)
@@ -1883,9 +1884,7 @@ function buildAgentBody(
   // 聚合投递提示(2026-09-07 主人定): 这些消息是我上一轮回合进行中群友发的, 攒到回合结束
   // 才统一入站 —— 必须显式说明, 否则 AI 会误以为它们是"我回完之后群友接着说的"。
   // ⚠️ 2026-10-07 主人: "系统提示太长了, 浪费 token" → 压缩到一句。
-  const aggregatedNote = aggregated
-    ? "[系统提示] 以下是你思考/输出期间群友发的消息(非对你的回应), 通读后综合回应(如需回应)。\n\n"
-    : "";
+  const aggregatedNote = aggregated ? promptText('qq/transport/inbound/aggregatedNote') : '';
   if (!includeHistory) {
     // 私聊等无历史打包场景: 稳定区 → 聚合提示 → 正文
     return [stableHeader, aggregatedNote + currentBody]
@@ -1914,20 +1913,18 @@ function buildAgentBody(
   // 2026-11-01 主人: 说明性文字精简 —— 一行说清"独立消息+编号"就够
   const historyExplainer = `（群友近况 ${historyLines.length} 条，逐条独立）`;
   return [
-    stableHeader,
-    aggregated
-      ? "[系统提示] 以下是上次回复前群友所发(非对你的回应), 通读后综合回应。"
-      : "",
-    MK.HISTORY_BEGIN,
-    historyExplainer,
-    ...historyLines,
-    "",
-    MK.HISTORY_END,
-    MK.CURRENT,
-    currentBody,
+      stableHeader,
+      aggregated ? promptText('qq/transport/inbound/buildAgentBody') : '',
+      MK.HISTORY_BEGIN,
+      historyExplainer,
+      ...historyLines,
+      '',
+      MK.HISTORY_END,
+      MK.CURRENT,
+      currentBody
   ]
-    .filter(Boolean)
-    .join("\n");
+      .filter(Boolean)
+      .join('\n');
 }
 function extractVoiceTexts(attachments, processed, _logger) {
   const results = [];

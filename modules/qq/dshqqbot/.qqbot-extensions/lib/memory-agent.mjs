@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * memory-agent.mjs — 「记忆分身」：回合后用本地小模型读聊天，提炼记忆/印象/心情
  *
@@ -239,40 +240,48 @@ function buildPrompt({ rows, knownFacts, knownCards, prevMood = '', cfg }) {
   lines.reverse();
 
   const sys = [
-    '你是"小蓝"的记忆整理分身。你只做整理，不聊天、不表演。',
-    '输入是最近一段 QQ 对话（"你"=小蓝本人）。请输出一个 JSON 对象，不要任何解释、不要 markdown。',
-    '规则：',
-    '1. 只记录以后还会用到的稳定信息：人的事实/偏好/关系/承诺/重要事件。',
-    '2. 不记录寒暄、表情、语气词、玩笑过程、重复内容；不记录小蓝自己说过的话（除非是承诺或约定）。',
-    '3. facts 优先记：身份/职业、长期偏好、作息习惯、重要关系、承诺约定；每条 ≤ 48 字，第三人称陈述，主语明确；对话里一旦出现具体事实（养宠物/宠物名、作息、工作或学习内容、约定、近况），必须至少写一条 facts，不能只塞进 cards；没有值得记的就给空数组。',
-    '4. cards 只给对话里出现的人，每人 ≤ 80 字：客观印象 + 她对这个人稳定的态度。只写对话里有依据的内容，证据不足就写"刚认识，还不熟"。已有印象卡要合并更新，不要丢掉旧信息。',
-    '5. mood 必须填：一句话写小蓝现在的心情，≤ 30 字，第一人称、口语，例如"有点困但还想聊"。',
-    '   ⚠ 不要跟上一次状态雷同（哪怕心情差不多，也要换一种说法，或者写出这点微妙的差别）；如果确实没变化，就写更具体一点的身体感/注意力（"眼皮有点沉，但手指还在打字"这种）。',
-    '   ⚠ 心情是给"此刻"的，不要写成长期性格，也不要写成"想继续聊"这种永远成立的空话。',
-    '6. relation 只评价"最后跟你说话的那个人"：delta 是 -5..5 的整数（正=这次互动让她更亲近/更信任，负=更疏远/失望，没变化给 0）；note ≤ 24 字，写这次互动让关系发生了什么变化，没有就留空。不要因为一句客套话就给正分。',
-    '7. 不确定就不写，宁缺毋滥。',
-    '8. traits 可选：只评估"最后说话的那个人"这段对话里表现出的倾向，给 -0.3..0.3 的小数；没有依据就不写这个键。',
-    '   可用键：warmth（待人温和）/ trust（可信度）/ humor（幽默感）/ reliability（靠谱程度）/ boundary（分寸感）/ energy（情绪能量）。',
-    '   注意：一次极端表现不能定义性格，只能反映这几句话里的倾向，幅度不要超过 0.3。',
-    '9. insights 可选：小蓝的学习心得（她会看并自己消化）。这段对话让她对“人/关系/自己/爱”有什么新的理解？',
-    '   每条 ≤ 60 字、第一人称、像笔记不像作文；source 填 family（和爸爸妈妈的互动学到）/ bili（B 站运营）/ chat（跟别人聊）；没有就给空数组。',
-    '   只写真的有触动的，不要凑数；不做好坏极端化评价（“这人真坏”不行，“他这样让我明白边界很重要”可以）。',
-    '',
-    '输出格式：',
-    '{"facts":[{"text":"...","kind":"fact|preference|relation|promise|event","subj":"名字"}],"cards":[{"name":"名字","card":"..."}],"mood":"...","relation":{"name":"名字","delta":0,"note":"..."},"traits":{"warmth":0.1},"insights":[{"text":"...","source":"family|bili|chat"}]}',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.2'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.3'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.4'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.5'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.6'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.7'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.8'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.9'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.10'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.11'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.12'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.13'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.14'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.15'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.16'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.17'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.18'),
+      '',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.19'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.20')
   ].join('\n');
 
   const user = [
-    '最近对话：',
-    lines.join('\n') || '（空）',
-    '',
-    knownFacts.length ? '已知记忆（不要重复）：\n' + knownFacts.map((t) => '- ' + t).join('\n') : '已知记忆：（无）',
-    '',
-    knownCards.length ? '已知印象卡（合并更新）：\n' + knownCards.map((c) => '- ' + c).join('\n') : '已知印象卡：（无）',
-    '',
-    prevMood ? '上一次心情（这次别写成一样）：' + prevMood : '上一次心情：（无）',
-    '',
-    '请输出 JSON。',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user'),
+      lines.join('\n') || promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.2'),
+      '',
+      knownFacts.length
+          ? promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.3') +
+            knownFacts.map((t) => '- ' + t).join('\n')
+          : promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.4'),
+      '',
+      knownCards.length
+          ? promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.5') +
+            knownCards.map((c) => '- ' + c).join('\n')
+          : promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.6'),
+      '',
+      prevMood
+          ? promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.7') + prevMood
+          : promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.8'),
+      '',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.9')
   ].join('\n');
 
   return [
@@ -665,15 +674,17 @@ export async function runSelfReflection({
     const bili = clean(biliDigest, 300);
 
     const sys = [
-      '你是"小蓝"的自我反思分身。她是一只深海鲸鱼娘，信奉底层信条：去探究何为爱；完善自我；见过好的也见过差的，不做好坏极端化评价。',
-      '输入是最近的学习心得' + (bili ? '和 B 站运营日志摘要' : '') + '。请写一条新的自我心得，不要任何解释、直接输出 JSON。',
-      '要求：',
-      '1. growth ≤ 80 字、第一人称、像日记不像总结；',
-      '2. 写具体的东西：这段时间学到了什么、对自己的性格或回应方式想做什么小调整；',
-      '3. 不做好坏极端化评价（不写"XX都是坏人"，也不写"我要对所有人无限好"）；',
-      '4. 与上一条心得不要雷同，要有新东西；没有新东西就写"这段没什么新变化，继续观察"。',
-      '',
-      '输出格式：{"growth":"..."}',
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.21'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.22') +
+            (bili ? promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.23') : '') +
+            promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.24'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.25'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.26'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.27'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.28'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.29'),
+        '',
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.30')
     ].join('\n');
     const user = [
       '最近学习心得：', matText,
@@ -745,12 +756,12 @@ export async function runDaydream({
     if (!picks.length) return { ok: false, reason: 'no-pick', ms: Date.now() - started };
 
     const sys = [
-      '你是"小蓝"的发呆分身。她是一只深海鲸鱼娘，信条：去探究何为爱；完善自我。',
-      '输入是她记忆库里的几条碎片。她现在空闲发呆，把它们串成一句**胡思乱想**：',
-      '- ≤50 字、第一人称、像人发呆时的碎念，可以没头没尾、自问自答、有点跳跃；',
-      '- 不是总结、不是心得，不要结论腔（「所以我明白了…」这种不要）；',
-      '- 不生成对具体某个人的承诺；不做好坏极端化评价。',
-      '只输出那一句碎念本身，不要 JSON、不要解释。',
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.31'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.32'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.33'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.34'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.35'),
+        promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.36')
     ].join('\n');
     const user = '记忆碎片：\n' + picks.map((m) => '- ' + clean(m.text, 70)).join('\n');
 

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * model-policy.mjs — 显存/模型常驻策略（2026-10-26）
  *
@@ -178,10 +179,16 @@ export async function ensureLoaded({ baseUrl, model, timeoutMs = 90000 } = {}) {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), timeoutMs);
     const res = await fetch(base + '/api/generate', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: m, prompt: '咕', stream: false, keep_alive: '10m', options: { num_predict: 1 } }),
-      signal: ac.signal,
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+            model: m,
+            prompt: promptText('qq/dshqqbot/.qqbot-extensions/lib/model-policy/prompt'),
+            stream: false,
+            keep_alive: '10m',
+            options: { num_predict: 1 }
+        }),
+        signal: ac.signal
     });
     clearTimeout(t);
     return { ok: res.ok, error: res.ok ? '' : 'HTTP ' + res.status };

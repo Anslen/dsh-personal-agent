@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * web_fetch.mjs — 工具 `web_fetch`：真的把网页抓下来，转成可读正文
  *
@@ -168,13 +169,22 @@ export async function run(args) {
 }
 
 export default {
-  name: 'web_fetch',
-  expose: 'all',
-  description:
-    '抓取一个网页并返回可读正文（标题 + 正文，默认 4000 字）。用户发来链接、要求"看看这个网页/读一下这个网址/抓一下这个链接"时用它，不要凭空猜网页内容。只支持 http/https 公网地址。',
-  inputSchema: {
-    url: { type: 'string', required: true, description: '要抓取的 http/https 网址' },
-    maxChars: { type: 'integer', description: `最多返回多少字，默认 ${DEFAULT_CHARS}，上限 ${MAX_CHARS}` },
-  },
-  run,
+    name: 'web_fetch',
+    expose: 'all',
+    description: promptText('qq/dshqqbot/.qqbot-extensions/tools/web_fetch/web_fetch.description'),
+    inputSchema: {
+        url: {
+            type: 'string',
+            required: true,
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/web_fetch/web_fetch.description.2')
+        },
+        maxChars: {
+            type: 'integer',
+            description: renderPrompt('qq/dshqqbot/.qqbot-extensions/tools/web_fetch/web_fetch.description.3', {
+                p0: DEFAULT_CHARS,
+                p1: MAX_CHARS
+            })
+        }
+    },
+    run
 };

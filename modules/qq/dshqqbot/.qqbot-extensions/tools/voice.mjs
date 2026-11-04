@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * voice.mjs — 让她"用嘴说话"（主动发语音条）
  *
@@ -66,81 +67,91 @@ async function sendNow(caps, path) {
 }
 
 export default {
-  name: 'voice',
-  description: '发一条语音（真·语音条）。想说出口的、带情绪的短句用它；技术长回答别用。'
-    + 'action=list 看有哪些音色；action=status 看有没有待发的。',
-  inputSchema: {
-    action: { type: 'string', description: 'say(默认，念出来) | list(列音色) | status(待发队列)' },
-    text: { type: 'string', description: 'say 必填：要念的话，≤70 字，别带表情/markdown' },
-    voice: { type: 'string', description: '可选音色 id，默认用配置里的 zh-CN-XiaoyiNeural' },
-  },
+    name: 'voice',
+    description:
+        promptText('qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description') +
+        promptText('qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.2'),
+    inputSchema: {
+        action: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.3')
+        },
+        text: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.4')
+        },
+        voice: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.5')
+        }
+    },
 
-  run: async (args, env) => {
-    const log = env?.logger || console;
-    const root = dataRoot(env);
-    const action = String(args?.action || 'say').trim();
+    run: async (args, env) => {
+        const log = env?.logger || console;
+        const root = dataRoot(env);
+        const action = String(args?.action || 'say').trim();
 
-    try {
-      if (action === 'list') {
-        return { ok: true, voices: listVoices() };
-      }
-      if (action === 'status') {
-        const items = pending(root);
-        return { ok: true, count: items.length, items: items.map((i) => i.text) };
-      }
+        try {
+            if (action === 'list') {
+                return { ok: true, voices: listVoices() };
+            }
+            if (action === 'status') {
+                const items = pending(root);
+                return { ok: true, count: items.length, items: items.map((i) => i.text) };
+            }
 
-      const text = String(args?.text || '').trim();
-      if (!text) return { ok: false, msg: 'text 不能为空' };
-      if (text.length > 120) return { ok: false, msg: `太长（${text.length} 字）—— 语音只念短句，压到 70 字内` };
+            const text = String(args?.text || '').trim();
+            if (!text) return { ok: false, msg: 'text 不能为空' };
+            if (text.length > 120) return { ok: false, msg: `太长（${text.length} 字）—— 语音只念短句，压到 70 字内` };
 
-      const cfg = voiceCfg(root);
-      const useVoice = String(args?.voice || cfg.voice);
-      const r = await synthesize(text, {
-        dataRoot: root,
-        voice: useVoice,
-        rate: cfg.rate,
-        pitch: cfg.pitch,
-        timeoutMs: cfg.timeoutMs,
-        // 本地模型接线（2026-10-25）：voice-config.json 里写 provider/endpoint 就能切后端。
-        // 原来这里只透传 dataRoot/voice/rate/pitch，provider 永远是默认 edge —— 改配置等于没改。
-        provider: cfg.provider,
-        endpoint: cfg.endpoint,
-        model: cfg.model,
-        vramSoft: cfg.vramSoft === true || cfg.vramSoft === 'true',
-        // [qqbot-mod] wsl-index 2026-10-29：主人专属开关（默认关闭）。开着时本地档直连
-        // WSL 的 IndexTTS2 且只许 index、绝不降级；别人不开这个开关完全不受影响。
-        wslIndex: cfg.wslIndex || null,
-        apiKey: cfg.apiKey,
-        speed: cfg.speed,
-      });
-      if (!r.ok) return { ok: false, msg: `合成失败：${r.error}` };
+            const cfg = voiceCfg(root);
+            const useVoice = String(args?.voice || cfg.voice);
+            const r = await synthesize(text, {
+                dataRoot: root,
+                voice: useVoice,
+                rate: cfg.rate,
+                pitch: cfg.pitch,
+                timeoutMs: cfg.timeoutMs,
+                // 本地模型接线（2026-10-25）：voice-config.json 里写 provider/endpoint 就能切后端。
+                // 原来这里只透传 dataRoot/voice/rate/pitch，provider 永远是默认 edge —— 改配置等于没改。
+                provider: cfg.provider,
+                endpoint: cfg.endpoint,
+                model: cfg.model,
+                vramSoft: cfg.vramSoft === true || cfg.vramSoft === 'true',
+                // [qqbot-mod] wsl-index 2026-10-29：主人专属开关（默认关闭）。开着时本地档直连
+                // WSL 的 IndexTTS2 且只许 index、绝不降级；别人不开这个开关完全不受影响。
+                wslIndex: cfg.wslIndex || null,
+                apiKey: cfg.apiKey,
+                speed: cfg.speed
+            });
+            if (!r.ok) return { ok: false, msg: `合成失败：${r.error}` };
 
-      const kb = (r.bytes / 1024).toFixed(0);
+            const kb = (r.bytes / 1024).toFixed(0);
 
-      // ① 当场直发（首选）
-      const direct = await sendNow(env?.caps, r.path);
-      if (direct.sent) {
-        log?.info?.(`[voice] 已直发 ${r.bytes}B (${direct.why}): ${text.slice(0, 20)}`);
-        return {
-          ok: true,
-          msg: `语音已发出（${kb}KB，${direct.why}）—— 别再说"我发了"，正常往下聊就行`,
-          voice: useVoice,
-          direct: true,
-        };
-      }
+            // ① 当场直发（首选）
+            const direct = await sendNow(env?.caps, r.path);
+            if (direct.sent) {
+                log?.info?.(`[voice] 已直发 ${r.bytes}B (${direct.why}): ${text.slice(0, 20)}`);
+                return {
+                    ok: true,
+                    msg: `语音已发出（${kb}KB，${direct.why}）—— 别再说"我发了"，正常往下聊就行`,
+                    voice: useVoice,
+                    direct: true
+                };
+            }
 
-      // ② 退回发件箱兜底
-      const q = enqueue(root, { path: r.path, text, voice: useVoice, bytes: r.bytes });
-      if (!q.ok) return { ok: false, msg: `语音发不出去（直发失败：${direct.why}；排队也失败：${q.msg}）` };
-      log?.warn?.(`[voice] 直发失败(${direct.why}) → 已排发件箱: ${text.slice(0, 20)}`);
-      return {
-        ok: true,
-        msg: `语音合成好了（${kb}KB），直发没成功（${direct.why}），已排进发件箱等下一跳补发`,
-        voice: useVoice,
-        direct: false,
-      };
-    } catch (e) {
-      return { ok: false, msg: `语音工具异常：${e instanceof Error ? e.message : String(e)}` };
+            // ② 退回发件箱兜底
+            const q = enqueue(root, { path: r.path, text, voice: useVoice, bytes: r.bytes });
+            if (!q.ok) return { ok: false, msg: `语音发不出去（直发失败：${direct.why}；排队也失败：${q.msg}）` };
+            log?.warn?.(`[voice] 直发失败(${direct.why}) → 已排发件箱: ${text.slice(0, 20)}`);
+            return {
+                ok: true,
+                msg: `语音合成好了（${kb}KB），直发没成功（${direct.why}），已排进发件箱等下一跳补发`,
+                voice: useVoice,
+                direct: false
+            };
+        } catch (e) {
+            return { ok: false, msg: `语音工具异常：${e instanceof Error ? e.message : String(e)}` };
+        }
     }
-  },
 };

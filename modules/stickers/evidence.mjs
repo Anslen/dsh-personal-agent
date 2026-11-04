@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../prompts/index.mjs";
 import { resolve } from "node:path";
 
 // 发送前核对当前会话的真实工具记录，布尔参数不能代替看图记录。
@@ -34,5 +35,5 @@ export function assertViewed(events, preview, now = Date.now(), id) {
       ),
     )
   )
-    throw new Error("请先调用sticker_view查看所选图片，再发送");
+    throw new Error(promptText("stickers/evidence/assertViewed"));
 }

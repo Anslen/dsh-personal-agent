@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { getScopePeer } from '../shared/index.js';
 /** 中文/简写 → 宿主档名映射(主人 2026-09-08: 懒得打长英文) */
 const ALIAS = {
@@ -14,7 +15,7 @@ const LABEL = {
 export function permissionCommand({ manager }) {
     return {
         name: ['permission', 'perm', '权限'],
-        description: '切换权限档: /perm [只读|工作区|全权] 查看/切换',
+        description: promptText('qq/commands/permission/description'),
         usage: '/perm [只读|工作区|全权|档名]',
         handler: async (cmdCtx) => {
             const { scope, peerId } = getScopePeer(cmdCtx);
@@ -22,14 +23,23 @@ export function permissionCommand({ manager }) {
             const list = await manager.listPermissionPresets();
             const cur = manager.currentPermissionPreset(scope, peerId);
             if (!rawArgs) {
-                if (list.length === 0)
-                    return '宿主未提供 permissionPresets 服务(需装配 dsh-permission-presets)';
+                if (list.length === 0) return '宿主未提供 permissionPresets 服务(需装配 dsh-permission-presets)';
                 const curText = cur
-                    ? (LABEL[cur] ? `${cur}(${LABEL[cur]})` : cur)
+                    ? LABEL[cur]
+                        ? `${cur}(${LABEL[cur]})`
+                        : cur
                     : '(会话尚无权限档记录 = 走宿主默认, 直接 /perm 切一个即可生效)';
-                const lines = ['### 🔐 权限档', '', `**当前: ${curText}**`, '', '发 `/perm 只读|工作区|全权` 或 `/perm 档名` 切换:'];
+                const lines = [
+                    '### 🔐 权限档',
+                    '',
+                    `**当前: ${curText}**`,
+                    '',
+                    '发 `/perm 只读|工作区|全权` 或 `/perm 档名` 切换:'
+                ];
                 for (const p of list) {
-                    lines.push(`- **${p.value}**${LABEL[p.value] ? `(${LABEL[p.value]})` : (p.name && p.name !== p.value ? `(${p.name})` : '')}${p.description ? ` — ${p.description}` : ''}`);
+                    lines.push(
+                        `- **${p.value}**${LABEL[p.value] ? `(${LABEL[p.value]})` : p.name && p.name !== p.value ? `(${p.name})` : ''}${p.description ? ` — ${p.description}` : ''}`
+                    );
                 }
                 return lines.join('\n');
             }
@@ -37,7 +47,7 @@ export function permissionCommand({ manager }) {
             const mapped = ALIAS[rawArgs] ?? ALIAS[rawArgs.toLowerCase()] ?? rawArgs;
             const r = await manager.switchPermissionPreset(scope, peerId, mapped);
             return r.msg;
-        },
+        }
     };
 }
 //# sourceMappingURL=permission.js.map

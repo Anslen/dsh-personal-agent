@@ -1,14 +1,14 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { getScopePeer, formatRelativeTime } from '../shared/index.js';
 /** /bot-status — 查看当前会话状态 */
 export function statusCommand({ manager }) {
     return {
         name: 'bot-status',
-        description: '查看当前会话状态',
+        description: promptText('qq/commands/status/bot-status.description'),
         handler: (cmdCtx) => {
             const { scope, peerId } = getScopePeer(cmdCtx);
             const status = manager.getStatus(scope, peerId);
-            if (!status.active)
-                return '当前无活跃会话';
+            if (!status.active) return '当前无活跃会话';
             const modelInfo = status.model ? `${status.provider}/${status.model}` : '宿主默认';
             return [
                 '📊 会话状态',
@@ -16,9 +16,9 @@ export function statusCommand({ manager }) {
                 `模型: ${modelInfo}`,
                 `Preset: ${status.preset ?? '无'}`,
                 `消息数: ${status.messageCount ?? 0}`,
-                `最后活动: ${formatRelativeTime(status.lastActivity)}`,
+                `最后活动: ${formatRelativeTime(status.lastActivity)}`
             ].join('\n');
-        },
+        }
     };
 }
 //# sourceMappingURL=status.js.map

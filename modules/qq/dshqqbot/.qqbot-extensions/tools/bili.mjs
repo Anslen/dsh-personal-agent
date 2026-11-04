@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/bili.mjs — B 站工具（扫码登录 / 读动态收藏 / 看视频评论 / 发评论 / 存表情）
  *
@@ -211,14 +212,16 @@ async function run(args = {}, env = {}) {
       pngOk = true;
     } catch { /* 本地渲染失败就不发图，绝不外联 */ }
     return {
-      ok: true,
-      msg: lines([
-        'B 站扫码登录已生成，二维码 3 分钟内有效。',
-        ...(pngOk ? [`请把这张图发给主人：[MEDIA:image|${qrPath.replace(/\\/g, '/')}]`] : ['二维码本地渲染失败，请把下面的登录链接直接发给主人扫码。']),
-        '扫完后调用 action=login_poll 查结果。',
-        `（备用登录链接：${q.url}）`,
-        '⚠️ 二维码里含一次性的登录票据，只发给主人本人，不要发群。',
-      ]),
+        ok: true,
+        msg: lines([
+            'B 站扫码登录已生成，二维码 3 分钟内有效。',
+            ...(pngOk
+                ? [`请把这张图发给主人：[MEDIA:image|${qrPath.replace(/\\/g, '/')}]`]
+                : ['二维码本地渲染失败，请把下面的登录链接直接发给主人扫码。']),
+            '扫完后调用 action=login_poll 查结果。',
+            `（备用登录链接：${q.url}）`,
+            promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/msg')
+        ])
     };
   }
 
@@ -627,30 +630,88 @@ async function run(args = {}, env = {}) {
 }
 
 export default {
-  name: 'bili',
-  expose: 'all',
-  description: 'B 站：扫码登录、看我的动态/收藏、读视频与评论、发评论（有每日上限，可 root/parent 回复某条；**发完会回读评论区确认 rpid 可见才报成功**，没公开会照实说）、last（查最近记住的那个视频）、发/删纯文字动态、把视频发成一条「链接+封面」卡片（share，可留档）、把配图存进表情包库。视频可以给 bvid/link，不给就自动用最近分享过的那个。只在主人 @ 或设定时间使用；登录失效会留汇报标记。',
-  inputSchema: {
-    action: { type: 'string', required: true, description: 'status | login_start | login_poll | dynamics | favorites | fav_items | video | comments | comment | last | post | remove | share | collect | like | like-comment' },
-    bvid: { type: 'string', description: 'video/comments/comment/share 可选：BV 号（不给就用 link 参数，或用最近记住的那个视频）' },
-    link: { type: 'string', description: 'video/comments/comment/share 可选：视频链接（b23.tv 短链 / 完整 URL / av 号都行）' },
-    root: { type: 'string', description: 'comment 可选：回复某条评论时的顶层评论 rpid' },
-    parent: { type: 'string', description: 'comment 可选：回复某条回复时的被回复 rpid（回复顶层评论可省略，默认等于 root）' },
-    mediaId: { type: 'string', description: 'fav_items 必填：收藏夹 id（favorites 可查）' },
-    message: { type: 'string', description: 'comment 必填：评论内容（≤1000 字，像真人，不发广告/引战）' },
-    text: { type: 'string', description: 'post 必填：动态正文（≤2000 字）' },
-    dynamicId: { type: 'string', description: 'remove 必填：要删的动态 id（post 会返回）' },
-    aid: { type: 'string', description: 'like / like-comment 可选：视频 aid（不给就用 bvid/link/最近记住那条）' },
-    rpid: { type: 'string', description: 'like-comment 必填：要赞的那条评论的 rpid' },
-    like: { type: 'string', description: 'like / like-comment 可选：on（默认）或 off（取消赞）' },
-    wait: { type: 'boolean', description: 'like 可选：true 时按 45s~4min 的真人节奏先等一会儿再点（默认只抖 1.5~6s）' },
-    shareCard: { type: 'boolean', description: 'comment 可选：评论成功后顺手把视频发成一条卡片（失败也留档）' },
-    urls: { type: 'array', description: 'collect 必填：图片直链数组（≤10 张）' },
-    limit: { type: 'integer', description: 'dynamics/favorites/fav_items/comments 的条数，默认 5~10' },
-    sort: { type: 'string', description: 'comments 可选：latest（默认）/ hot' },
-    verifyMs: { type: 'integer', description: 'comment 可选：发完回读校验等多久（毫秒，默认 15000）' },
-    collect: { type: 'boolean', description: 'dynamics 可选：顺手把动态配图存进表情包候选区' },
-    key: { type: 'string', description: 'login_poll 可选：二维码 key（默认读本地）' },
-  },
-  run,
+    name: 'bili',
+    expose: 'all',
+    description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description'),
+    inputSchema: {
+        action: {
+            type: 'string',
+            required: true,
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.2')
+        },
+        bvid: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.3')
+        },
+        link: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.4')
+        },
+        root: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.5')
+        },
+        parent: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.6')
+        },
+        mediaId: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.7')
+        },
+        message: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.8')
+        },
+        text: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.9')
+        },
+        dynamicId: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.10')
+        },
+        aid: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.11')
+        },
+        rpid: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.12')
+        },
+        like: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.13')
+        },
+        wait: {
+            type: 'boolean',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.14')
+        },
+        shareCard: {
+            type: 'boolean',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.15')
+        },
+        urls: {
+            type: 'array',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.16')
+        },
+        limit: {
+            type: 'integer',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.17')
+        },
+        sort: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.18')
+        },
+        verifyMs: {
+            type: 'integer',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.19')
+        },
+        collect: {
+            type: 'boolean',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.20')
+        },
+        key: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.21') }
+    },
+    run
 };

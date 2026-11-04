@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * /子会话 — 创建子会话的「问答式向导」（2026-10-13）
  *
@@ -522,88 +523,112 @@ async function parseArgs(ctx, tokens) {
 }
 
 export default {
-  name: ['子会话', 'subsession'],
-  description: '创建子会话（会话名之外参数顺序随意；没给全的会依次发卡片让你点选）',
-  usage: '/子会话 <会话名> [人设] [工作区] [模型] [推理等级] [回灌模式]',
+    name: ['子会话', 'subsession'],
+    description: promptText('qq/dshqqbot/.qqbot-extensions/commands/sub-session/description'),
+    usage: '/子会话 <会话名> [人设] [工作区] [模型] [推理等级] [回灌模式]',
 
-  async handler(ctx) {
-    const raw = cn(ctx?.command?.raw);
-    // ★ 把 handler 侧那个「能取到服务的 kernel」缓存下来（建会话发生在回调里，那边取不到）
-    KERNEL = ctx?.caps?.kernel ?? ctx?.kernel ?? KERNEL;
-    // 顺手缓存回灌钩子要用的三件套（回调侧全都没有）
-    CTX_CACHE.sender = ctx?.sender ?? ctx?.caps?.sender ?? CTX_CACHE.sender;
-    CTX_CACHE.replyTarget = ctx?.replyTarget ?? ctx?.caps?.replyTarget ?? CTX_CACHE.replyTarget;
-    try {
-      const st = ctx?.state ?? {};
-      const bs = ctx?.bot ?? {};
-      const cand = st.agentId ?? st.sessionId ?? st.agent?.id ?? bs.agentId ?? bs.sessionId ?? '';
-      if (cand) { CTX_CACHE.agentId = String(cand); CTX_CACHE.sessionId = String(st.sessionId ?? cand); }
-    } catch { /* ignore */ }
-    // ★★ 正解（读插件 middleware-setup.ts:357-369 得出）：
-    //   命令能力包里 `caps.agent` = **manager.findByPeer(scope, peerId).agent** ⇒ 就是"本会话的 agent"；
-    //   `caps.sender` 那颗其实来自 `ctx.bot`。这两样正是回灌钩子要的「父会话 id + 发送器」。
-    let capInfo = '-';
-    try {
-      const caps = ctx?.caps ?? {};
-      // ★★ 正解（2026-10-13 改插件后新增）：`caps.peerSessionId`
-      //    = manager.sessionIdFor(scope, peerId) = `session/event` 里那个 `session.id`
-      //    —— **回灌钩子比的就是它**（不是 agent.id；那个一直拿不到、拿到也不是同一个 id）。
-      const psid = String(caps.peerSessionId ?? '');
-      if (psid) { CTX_CACHE.agentId = psid; CTX_CACHE.sessionId = psid; }
-      if (!CTX_CACHE.sender) CTX_CACHE.sender = ctx?.bot ?? caps.sender ?? null;
-      capInfo = `peerSessionId=${psid || '-'} agentId=${String(caps.agent?.id ?? '-')}`;
-    } catch (e) { capInfo = 'err=' + String(e?.message ?? e).slice(0, 60); }
-    void diag(`[handler] kernel=${!!KERNEL} sender=${!!CTX_CACHE.sender} replyTarget=${!!CTX_CACHE.replyTarget} agentId=${CTX_CACHE.agentId || '-'} ${capInfo}`);
-    if (!raw) return '用法：/子会话 <要说的话> [人设] [工作区] [模型] [推理等级] [回灌模式]\n例：/子会话 帮我看看这个报错 温柔鲸鱼娘 鲸鱼娘 一档';
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    const picked = await parseArgs(ctx, tokens);
-    const prompt = String(picked.__prompt ?? '').trim();
-    if (!prompt) return '要告诉子会话什么呀？用法：/子会话 <要说的话> [人设] [工作区] [模型] [推理等级] [回灌模式]';
+    async handler(ctx) {
+        const raw = cn(ctx?.command?.raw);
+        // ★ 把 handler 侧那个「能取到服务的 kernel」缓存下来（建会话发生在回调里，那边取不到）
+        KERNEL = ctx?.caps?.kernel ?? ctx?.kernel ?? KERNEL;
+        // 顺手缓存回灌钩子要用的三件套（回调侧全都没有）
+        CTX_CACHE.sender = ctx?.sender ?? ctx?.caps?.sender ?? CTX_CACHE.sender;
+        CTX_CACHE.replyTarget = ctx?.replyTarget ?? ctx?.caps?.replyTarget ?? CTX_CACHE.replyTarget;
+        try {
+            const st = ctx?.state ?? {};
+            const bs = ctx?.bot ?? {};
+            const cand = st.agentId ?? st.sessionId ?? st.agent?.id ?? bs.agentId ?? bs.sessionId ?? '';
+            if (cand) {
+                CTX_CACHE.agentId = String(cand);
+                CTX_CACHE.sessionId = String(st.sessionId ?? cand);
+            }
+        } catch {
+            /* ignore */
+        }
+        // ★★ 正解（读插件 middleware-setup.ts:357-369 得出）：
+        //   命令能力包里 `caps.agent` = **manager.findByPeer(scope, peerId).agent** ⇒ 就是"本会话的 agent"；
+        //   `caps.sender` 那颗其实来自 `ctx.bot`。这两样正是回灌钩子要的「父会话 id + 发送器」。
+        let capInfo = '-';
+        try {
+            const caps = ctx?.caps ?? {};
+            // ★★ 正解（2026-10-13 改插件后新增）：`caps.peerSessionId`
+            //    = manager.sessionIdFor(scope, peerId) = `session/event` 里那个 `session.id`
+            //    —— **回灌钩子比的就是它**（不是 agent.id；那个一直拿不到、拿到也不是同一个 id）。
+            const psid = String(caps.peerSessionId ?? '');
+            if (psid) {
+                CTX_CACHE.agentId = psid;
+                CTX_CACHE.sessionId = psid;
+            }
+            if (!CTX_CACHE.sender) CTX_CACHE.sender = ctx?.bot ?? caps.sender ?? null;
+            capInfo = `peerSessionId=${psid || '-'} agentId=${String(caps.agent?.id ?? '-')}`;
+        } catch (e) {
+            capInfo = 'err=' + String(e?.message ?? e).slice(0, 60);
+        }
+        void diag(
+            `[handler] kernel=${!!KERNEL} sender=${!!CTX_CACHE.sender} replyTarget=${!!CTX_CACHE.replyTarget} agentId=${CTX_CACHE.agentId || '-'} ${capInfo}`
+        );
+        if (!raw)
+            return '用法：/子会话 <要说的话> [人设] [工作区] [模型] [推理等级] [回灌模式]\n例：/子会话 帮我看看这个报错 温柔鲸鱼娘 鲸鱼娘 一档';
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        const picked = await parseArgs(ctx, tokens);
+        const prompt = String(picked.__prompt ?? '').trim();
+        if (!prompt) return '要告诉子会话什么呀？用法：/子会话 <要说的话> [人设] [工作区] [模型] [推理等级] [回灌模式]';
 
-    const st = { prompt, picked, stepIdx: 0, step: STEPS[0], page: 0, options: [], cardId: '', error: '' };
-    // 已有值就跳过对应步骤
-    while (st.stepIdx < STEPS.length && st.picked[STEPS[st.stepIdx]]) st.stepIdx += 1;
+        const st = { prompt, picked, stepIdx: 0, step: STEPS[0], page: 0, options: [], cardId: '', error: '' };
+        // 已有值就跳过对应步骤
+        while (st.stepIdx < STEPS.length && st.picked[STEPS[st.stepIdx]]) st.stepIdx += 1;
 
-    if (st.stepIdx >= STEPS.length) {
-      return await createNow(ctx, st);         // 参数齐了，直接建
+        if (st.stepIdx >= STEPS.length) {
+            return await createNow(ctx, st); // 参数齐了，直接建
+        }
+        st.step = STEPS[st.stepIdx];
+        W.set('pending', st); // 先占位，paint 后 cardId 才有值
+        await paint(ctx, st);
+        W.delete('pending');
+        W.set(st.cardId, st);
+        return ''; // 卡已经发了，不再回文本
+    },
+
+    async onInteraction(ctx, info) {
+        const cardId = cn(info?.cardId);
+        const bid = cn(info?.buttonId);
+        const st = W.get(cardId);
+        void diag(
+            `[onInteraction] card=${cardId} btn=${bid} 状态表命中=${!!st} 表内keys=[${[...W.keys()].join(',')}] hasApi=${typeof ctx?.caps?.api === 'function'}`
+        );
+        if (!st) return '这个向导已经过期了，重新发一次 /子会话 吧～';
+        if (st.startedAt && Date.now() - st.startedAt > MAX_PAGE_MS) {
+            W.delete(cardId);
+            return '向导放太久了，重新发一次吧～';
+        }
+        st.startedAt = st.startedAt ?? Date.now();
+
+        if (bid === 'cancel') {
+            W.delete(cardId);
+            return '已取消，子会话没有创建。';
+        }
+        if (bid === 'skip') {
+            st.stepIdx += 1;
+            return (await advance(ctx, st)) || '好，跳过这一项。';
+        }
+        if (bid === 'prev' || bid === 'next') {
+            st.page = Math.max(0, st.page + (bid === 'next' ? 1 : -1));
+            const ok = await paint(ctx, st);
+            W.delete(cardId);
+            W.set(st.cardId, st);
+            return ok
+                ? `已翻到第 ${st.page + 1} 页 ✅（新卡片在上面）`
+                : `翻页失败：新卡片没发出去（第 ${st.page + 1} 页）—— 可能是拿不到群号或接口报错`;
+        }
+        if (/^p\d+$/.test(bid)) {
+            const idx = Number(bid.slice(1));
+            const opt = st.options[idx];
+            if (!opt) return '这个选项没了，翻一页再选～';
+            st.picked[st.step] = opt;
+            st.stepIdx += 1;
+            const done = await advance(ctx, st);
+            return done || '';
+        }
+        return '';
     }
-    st.step = STEPS[st.stepIdx];
-    W.set('pending', st);                      // 先占位，paint 后 cardId 才有值
-    await paint(ctx, st);
-    W.delete('pending');
-    W.set(st.cardId, st);
-    return '';                                  // 卡已经发了，不再回文本
-  },
-
-  async onInteraction(ctx, info) {
-    const cardId = cn(info?.cardId);
-    const bid = cn(info?.buttonId);
-    const st = W.get(cardId);
-    void diag(`[onInteraction] card=${cardId} btn=${bid} 状态表命中=${!!st} 表内keys=[${[...W.keys()].join(',')}] hasApi=${typeof ctx?.caps?.api === 'function'}`);
-    if (!st) return '这个向导已经过期了，重新发一次 /子会话 吧～';
-    if (st.startedAt && Date.now() - st.startedAt > MAX_PAGE_MS) { W.delete(cardId); return '向导放太久了，重新发一次吧～'; }
-    st.startedAt = st.startedAt ?? Date.now();
-
-    if (bid === 'cancel') { W.delete(cardId); return '已取消，子会话没有创建。'; }
-    if (bid === 'skip') { st.stepIdx += 1; return await advance(ctx, st) || '好，跳过这一项。'; }
-    if (bid === 'prev' || bid === 'next') {
-      st.page = Math.max(0, st.page + (bid === 'next' ? 1 : -1));
-      const ok = await paint(ctx, st);
-      W.delete(cardId);
-      W.set(st.cardId, st);
-      return ok
-        ? `已翻到第 ${st.page + 1} 页 ✅（新卡片在上面）`
-        : `翻页失败：新卡片没发出去（第 ${st.page + 1} 页）—— 可能是拿不到群号或接口报错`;
-    }
-    if (/^p\d+$/.test(bid)) {
-      const idx = Number(bid.slice(1));
-      const opt = st.options[idx];
-      if (!opt) return '这个选项没了，翻一页再选～';
-      st.picked[st.step] = opt;
-      st.stepIdx += 1;
-      const done = await advance(ctx, st);
-      return done || '';
-    }
-    return '';
-  },
 };

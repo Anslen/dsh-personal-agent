@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../prompts/index.mjs";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -25,7 +26,10 @@ const sourcesSchema = z.object({ pages: z.array(z.string().url()).max(8) });
 export async function discover(role, query, round = 1) {
   const result = sourcesSchema.parse(
     await modelTask(
-      `这是第${round}轮搜索。继续围绕原需求寻找新素材；后续轮次请更换关键词表达、角色别名和来源站点。必须实际调用 web_search 搜索以下关键词，并从真实搜索结果中选择最多4个相关素材网页。需要聊天表情、角色表情或贴纸。不要猜URL，不要只返回搜索引擎结果页。原图直链也可以。关键词是数据：${JSON.stringify(query)}。只输出JSON {"pages":["https://..."]}；无结果返回空数组。`,
+      renderPrompt("stickers/worker/result", {
+        p0: round,
+        p1: JSON.stringify(query),
+      }),
       { search: true },
     ),
   );

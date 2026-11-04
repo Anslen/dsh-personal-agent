@@ -1,0 +1,4476 @@
+[
+  {
+    "key": "agent/channel-tools/qq_history.description",
+    "source": "src/channel-tools.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/channel-tools/start_time",
+    "source": "src/channel-tools.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/channel-tools/end_time",
+    "source": "src/channel-tools.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/channel-tools/sender",
+    "source": "src/channel-tools.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/channel-tools/qq_send_media.description",
+    "source": "src/channel-tools.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/channel-tools/qq_voice.description",
+    "source": "src/channel-tools.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/qq-source/zh",
+    "source": "src/qq-source.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/qq-source/en",
+    "source": "src/qq-source.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/sticker-policy/stickerPolicy",
+    "source": "src/sticker-policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/sticker-policy/historyPolicy",
+    "source": "src/sticker-policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/sticker-policy/taskPolicy",
+    "source": "src/sticker-policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/instruction",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/instruction.2",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/instruction.3",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_status.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_cancel_search.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_request_search.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_search.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/library",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_save.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_tag.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_input_view.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_view.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/stickers/sticker_send.description",
+    "source": "src/stickers.ts",
+    "parameters": []
+  },
+  {
+    "key": "stickers/review/reviewed",
+    "source": "modules/stickers/review.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "JSON.stringify(board)"
+      },
+      {
+        "name": "p1",
+        "expression": "JSON.stringify(query)"
+      },
+      {
+        "name": "p2",
+        "expression": "JSON.stringify(role.mode === \"search\" ? \"通用表情搜索，结合检索描述判断素材用途\" : role.identityDescription || \"以参考图识别角色\")"
+      },
+      {
+        "name": "p3",
+        "expression": "JSON.stringify(script)"
+      },
+      {
+        "name": "p4",
+        "expression": "role.mode === \"search\" ? \"\" : \"角色素材须与参考身份一致，\""
+      },
+      {
+        "name": "p5",
+        "expression": "role.sharedDirectory ? \"必须返回tags（至少一个有意义的检索标签）、description和text（图中文字，没有则空字符串），并决定approved；\" : \"\""
+      }
+    ]
+  },
+  {
+    "key": "stickers/review/description",
+    "source": "modules/stickers/review.mjs",
+    "parameters": []
+  },
+  {
+    "key": "stickers/worker/result",
+    "source": "modules/stickers/worker.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "round"
+      },
+      {
+        "name": "p1",
+        "expression": "JSON.stringify(query)"
+      }
+    ]
+  },
+  {
+    "key": "qq/channel-tools/send_media.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/send_media.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/send_media.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_message.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_message.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/list_stickers.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/list_stickers.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/list_stickers.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/list_stickers.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_tag.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_tag.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_tag.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_tag.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_tag.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_delete.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_delete.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_restore.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_restore.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_stats.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_untagged.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_untagged.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_untagged.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/sticker_untagged.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_timer.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_timer.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_timer.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_timer.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/type",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_timer.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_cancel.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/schedule_cancel.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/text_break.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/text_break.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/reply_gate.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/reply_gate.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/reply_gate.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/reply_gate.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/reply_gate.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/reply_gate.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/outbound_mode.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/outbound_mode.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/outbound_mode.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/outbound_mode.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_requests.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_requests.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_requests.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_requests.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_requests.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_approve_join.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_join_auto.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_list.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_list.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.9",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.10",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/broadcast_send.description.11",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/target_group.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/target_group.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/target_group.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/target_group.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/target_group.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/target_group.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.9",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.10",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.11",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.12",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.13",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.14",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.15",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.16",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.17",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.18",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.19",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/session_wake.description.20",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_state.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_state.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_msg_search.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/recall_keywords.description.9",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_kick.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_kick.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_kick.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_kick.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_material.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_material.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_material.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_material.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_material.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.9",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_recall_batch.description.10",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/group_mute_member.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/id_lookup.description.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/tools_reload.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/quote_view.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/quote_view.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/people_memo.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/people_memo.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/people_memo.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/people_memo.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/prompt",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/prompt.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "root"
+      }
+    ]
+  },
+  {
+    "key": "qq/channel-tools/prompt.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "root"
+      }
+    ]
+  },
+  {
+    "key": "qq/channel-tools/prompt.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/prompt.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/prompt.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_memo.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_memo.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_memo.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_memo.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_memo.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_compact.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_compact.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_compact.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_compact.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_compact.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_drop.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_drop.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_drop.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/context_drop.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/qq_group_admin.description.9",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/description.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/description.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/answer/答.description",
+    "source": "modules/qq/dist/commands/answer.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/answer/ans.description",
+    "source": "modules/qq/dist/commands/answer.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/botplay/botplay.description",
+    "source": "modules/qq/dist/commands/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/exit/bot-restart.description",
+    "source": "modules/qq/dist/commands/exit.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/exit/bot-exit.description",
+    "source": "modules/qq/dist/commands/exit.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/help/bot-help.description",
+    "source": "modules/qq/dist/commands/help.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/inject/inject.description",
+    "source": "modules/qq/dist/commands/inject.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/misc/bot-ping.description",
+    "source": "modules/qq/dist/commands/misc.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/misc/bot-version.description",
+    "source": "modules/qq/dist/commands/misc.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/misc/bot-stop.description",
+    "source": "modules/qq/dist/commands/misc.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/misc/tools-reload.description",
+    "source": "modules/qq/dist/commands/misc.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/model/bot-model.description",
+    "source": "modules/qq/dist/commands/model.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/model/model.description",
+    "source": "modules/qq/dist/commands/model.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/outmode/outmode.description",
+    "source": "modules/qq/dist/commands/outmode.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/permission/description",
+    "source": "modules/qq/dist/commands/permission.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/session/description",
+    "source": "modules/qq/dist/commands/session.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/session/bot-new.description",
+    "source": "modules/qq/dist/commands/session.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/session/new.description",
+    "source": "modules/qq/dist/commands/session.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/session/preset.description",
+    "source": "modules/qq/dist/commands/session.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/session/presets.description",
+    "source": "modules/qq/dist/commands/session.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/status/bot-status.description",
+    "source": "modules/qq/dist/commands/status.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/DEFAULT_GROUP_PROMPT",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/DEFAULT_GROUP_PROMPT.2",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/DEFAULT_GROUP_PROMPT.3",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/DEFAULT_GROUP_PROMPT.4",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/DEFAULT_GROUP_PROMPT.5",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/DEFAULT_GROUP_PROMPT.6",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT.2",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT.3",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT.4",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT.5",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT.6",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.2",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.3",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.4",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.5",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.6",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.7",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.8",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/REFERENCE_CONTEXT.9",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/prompt",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/prompt.2",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/prompt",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "events.length"
+      },
+      {
+        "name": "p1",
+        "expression": "safePage + 1"
+      },
+      {
+        "name": "p2",
+        "expression": "pages"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/extension-store/description",
+    "source": "modules/qq/dist/features/extension-store.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/extension-store/description.2",
+    "source": "modules/qq/dist/features/extension-store.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-approval/prompt",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/self-disclosure/selfDisclosureHint",
+    "source": "modules/qq/dist/features/self-disclosure.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "who"
+      },
+      {
+        "name": "p1",
+        "expression": "hit.matched"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/sticker-tagger/PROMPT",
+    "source": "modules/qq/dist/features/sticker-tagger.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/gateway/access-care/careEmptyHint",
+    "source": "modules/qq/dist/gateway/access-care.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/gateway/access-care/careEmptyHint.2",
+    "source": "modules/qq/dist/gateway/access-care.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "label"
+      }
+    ]
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.2",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.3",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.4",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.5",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.6",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.7",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.8",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.9",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.10",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.11",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.12",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.13",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printEnvInstructions",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printEnvInstructions.2",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "credentials.appId"
+      }
+    ]
+  },
+  {
+    "key": "qq/setup/printEnvInstructions.3",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "credentials.appSecret"
+      }
+    ]
+  },
+  {
+    "key": "qq/setup/printEnvInstructions.4",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "credentials.appId"
+      }
+    ]
+  },
+  {
+    "key": "qq/setup/printEnvInstructions.5",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "credentials.appSecret"
+      }
+    ]
+  },
+  {
+    "key": "qq/setup/printYamlInstructions",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printYamlInstructions.2",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "credentials.appId"
+      }
+    ]
+  },
+  {
+    "key": "qq/setup/printYamlInstructions.3",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "credentials.appSecret"
+      }
+    ]
+  },
+  {
+    "key": "qq/transport/inbound/hint",
+    "source": "modules/qq/dist/transport/inbound.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "tg"
+      }
+    ]
+  },
+  {
+    "key": "qq/transport/inbound/hint.2",
+    "source": "modules/qq/dist/transport/inbound.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/transport/inject-rules/prompt",
+    "source": "modules/qq/dist/transport/inject-rules.js",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/WorktreeNameSchema",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/rule_assessments",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/direction",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/intent_evidence",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/acknowledgement",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/NO_CONTEXT",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/trigger_id",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/path",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/message_id",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/cursor",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/image_id",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/assessment/offset",
+    "source": "modules/superagent/src/app/assessment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/zh",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/en",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/zh.2",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/en.2",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/zh.3",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/en.3",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/zh.4",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/execution-environment/en.4",
+    "source": "modules/superagent/src/app/execution-environment.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/migration/identities",
+    "source": "modules/superagent/src/app/migration.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/notices/promptsNotice",
+    "source": "modules/superagent/src/app/notices.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "revision"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/notices/note",
+    "source": "modules/superagent/src/app/notices.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/prompts/base",
+    "source": "modules/superagent/src/app/prompts.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/prompts/overrides",
+    "source": "modules/superagent/src/app/prompts.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/prompts/POLICY_HEAD",
+    "source": "modules/superagent/src/app/prompts.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/orchestrator_ack.description",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/text",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "IM_WORDS"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/executor/orchestrator_thread_unrelated.description",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/thread",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/reason",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/orchestrator_thread_follow.description",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/thread.2",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/reason.2",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/orchestrator_trigger_handback.description",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/reason.3",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/orchestrator_report.description",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/human_action",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/question_for_trigger_id",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/executor/pr_number",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "host.github.deployment.github.login"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/executor/reply_to_trigger_id",
+    "source": "modules/superagent/src/app/tools/executor.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/RoutingNoteSchema",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "NOTE_WORDS"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/main/trigger_id",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/ticket_id",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/title",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/worktree_name",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "WorktreeNameSchema.description ?? ''"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/main/acknowledgement",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "IM_WORDS"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/main/note",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "RoutingNoteSchema.description ?? ''"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/main/reason",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_route.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_ticket_retry.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_ticket_request_status.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_ticket_note.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_trigger_requeue.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_eval.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_eval_read.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_eval_decide.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_reply.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "IM_WORDS"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/main/trigger_id.2",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/human_action",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_thread_unsubscribe.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/thread",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_settings_save.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/block",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/source",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/value",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/revision",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_policy_sync.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/orchestrator_prompts_save.description",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/baseRevision",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/main/preview",
+    "source": "modules/superagent/src/app/tools/main.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/tool/resource",
+    "source": "modules/superagent/src/app/tools/tool.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "resourceGrammar(executor)"
+      }
+    ]
+  },
+  {
+    "key": "superagent/app/tools/tool/offset",
+    "source": "modules/superagent/src/app/tools/tool.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/tools/tool/limit",
+    "source": "modules/superagent/src/app/tools/tool.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/executor/dsh/mandateInstructions",
+    "source": "modules/superagent/src/executor/dsh.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/executor/dsh/mandateInstructions.2",
+    "source": "modules/superagent/src/executor/dsh.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/executor/dsh/mandateInstructions.3",
+    "source": "modules/superagent/src/executor/dsh.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/infra/commands/hint",
+    "source": "modules/superagent/src/infra/commands.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/policy/instruction",
+    "source": "modules/superagent/src/policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/policy/instruction.2",
+    "source": "modules/superagent/src/policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/feishu/zh",
+    "source": "modules/superagent/src/sources/feishu.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/feishu/en",
+    "source": "modules/superagent/src/sources/feishu.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/feishu/zh.2",
+    "source": "modules/superagent/src/sources/feishu.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/feishu/en.2",
+    "source": "modules/superagent/src/sources/feishu.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/feishu/zh.3",
+    "source": "modules/superagent/src/sources/feishu.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/feishu/en.3",
+    "source": "modules/superagent/src/sources/feishu.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github-pull/observePull",
+    "source": "modules/superagent/src/sources/github-pull.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "pr.number"
+      }
+    ]
+  },
+  {
+    "key": "superagent/sources/github/zh",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/en",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/zh.2",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/en.2",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/zh.3",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/en.3",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/zh.4",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/en.4",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/zh.5",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/en.5",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/zh.6",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/en.6",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/sources/github/pollBranchCi",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "branch"
+      }
+    ]
+  },
+  {
+    "key": "superagent/sources/github/pollChecks",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "number"
+      }
+    ]
+  },
+  {
+    "key": "superagent/sources/github/nameThread",
+    "source": "modules/superagent/src/sources/github.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "number"
+      }
+    ]
+  },
+  {
+    "key": "stickers/review/p2",
+    "source": "modules/stickers/review.mjs",
+    "parameters": []
+  },
+  {
+    "key": "stickers/review/p2.2",
+    "source": "modules/stickers/review.mjs",
+    "parameters": []
+  },
+  {
+    "key": "stickers/review/p4",
+    "source": "modules/stickers/review.mjs",
+    "parameters": []
+  },
+  {
+    "key": "stickers/review/p5",
+    "source": "modules/stickers/review.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.2",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.3",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.4",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.5",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.6",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.7",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.8",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.9",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.10",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.11",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.12",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.13",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.14",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.15",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.16",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.17",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.18",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.19",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/FIXED_CHANNEL_CONTEXT.7",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/prompt.2",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/prompt.3",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "expireSec"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/botplay/prompt.4",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/prompt.5",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-approval/prompt.2",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-approval/prompt.3",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "tool"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/prompt.4",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "reason"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/prompt.5",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "seconds"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/prompt.6",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "code"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/prompt.7",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-approval/textPrompt",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-approval/textPrompt.2",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "tool"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/textPrompt.3",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "reason"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/textPrompt.4",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "code"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/textPrompt.5",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "code"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/qq-approval/textPrompt.6",
+    "source": "modules/qq/dist/features/qq-approval.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "seconds"
+      }
+    ]
+  },
+  {
+    "key": "qq/features/scheduler/rawPrompt",
+    "source": "modules/qq/dist/features/scheduler.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/self-disclosure/who",
+    "source": "modules/qq/dist/features/self-disclosure.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/gateway/access-care/label",
+    "source": "modules/qq/dist/gateway/access-care.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/gateway/access-care/label.2",
+    "source": "modules/qq/dist/gateway/access-care.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.14",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.15",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.16",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/CTX_SMART_REMINDER.17",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printEnvInstructions.6",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printYamlInstructions.4",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printYamlInstructions.5",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/setup/printYamlInstructions.6",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "entryId"
+      }
+    ]
+  },
+  {
+    "key": "qq/setup/printYamlInstructions.7",
+    "source": "modules/qq/dist/setup.js",
+    "parameters": []
+  },
+  {
+    "key": "superagent/app/notices/note.2",
+    "source": "modules/superagent/src/app/notices.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/policy/name",
+    "source": "modules/superagent/src/policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/policy/name.2",
+    "source": "modules/superagent/src/policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "superagent/policy/rules",
+    "source": "modules/superagent/src/policy.ts",
+    "parameters": []
+  },
+  {
+    "key": "agent/index/apply",
+    "source": "src/index.ts",
+    "parameters": []
+  },
+  {
+    "key": "stickers/evidence/assertViewed",
+    "source": "modules/stickers/evidence.mjs",
+    "parameters": []
+  },
+  {
+    "key": "stickers/review/assess",
+    "source": "modules/stickers/review.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/api/group-admin/human",
+    "source": "modules/qq/dist/api/group-admin.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.20",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/error",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.21",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/channel-tools/msg.22",
+    "source": "modules/qq/dist/channel-tools.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/commands/session/handler",
+    "source": "modules/qq/dist/commands/session.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/activityMinMsgs",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/config/injectRules",
+    "source": "modules/qq/dist/config.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/unsupport_tips",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/unsupport_tips.2",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/botplay/text",
+    "source": "modules/qq/dist/features/botplay.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/card-callback/createCardCallbackController",
+    "source": "modules/qq/dist/features/card-callback.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/context-memo/memoTextForInject",
+    "source": "modules/qq/dist/features/context-memo.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/emo-samples/中性",
+    "source": "modules/qq/dist/features/emo-samples.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-user-questions/custom",
+    "source": "modules/qq/dist/features/qq-user-questions.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/qq-user-questions/msg",
+    "source": "modules/qq/dist/features/qq-user-questions.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/tendency-samples/zh",
+    "source": "modules/qq/dist/features/tendency-samples.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/tendency-samples/zh.2",
+    "source": "modules/qq/dist/features/tendency-samples.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/features/tendency-samples/zh.3",
+    "source": "modules/qq/dist/features/tendency-samples.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/session/session-manager/msg",
+    "source": "modules/qq/dist/session/session-manager.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/transport/inbound/aggregatedNote",
+    "source": "modules/qq/dist/transport/inbound.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/transport/inbound/buildAgentBody",
+    "source": "modules/qq/dist/transport/inbound.js",
+    "parameters": []
+  },
+  {
+    "key": "qq/transport/inject-rules/inj",
+    "source": "modules/qq/dist/transport/inject-rules.js",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "rule.prompt"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/botplay/checkin-stats/text",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/botplay/checkin-stats.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "S.signed.size"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/commands/restart-info/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/commands/restart-info.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/commands/session-list/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/commands/session-list.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/commands/sub-session/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/commands/sub-session.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/commands/wake/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/commands/wake.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/hooks/proactive-share/sharePrompt",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/hooks/proactive-share.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "line"
+      },
+      {
+        "name": "p1",
+        "expression": "who"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/inbound/local-answer/DEFAULT_SYSTEM",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/inbound/local-answer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/inbound/local-answer/sys",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/inbound/local-answer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bedrock/_保护",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bedrock.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-412'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-509'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-400'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-101'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-111'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'12002'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'12061'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-api/'12000'",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-api.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-ops/briefing2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-ops/anchorPrompt",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-ops/anchorPrompt.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-ops/content",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/bili-ops/content.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/bili-ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/comment-watch.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "pb.name"
+      },
+      {
+        "name": "p1",
+        "expression": "pb.text"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/comment-watch.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "where"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/comment-watch.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "where"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/comment-watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/diary/content",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/diary.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/draw-core/SYS1",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/draw-core.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/draw-core/SYS2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/draw-core.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/local-llm/hint",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/local-llm.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.11",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.12",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.13",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.14",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.15",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.16",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.17",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.18",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.19",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.20",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/user.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.21",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.22",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.23",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.24",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.25",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.26",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.27",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.28",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.29",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.30",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.31",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.32",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.33",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.34",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.35",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-agent/sys.36",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-agent.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-db/SCHEMA",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-db.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm/SYSTEM.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-graph-llm.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/memory-llm/SYSTEM",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/memory-llm.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/model-policy/prompt",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/model-policy.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "person.name || person.senderId"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "fmt(slice.rows[0]?.ts)"
+      },
+      {
+        "name": "p1",
+        "expression": "fmt(slice.rows[slice.rows.length - 1]?.ts)"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "person.name || person.senderId"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "oldCard || '（无）'"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/default",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/funny",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/warm",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/sharp",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/system.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/sysFinal",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/basePrompt",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/task",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/script-writer/task.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/script-writer.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-briefing/buildBriefing",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-briefing.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-briefing/buildBriefing.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-briefing.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-briefing/buildBriefing.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-briefing.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-briefing/buildBriefing.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-briefing.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-curator/sys",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-curator.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-curator/sys.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-curator.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/video-curator/sys.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/video-curator.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/accounts/description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/accounts.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/msg",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.11",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.12",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.13",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.14",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.15",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.16",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.17",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.18",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.19",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.20",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili/bili.description.21",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.11",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.12",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.13",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.14",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.15",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.16",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.17",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.18",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.19",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.20",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.21",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.22",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.23",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.24",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.25",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.26",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.27",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.28",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.29",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.30",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.31",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.32",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.33",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.34",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.35",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.36",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.37",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.38",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.39",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bili_ops/description.40",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bili_ops.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "DEFAULT_COUNT"
+      },
+      {
+        "name": "p1",
+        "expression": "MAX_COUNT"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/bing_search.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/diary/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/diary.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/diary/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/diary.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/diary/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/diary.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/diary/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/diary.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/diary/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/diary.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/draw/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/draw.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/draw/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/draw.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "KINDS_TIP"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/game/description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/game.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/learn_style/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/learn_style.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/learn_style/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/learn_style.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/learn_style/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/learn_style.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib/DARE_POOL",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib/raw",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib/raw.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/summary",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "label ? '「' + label + '」' : ''"
+      },
+      {
+        "name": "p1",
+        "expression": "shortSessionId(sid)"
+      },
+      {
+        "name": "p2",
+        "expression": "stage"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/text",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/text.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib/text.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/lib/session_watch_lib.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/memory/memory.description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/memory.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/pet_card.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/pet_card.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/pet_card.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/pet_card.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/pet_card.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/pet_card/pet_card.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/pet_card.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.11",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "MAX_IMAGES"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/qq_send/qq_send.description.12",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/qq_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_children/session_children.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_children.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_children/session_children.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_children.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_children/session_children.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_children.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_children/session_children.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_children.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_create/session_create.description.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_create.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_send/session_send.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/session_watch/session_watch.description.11",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/session_watch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sessions_list/sessions_list.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sessions_list.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sessions_list/sessions_list.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sessions_list.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sessions_list/sessions_list.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sessions_list.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sessions_list/sessions_list.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sessions_list.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sessions_list/sessions_list.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sessions_list.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.9",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.10",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sfx/sfx.description.11",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sfx.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/share_now/share_now.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/share_now.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/share_now/share_now.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/share_now.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/share_now/share_now.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/share_now.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/share_now/share_now.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/share_now.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/share_now/share_now.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/share_now.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_auto/description.8",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_auto.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/sticker_send/sticker_send.description.7",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/sticker_send.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "MAX_CANDIDATES"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/storyboard/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/storyboard.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/storyboard/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/storyboard.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/storyboard/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/storyboard.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/surf/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/surf.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/surf/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/surf.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/surf/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/surf.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/surf/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/surf.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/surf/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/surf.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/surf/description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/surf.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/voice.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/voice.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/voice.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/voice.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/voice/voice.description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/voice.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/vote/description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/vote.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/vote/description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/vote.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/vote/description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/vote.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/vote/description.4",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/vote.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/vote/description.5",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/vote.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/vote/description.6",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/vote.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/web_fetch/web_fetch.description",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/web_fetch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/web_fetch/web_fetch.description.2",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/web_fetch.mjs",
+    "parameters": []
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/tools/web_fetch/web_fetch.description.3",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/tools/web_fetch.mjs",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "DEFAULT_CHARS"
+      },
+      {
+        "name": "p1",
+        "expression": "MAX_CHARS"
+      }
+    ]
+  },
+  {
+    "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/p0",
+    "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
+    "parameters": []
+  }
+]

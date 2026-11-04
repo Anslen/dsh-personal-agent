@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * hooks/proactive-share.mjs — 主动分享（给爸爸妈妈）
  *
@@ -177,7 +178,7 @@ function leastRecentTarget(targets, st, day) {
 
 /** 统一的分享 prompt：手动与自动都用这一句，口吻一致 */
 function sharePrompt(line, who) {
-  return `【分享】${line}。你现在想主动跟${who}说这件事：用一两句口语讲出来，别复述上面这句、别写成总结，说完就停；对方没接话就不要再追问。`;
+  return renderPrompt('qq/dshqqbot/.qqbot-extensions/hooks/proactive-share/sharePrompt', { p0: line, p1: who });
 }
 
 /** 消费手动触发请求（tools/share_now.mjs 写的）。读失败/过期都当没有 */

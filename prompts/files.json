@@ -1,0 +1,5 @@
+{
+  "agent/sticker-policy/stickerPolicy": "agent/stickers.md",
+  "agent/sticker-policy/historyPolicy": "agent/history.md",
+  "agent/sticker-policy/taskPolicy": "agent/tasks.md"
+}

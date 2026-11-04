@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * video-curator.mjs — 视频雷达（主人 2026-10-27 点单）：
  *   给定链接或「随机来一个」→ 拉视频信息+热评 → 本地模型生成一条评论文案
@@ -121,9 +122,9 @@ export async function draftComment(root, video) {
   if (!video || !video.title) return { ok: false, error: '没有视频信息' };
   const hot = (video.comments || []).slice(0, 3).map((c) => '- ' + c.text).join('\n');
   const sys = [
-    '你是「小蓝」，一个真实、有梗、说话自然的 QQ 群机器人（年轻人语气）。',
-    '看完这个视频的信息和热评，写**一条**你要发在视频下的评论。',
-    '要求：20~48 字；像真人随手写的（可以有梗/共情/吐槽，不要彩虹屁，不要「这视频真不错」这种空话）；不要 emoji 堆砌，最多 1 个；只输出评论文本本身，不要引号不要解释。',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/video-curator/sys'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/video-curator/sys.2'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/video-curator/sys.3')
   ].join('\n');
   const user = [
     `标题：${video.title}`,

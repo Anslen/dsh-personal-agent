@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * botplay.ts — botplay 互动事件装配器(2026-09-08, Phase1 MVP)
  *
@@ -75,14 +76,14 @@ export function botplayKeyboard(cardId, buttons, perm, ownerIds, triggererId, bu
             render_data: {
                 label: String(b.label ?? '').slice(0, 20),
                 visited_label: String(b.visitedLabel || b.label || '').slice(0, 20),
-                style: b.style === 0 ? 0 : 1,
+                style: b.style === 0 ? 0 : 1
             },
             action: {
                 type: isJump ? 0 : 1, // 0跳转 1回调
                 permission,
                 data,
-                unsupport_tips: '请在支持的客户端点击按钮',
-            },
+                unsupport_tips: promptText('qq/features/botplay/unsupport_tips')
+            }
         };
     };
     const rows = [];
@@ -137,8 +138,8 @@ function catalogKeyboard(page, events) {
             type: 1,
             permission: { type: 2 },
             data: `${CAT_PREFIX}${safePage}:${key}`,
-            unsupport_tips: '请在支持的客户端点击',
-        },
+            unsupport_tips: promptText('qq/features/botplay/unsupport_tips.2')
+        }
     });
     const rows = [];
     // 事件按钮: 每行 CAT_COLS 个(最多4行, 第5行留给翻页导航 → 合计≤5行)
@@ -482,12 +483,12 @@ export class BotplayController {
         const prompt = tpl
             ? tpl.replace(/\{name\}/g, ev.name)
             : [
-                `## 🎮 ${ev.name}`,
-                '',
-                '点下方按钮完成互动 👇',
-                '',
-                `⏱ 本卡片 ${expireSec} 秒内有效。`,
-            ].join('\n');
+                  `## 🎮 ${ev.name}`,
+                  '',
+                  promptText('qq/features/botplay/prompt.2'),
+                  '',
+                  renderPrompt('qq/features/botplay/prompt.3', { p0: expireSec })
+              ].join('\n');
         try {
             await this.sender.sendMarkdownWithKeyboard(target, prompt, kb);
             this.logger.info(`[botplay] 发卡 ok event=${ev.id} card=${cardId} target=${target.scope}:${target.targetId} perm=${perm.type}${extFile ? ` ext=${extFile}` : ''}`);
@@ -773,11 +774,11 @@ export class BotplayController {
         const safePage = Math.max(0, Math.min(page, pages - 1));
         const kb = catalogKeyboard(safePage, events);
         const prompt = [
-            '### 🎮 互动事件',
+            promptText('qq/features/botplay/prompt.4'),
             '',
-            `共 ${events.length} 个 · 第 ${safePage + 1}/${pages} 页`,
+            renderPrompt('qq/features/botplay/prompt', { p0: events.length, p1: safePage + 1, p2: pages }),
             '',
-            '点下方事件名直接触发 👇',
+            promptText('qq/features/botplay/prompt.5')
         ].join('\n');
         try {
             await this.sender.sendMarkdownWithKeyboard(target, prompt, kb);
@@ -898,7 +899,10 @@ export class BotplayController {
             // jump_url 是官方 type=0 跳转按钮 → 点击时客户端直接跳, 不会走到回调;
             // 若仍收到回调(降级/不可跳)则提示用户直接点链接。
             const url = String(btn.botAction?.url ?? '').trim();
-            await this.safeReply(replyTarget, url ? `跳转按钮: ${url}(如未自动跳转请手动打开)` : '该按钮是跳转按钮, 请在支持跳转的客户端点击');
+            await this.safeReply(
+                replyTarget,
+                url ? `跳转按钮: ${url}(如未自动跳转请手动打开)` : promptText('qq/features/botplay/text')
+            );
         }
         else if (actionType === 'command') {
             // command 指令型(Phase2): 点击 → host 直接执行斜杠命令(不经 AI 文本)。

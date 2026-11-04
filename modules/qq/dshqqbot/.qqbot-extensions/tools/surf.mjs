@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/surf.mjs — 逛网站并记下来
  *   action=read  读一个网址，存标题+摘要；learn=true 时把她自己的收获写进记忆
@@ -10,12 +11,17 @@ export const description =
   '逛网页：read=读网址并存标题/摘要（可顺手学一点）；list=最近逛过什么。主人让你看某个网页、或你自己想查资料并用上时用。';
 
 export const inputSchema = {
-  action: { type: 'string', required: true, enum: ['read', 'list'], description: 'read 读网页；list 看记录' },
-  url: { type: 'string', description: 'read 的 http(s) 网址' },
-  note: { type: 'string', description: 'read 可选：你自己的收获（learn=true 时写进记忆）' },
-  learn: { type: 'boolean', description: 'read 时是否把 note 写进记忆' },
-  q: { type: 'string', description: 'list 可选：搜索词' },
-  limit: { type: 'number', description: 'list 条数，默认 20' },
+    action: {
+        type: 'string',
+        required: true,
+        enum: ['read', 'list'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/surf/description')
+    },
+    url: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/surf/description.2') },
+    note: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/surf/description.3') },
+    learn: { type: 'boolean', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/surf/description.4') },
+    q: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/surf/description.5') },
+    limit: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/surf/description.6') }
 };
 
 function dataRootOf(env) {

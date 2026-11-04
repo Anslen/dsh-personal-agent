@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * scheduler.ts — 定时唤醒（M3, 2026-09-03 新增, v3 改造）
  *
@@ -74,7 +75,7 @@ export function startScheduler(manager, config, logger) {
             const now = new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-            const rawPrompt = task.prompt?.trim() || '在吗~ 出来说说话吧';
+            const rawPrompt = task.prompt?.trim() || promptText('qq/features/scheduler/rawPrompt');
             const trigger = `[定时任务 ${ts}] ${rawPrompt}`;
             const fakeMsg = {
                 kind: scope,

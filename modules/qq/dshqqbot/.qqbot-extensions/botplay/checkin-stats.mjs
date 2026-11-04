@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * ⚠️ 本文件是**插件自带的示例模块**（随仓库分发：examples/botplay/checkin-stats.mjs）。
  *    想用它：复制到 {数据根}/.qqbot-extensions/botplay/ ，再登记一个 botplay 事件
@@ -248,7 +249,7 @@ export default {
         // 点签到只**记录 + 回一句话**，不重发卡片（2026-10-05 修）：
         //   重发整卡既刷屏、又可能撞 QQ 发卡限频；名单在「结束」时统一公布就够。
       ctx.log(`签到 ok openid=${who.openid} name=${who.pureName} 共=${S.signed.size}`);
-      return `✅ 签到成功，你是第 ${S.signed.size} 位！`;
+      return renderPrompt('qq/dshqqbot/.qqbot-extensions/botplay/checkin-stats/text', { p0: S.signed.size });
     }
 
     // ── 按钮2: 结束并统计(只有主人能点) ──

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * context-memo.ts — 无上下文模式·智能判断下 **AI 自己的备忘**（2026-10-01 主人设计）。
  *
@@ -157,7 +158,7 @@ export function memoTextForInject(dataRoot, sessionKey) {
     return [
         '【你（机器人）自己的备忘 —— 无上下文模式下用来代替被压缩掉的历史】',
         ...lines,
-        '（这些是你过去的总结，不会被压缩丢掉；要增改删请用 context_memo 工具）',
+        promptText('qq/features/context-memo/memoTextForInject')
     ].join('\n');
 }
 /** 诊断：当前备忘条数与文件大小 */

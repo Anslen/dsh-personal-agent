@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * SessionManager — 管理 QQ peer → dsh Agent 的映射和生命周期
  *
@@ -46,27 +47,27 @@ function diagSm(line) {
 /** agent ctx 上"通道工具已装载"标记(幂等/自愈用) */
 /** 智能判断模式的「每轮必做」提示（2026-10-01 主人审过的措辞） */
 const CTX_SMART_REMINDER = [
-    '【⚠️ 话题判断 · 每轮必做，且必须给出结论】',
-    '本会话开着「无上下文模式 · 智能判断」——历史会随每一轮一起送出，**每多带一轮就是在白花主人的钱**。',
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.14'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER'),
     '',
-    '**每轮回复前，必须做这件事**：判断当前话题是否已经结束（或对方明显换话题了）。',
-    '判断完**立刻动手**，不要想着「再观察一下」：',
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.2'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.15'),
     '',
-    '  · 话题还在继续 → 不动作（这是唯一可以不动作的情况）',
-    '  · 话题已结束 / 明显换向 → **立刻处理**：',
-    '      · 这段历史以后用不上 → 调 context_drop',
-    '      · 以后还可能用到 → 调 context_compact（keep 默认 3）',
-    '      · **犹豫不决时 → 默认 context_compact**（压缩比丢弃安全；要点能写进 note）',
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.3'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.16'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.4'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.5'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.6'),
     '',
-    '**调之前先写 note**（一句话把这段的要害写下来）——它存进你的备忘，压缩/丢弃都碰不到它。',
-    '  ⚠️ note 必须精简：一句话、别超 100 字；写完确认旧的那条已删（备忘有条数上限，超了丢最旧）。',
-    '  ⚠️ 不要把「日常寒暄、重复确认、已经写在备忘里的内容」再写一遍。',
-    '  · context_memo 只用来看/改/删已有的备忘，**别拿它当随手记的笔记本**。',
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.7'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.8'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.9'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.10'),
     '',
-    '**判断标准（拿不准时照这个来）**：',
-    '  · 已经聊了 5 轮以上、且中间没有新信息进来 → 可以压',
-    '  · 对方换了话题、或开始聊一件跟前面无关的事 → 可以丢',
-    '  · 只是「聊得挺热」但内容重复、没有新增结论 → **一样可以压**（热不等于有用）',
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.17'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.11'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.12'),
+    promptText('qq/session/session-manager/CTX_SMART_REMINDER.13')
 ].join('\n');
 const CTX_TOOLS_READY = Symbol('qqbotChannelToolsReady');
 export class SessionManager {
@@ -365,7 +366,7 @@ export class SessionManager {
         }
         const rec = this.sessions.get(this.sessionKey(scope, peerId));
         if (!rec)
-            return { ok: false, msg: '当前没有活跃会话, 请先聊一句再切' };
+            return { ok: false, msg: promptText('qq/session/session-manager/msg') };
         try {
             svc.set(rec.agent.session, name);
             this.logger.info(`[permission] 权限档 → ${name} (${scope}:${peerId})`);

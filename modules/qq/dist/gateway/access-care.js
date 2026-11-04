@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * access-care.js — care（特别关心）访问模式的名单源（2026-11-02 市场合规 11173）
  *
@@ -59,15 +60,16 @@ export function accessScopeOf(kind, mode, cfgAllow, dataRoot, extraAllow = []) {
 export function careEmptyHint(kind, mode, cfgAllow, dataRoot) {
     if (mode !== 'care') {
         if (mode === 'allowlist' && (!cfgAllow || cfgAllow.length === 0)) {
-            return `allowlist 模式但白名单为空 → 相关消息将被拒绝（往 Allow 填 openid，或改 open/care）`;
+            return promptText('qq/gateway/access-care/careEmptyHint');
         }
         return null;
     }
     const lists = readCareLists(dataRoot);
     const list = kind === 'group' ? lists.groups : lists.people;
-    const label = kind === 'group' ? '特别关心群(priority)' : '特别关心的人(priorityPeople)';
+    const label =
+        kind === 'group' ? promptText('qq/gateway/access-care/label') : promptText('qq/gateway/access-care/label.2');
     if (list.length === 0 && (!cfgAllow || cfgAllow.length === 0)) {
-        return `care(特别关心) 模式但 ${label} 名单为空 → 相关消息将被拒绝（把人/群设为特别关心即可，或往 Allow 填 openid，或改 open）`;
+        return renderPrompt('qq/gateway/access-care/careEmptyHint.2', { p0: label });
     }
     return null;
 }

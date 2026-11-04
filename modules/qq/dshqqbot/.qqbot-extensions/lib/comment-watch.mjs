@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * comment-watch.mjs — 评论巡检与自动回复（2026-10-28 主人需求）
  *
@@ -114,12 +115,12 @@ async function genReply(root, { platform, title, gist, user, comment, via = 'clo
   const rel = (pb.relations || []).find((r) => r && (r.who === user || r.name === user));
   const where = platform === 'douyin' ? '抖音' : 'B站';
   const sys = [
-    `你是「${pb.name}」，一只住在 QQ 群里的鲸鱼娘，说话像真人、有点小脾气。${pb.text}`,
-    selfSupplement
-      // [qqbot-mod] self-supplement 2026-10-29：主人要在自家评论下补楼 —— 语境完全不同
-      ? `你在${where}自己发的视频评论区里留过一条评论，现在你想在那条评论下面**再补充一条回复**（盖楼）：把当时没说完的补上、说说最新进展，或者接住楼里的话。语气还是你平时那样。`
-      : `你在${where}发过一条视频，有人在你视频底下留言。你要**回这个人的话**——像在评论区跟人搭一句，不是在介绍或点评自己的视频（最多顺口提一句相关的）。`,
-    '15~40 字；可共情/接梗/答问题/反问一句；不要客服腔（「感谢支持」「谢谢关注」），不堆 emoji（最多 1 个）；只输出回复本身。',
+      renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys', { p0: pb.name, p1: pb.text }),
+      selfSupplement
+          ? // [qqbot-mod] self-supplement 2026-10-29：主人要在自家评论下补楼 —— 语境完全不同
+            renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys.2', { p0: where })
+          : renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys.3', { p0: where }),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/comment-watch/sys.4')
   ].join('\n');
   const desc = rel?.role ? `${rel.role}` : '观众';
   const userMsg = [

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /** 高置信自述句式：主语是"我" + 关于自己的动词/判断 */
 const PATTERNS = [
     { label: '我是/叫/来自', re: /我(是|叫|来自|住在)/ },
@@ -34,8 +35,8 @@ export function detectSelfDisclosure(text) {
 }
 /** 注入给她看的提醒（一行，别写成命令式 —— 是"可以"，不是"必须"） */
 export function selfDisclosureHint(hit, senderName) {
-    const who = String(senderName || '').trim() || '对方';
-    return `【小传提醒】${who}这段话像是在说他**自己**的事（命中"${hit.matched}"）。如果那确实算"旁人也复述得出的客观事实"（身份/喜好/经历），可以顺手用 people_memo 记一条；不是事实、或者只是随口一提，就别记。`;
+    const who = String(senderName || '').trim() || promptText('qq/features/self-disclosure/who');
+    return renderPrompt('qq/features/self-disclosure/selfDisclosureHint', { p0: who, p1: hit.matched });
 }
 // ── 提醒节流（内存；防止她天天被同一个人同一件事叨扰） ──
 /** 每人每天最多提醒几次（够用又不唠叨） */

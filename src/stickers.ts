@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../prompts/index.mjs";
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
@@ -214,9 +215,9 @@ export class Stickers {
             ticketId: sub.ticketId,
             triggerId: sub.triggerId,
             instruction:
-              sub.kind === "collection"
-                ? "这是用户要求反馈的收藏任务完成事件。根据done/failed及approved/rejected/duplicate结果回复原会话；仅approved素材或已有正式素材可检索、看图后发送。"
-                : "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。结果中的approved素材已入库；将其id列表传给sticker_search的ids参数，再sticker_view查看并sticker_send发送，避免关键词漏检。",
+              sub.kind === promptText("agent/stickers/instruction")
+                ? promptText("agent/stickers/instruction.2")
+                : promptText("agent/stickers/instruction.3"),
           }),
         );
         this.runtime.store.set(key, { ...sub, delivered: true });
@@ -227,13 +228,15 @@ export class Stickers {
     return [
       tool({
         name: "sticker_status",
-        description: "查询后台表情搜索的当前阶段、候选数量和重试原因。",
+        description: promptText("agent/stickers/sticker_status.description"),
         schema: z.object({ id: z.string() }),
         execute: async (args: any) => this.request("status", args),
       }),
       tool({
         name: "sticker_cancel_search",
-        description: "用户要求停止时取消后台表情搜索。",
+        description: promptText(
+          "agent/stickers/sticker_cancel_search.description",
+        ),
         schema: z.object({ id: z.string(), trigger_id: z.string().optional() }),
         execute: async (args: any) => {
           channelTarget(this.runtime, this.bot, args, ticket);
@@ -242,8 +245,9 @@ export class Stickers {
       }),
       tool({
         name: "sticker_request_search",
-        description:
-          "异步联网搜索当前Bot的表情包。立即返回started，完成后通过持久化事件唤醒主控。可主动补库，主控传当前人类消息trigger_id。",
+        description: promptText(
+          "agent/stickers/sticker_request_search.description",
+        ),
         schema: z.object({
           query: z.string().min(1).max(160),
           trigger_id: z.string().optional(),
@@ -275,8 +279,7 @@ export class Stickers {
       }),
       tool({
         name: "sticker_search",
-        description:
-          "检索当前Bot已入库的表情，使用sticker_view查看选中的图片后再发送。",
+        description: promptText("agent/stickers/sticker_search.description"),
         schema: z.object({
           query: z.string().default(""),
           ids: z.array(z.string()).max(20).optional(),
@@ -284,15 +287,14 @@ export class Stickers {
           library: z
             .enum(["personal", "shared"])
             .optional()
-            .describe("省略时同时检索角色库和共享库"),
+            .describe(promptText("agent/stickers/library")),
         }),
         execute: async (args: any) =>
           this.request("search", { ...args, peer: agent.session.id }),
       }),
       tool({
         name: "sticker_save",
-        description:
-          "异步评估并收藏当前会话历史或当前消息中的图片到共享库。传消息id和附件序号；后台模型实际看图、打标并决定采纳后才可检索发送。立即返回排队状态，默认静默完成。",
+        description: promptText("agent/stickers/sticker_save.description"),
         schema: z.object({
           trigger_id: z.string().optional(),
           message_id: z.string().min(1),
@@ -357,8 +359,7 @@ export class Stickers {
       }),
       tool({
         name: "sticker_tag",
-        description:
-          "看图后修改已入库表情的检索标签和描述，支持角色库与共享库。",
+        description: promptText("agent/stickers/sticker_tag.description"),
         schema: z.object({
           id: z.string(),
           tags: z.array(z.string().min(1).max(40)).min(1).max(20),
@@ -383,8 +384,9 @@ export class Stickers {
       }),
       tool({
         name: "sticker_input_view",
-        description:
-          "查看用户消息或其引用原消息中的图片。传原trigger_id和图片序号index（从0开始），source=reply查看引用图片，无需搜索历史。",
+        description: promptText(
+          "agent/stickers/sticker_input_view.description",
+        ),
         schema: z.object({
           trigger_id: z.string().optional(),
           index: z.number().int().min(0).default(0),
@@ -419,8 +421,7 @@ export class Stickers {
       }),
       tool({
         name: "sticker_view",
-        description:
-          "查看已检索候选的实际图片。返回图片本身，确认合适后用sticker_send发送同一id。",
+        description: promptText("agent/stickers/sticker_view.description"),
         schema: z.object({ id: z.string() }),
         execute: async (args: any) => {
           const item = await this.request("inspect", {
@@ -437,8 +438,7 @@ export class Stickers {
       }),
       tool({
         name: "sticker_send",
-        description:
-          "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。",
+        description: promptText("agent/stickers/sticker_send.description"),
         schema: z.object({
           id: z.string(),
           task_id: z.string().optional(),

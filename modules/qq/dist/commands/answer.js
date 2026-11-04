@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { getScopePeer } from '../shared/index.js';
 import { answerPendingQuestionByText } from '../features/qq-user-questions.js';
 const USAGE = [
@@ -8,22 +9,21 @@ const USAGE = [
 export function answerCommand({ config }) {
     return {
         name: '答',
-        description: '回答机器人的提问卡片(文字兜底: /答 A | /答 #2 B | /答 你的回答)',
+        description: promptText('qq/commands/answer/答.description'),
         handler: async (cmdCtx) => {
             const { scope, peerId } = getScopePeer(cmdCtx);
             const raw = String(cmdCtx.command?.raw ?? '').trim();
-            if (raw === '')
-                return USAGE;
+            if (raw === '') return USAGE;
             const senderId = String(cmdCtx.message?.senderId ?? '');
             const ns = String(config.settingsNs ?? '').trim() || 'im-qqbot';
             const r = answerPendingQuestionByText({ ns, scope, peerId, senderId, text: raw });
             return r.ok ? `✅ ${r.msg}` : `⚠️ ${r.msg}\n\n${USAGE}`;
-        },
+        }
     };
 }
 /** /ans（英文简写别名, 复用同一 handler） */
 export function answerAliasCommand(deps) {
     const base = answerCommand(deps);
-    return { name: 'ans', description: '回答机器人的提问卡片(简写, 同 /答)', handler: base.handler };
+    return { name: 'ans', description: promptText('qq/commands/answer/ans.description'), handler: base.handler };
 }
 //# sourceMappingURL=answer.js.map

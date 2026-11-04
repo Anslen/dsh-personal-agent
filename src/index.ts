@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../prompts/index.mjs";
 // SPDX-License-Identifier: GPL-3.0-or-later
 import type { Context } from "@deepseek-ai/cordis";
 import s from "@deepseek-ai/schemastery";
@@ -95,7 +96,7 @@ export async function apply(ctx: Context, config: any) {
       ids.has(bot.id) ||
       apps.has(bot.appId)
     )
-      throw new Error("Bot标识和AppID必须唯一");
+      throw new Error(promptText("agent/index/apply"));
     ids.add(bot.id);
     apps.add(bot.appId);
   }

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * profile-digest.mjs — 把一个人的**全部历史消息**压成可切片、可汇总的印象卡
  *
@@ -218,38 +219,49 @@ export function loadSlices(dataRoot, scope, senderId) {
 
 function buildSlicePrompt(person, slice) {
   const sys = [
-    '你是"小蓝"的记忆整理分身，只做客观整理，不聊天。',
-    '输入是某个人的一段历史聊天（跨时间切片；"小蓝（你）"是机器人本人）。',
-    '请输出一个 JSON 对象，不要 markdown、不要解释：',
-    '{"summary":"≤160字：这段时间这个人的状态、关注的事、和小蓝的相处方式","traits":["≤3条，每条≤12字的稳定性格/偏好"],"relation":{"note":"≤24字：这段时间关系的变化"}}',
-    '规则：只写有证据的内容；寒暄、表情、复读不写；不确定就不写；summary 要具体（提到宠物、作息、工作、约定等）。',
-    '【归属铁律】只提炼「对象」他**自己**的言行与特质：群里别人说的话、别人的事、机器人自己说的话，一律不算他的——这是历次卡片张冠李戴的根源。',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.2'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.3'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.4'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.5'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.6')
   ].join('\n');
   const user = [
-    `对象：${person.name || person.senderId}`,
-    `时间：${fmt(slice.rows[0]?.ts)} ~ ${fmt(slice.rows[slice.rows.length - 1]?.ts)}`,
-    '对话：',
-    slice.rows.map(lineOf).join('\n').slice(0, 5200),
-    '',
-    '输出 JSON。',
+      renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user', { p0: person.name || person.senderId }),
+      renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.2', {
+          p0: fmt(slice.rows[0]?.ts),
+          p1: fmt(slice.rows[slice.rows.length - 1]?.ts)
+      }),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.3'),
+      slice.rows.map(lineOf).join('\n').slice(0, 5200),
+      '',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.4')
   ].join('\n');
   return [{ role: 'system', content: sys }, { role: 'user', content: user }];
 }
 
 function buildFinalPrompt(person, slices, oldCard) {
   const sys = [
-    '你是"小蓝"的印象官。输入是某个人多年聊天的分片摘要，请做**高维抽象**。',
-    '输出 JSON：{"card":"≤300字，第三人称：身份/性格/长期偏好/和小蓝的关系与相处模式","traits":["5条，每条≤12字"],"relation":{"note":"≤24字"}}',
-    '要求：综合所有切片，不只看最近；保留旧卡里仍然成立的信息；不要编造；不要写空话（"是个有趣的人"这类不算）。',
-    '【归属铁律】卡上只能写「对象」本人的长期特质：切片里混入的别人的言行（群里其他人、机器人）一律忽略，绝不归到对象头上。',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.7'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.8'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.9'),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/sys.10')
   ].join('\n');
   const user = [
-    `对象：${person.name || person.senderId}`,
-    `旧卡：${oldCard || '（无）'}`,
-    '分片摘要（按时间顺序）：',
-    slices.map((s, i) => `${i + 1}. ${s.period ? '[' + s.period + '] ' : ''}${s.summary}${s.traits.length ? '（' + s.traits.join('、') + '）' : ''}`).join('\n').slice(0, 7000),
-    '',
-    '输出 JSON。',
+      renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.5', { p0: person.name || person.senderId }),
+      renderPrompt('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.6', {
+          p0: oldCard || promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/p0')
+      }),
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.7'),
+      slices
+          .map(
+              (s, i) =>
+                  `${i + 1}. ${s.period ? '[' + s.period + '] ' : ''}${s.summary}${s.traits.length ? '（' + s.traits.join('、') + '）' : ''}`
+          )
+          .join('\n')
+          .slice(0, 7000),
+      '',
+      promptText('qq/dshqqbot/.qqbot-extensions/lib/profile-digest/user.8')
   ].join('\n');
   return [{ role: 'system', content: sys }, { role: 'user', content: user }];
 }

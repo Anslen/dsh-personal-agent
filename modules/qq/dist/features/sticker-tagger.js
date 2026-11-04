@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * sticker-tagger.ts — 新图后台自动打标(tags + 详细描述)
  *
@@ -13,7 +14,7 @@ import { existsSync } from 'node:fs';
 const MODLENS_CANDIDATES = [
 // 公开版不内置任何机器绝对路径。用法: 配置 sticker.visionCli 命令模板(含 {img}), 或把本机视觉 CLI 路径加进候选数组。
 ];
-const PROMPT = '请用简体中文回答，只输出两行，不要输出其他内容：第一行以【标签】开头，给出 3-6 个逗号分隔的中文短标签（从内容/情绪/用途三个维度）；第二行以【描述】开头，给一句中文详细描述（画面内容+情绪+适合在什么群聊场合用这张图）。';
+const PROMPT = promptText('qq/features/sticker-tagger/PROMPT');
 const GENERIC = new Set(['人物', '物品', '画面', '图片', '图像', '场景', '内容', '插画', '动漫', '二次元', '背景', '角色', '风格']);
 /** 找可用的 modlens CLI 路径(缓存) */
 let cliPath;

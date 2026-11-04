@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../prompts/index.mjs";
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { z } from "zod";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -41,8 +42,7 @@ export function channelTools(
   const tools = [
     tool({
       name: "qq_history",
-      description:
-        "实时查询当前QQ群/私聊归档，包含未@机器人的普通聊天。结果仅供紧接查询后的当前处理使用；后续每次模型调用均假定可能已有新消息，需要历史信息就主动重新查，无需用户明确要求。snapshot给出查询时刻、总数和筛选数量，next_before表示仍有下一页。支持起止时间、发送人ID或昵称（*代表所有人）、关键词和分页。reply附引用关系及可用原文。主控传当前trigger_id，执行器自动使用任务原会话。",
+      description: promptText("agent/channel-tools/qq_history.description"),
       schema: z.object({
         ...context,
         keyword: z.string().max(100).optional(),
@@ -50,17 +50,17 @@ export function channelTools(
           .string()
           .datetime({ offset: true })
           .optional()
-          .describe("起始时间，含时区，包含该时刻"),
+          .describe(promptText("agent/channel-tools/start_time")),
         end_time: z
           .string()
           .datetime({ offset: true })
           .optional()
-          .describe("结束时间，含时区，包含该时刻"),
+          .describe(promptText("agent/channel-tools/end_time")),
         sender: z
           .string()
           .max(200)
           .default("*")
-          .describe("发送人ID或精确昵称；*表示所有人；self表示机器人"),
+          .describe(promptText("agent/channel-tools/sender")),
         limit: z.number().int().min(1).max(200).default(50),
         before: z.string().optional(),
       }),
@@ -71,8 +71,7 @@ export function channelTools(
     }),
     tool({
       name: "qq_send_media",
-      description:
-        "向原始授权QQ会话发送本地文件或媒体。不可用于绕过sticker_send的已审核表情发送流程。主控指定原trigger_id或task_id，执行器固定当前任务。",
+      description: promptText("agent/channel-tools/qq_send_media.description"),
       schema: z.object({
         ...context,
         kind: z.enum(["voice", "video", "file"]),
@@ -93,8 +92,7 @@ export function channelTools(
     tools.push(
       tool({
         name: "qq_voice",
-        description:
-          "使用部署配置的音色合成并发送中文语音。主控指定原trigger_id或task_id；角色和服务地址由配置固定。",
+        description: promptText("agent/channel-tools/qq_voice.description"),
         schema: z.object({ ...context, text: z.string().min(1).max(120) }),
         execute: async (args, signal) => {
           const target = channelTarget(runtime, bot, args, ticket);

@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../prompts/index.mjs";
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { z } from "zod";
 import type { SourceKind } from "../modules/superagent/src/sources/kind.ts";
@@ -17,7 +18,10 @@ export function qqSource(
   return {
     kind: "qq",
     title: { zh: "QQ", en: "QQ" },
-    description: { zh: "QQ私聊与群聊", en: "QQ messages" },
+    description: {
+      zh: promptText("agent/qq-source/zh"),
+      en: promptText("agent/qq-source/en"),
+    },
     schema: z.record(z.string(), z.unknown()),
     fields: [],
     health: ["qq"],

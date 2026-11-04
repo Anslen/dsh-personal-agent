@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /** Formats background notices and steering relays delivered to the main Session via the effect queue. */
 import { randomUUID } from 'node:crypto'
 import { followupOwners, key, liveTicket, type DomainEvent, type Ticket, type WorkerReport } from '../core/index.ts'
@@ -13,8 +14,11 @@ import { ticketCard } from './cards.ts'
  */
 export type Notice = readonly [name: string, value: Record<string, unknown>, summary: string]
 /** Builds a notice for a saved prompt configuration revision, coalescing under `'prompts'`. */
-export const promptsNotice = (revision: number): Notice =>
-  ['prompts', { prompt_config_saved: revision, effect: 'next-request', read: `prompts/${revision}` }, `Prompt configuration saved (revision ${revision})`]
+export const promptsNotice = (revision: number): Notice => [
+  'prompts',
+  { prompt_config_saved: revision, effect: 'next-request', read: `prompts/${revision}` },
+  renderPrompt('superagent/app/notices/promptsNotice', { p0: revision })
+]
 /**
  * Builds a notice for a saved settings block with the changed dot-separated paths (coalescing per block under
  * `settings:<block>`), or for the whole settings on legacy saves that recorded no block.
@@ -59,8 +63,7 @@ export function eventNotice(event: DomainEvent, ticket: (id: string) => Ticket |
   if (event.type === 'thread.unsubscribed' && event.data.by === 'person') return subscriptionNotice(event.data.threadKey, at)
   if (event.type === 'thread.unsubscribed') {
     const { ticketId, threadKey: thread, reason } = event.data
-    const note = 'Its Executor found this thread unrelated after reading it; attach later triggers there to this ticket only when they '
-      + 'point at it explicitly.'
+    const note = promptText('superagent/app/notices/note') + promptText('superagent/app/notices/note.2')
     return receiptNotice({ thread_unrelated: { ticket_id: ticketId, thread, reason }, at, note },
       `Ticket ${ticketId} no longer follows thread ${thread}: ${reason}`)
   }

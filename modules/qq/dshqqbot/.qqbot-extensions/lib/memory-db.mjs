@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * memory-db.mjs — 小蓝的长期记忆库（SQLite 版）
  *
@@ -157,94 +158,7 @@ function recency(ts, halfLifeDays) {
 }
 
 // ── 建库 / 打开 ─────────────────────────────────────────────────────────
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS mem (
-  id       TEXT PRIMARY KEY,
-  scope    TEXT,
-  kind     TEXT,
-  subj     TEXT,
-  text     TEXT,
-  vec      BLOB,
-  ts       INTEGER,
-  hits     INTEGER DEFAULT 0,
-  last_hit INTEGER,
-  src      TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_mem_scope    ON mem(scope);
-CREATE INDEX IF NOT EXISTS idx_mem_scope_ts ON mem(scope, ts);
-
-CREATE TABLE IF NOT EXISTS persona (
-  id     TEXT PRIMARY KEY,
-  scope  TEXT,
-  ckey   TEXT,
-  cvalue TEXT,
-  weight REAL DEFAULT 1,
-  ts     INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_persona_scope ON persona(scope);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_persona_scope_ckey ON persona(scope, ckey);
-
-CREATE TABLE IF NOT EXISTS meta (
-  k TEXT PRIMARY KEY,
-  v TEXT
-);
-
--- ── 类海马体索引（2026-10-24）──────────────────────────────────────────
--- 为什么加：主表只有「向量 + 全表扫描」，查询必须先把整个 scope 的 1500 条向量
--- 全部算一遍余弦，既慢又只能靠语义相似度排序（名字/专名类查询经常被摘要挤掉）。
--- 这里补三层索引，让召回像海马体一样「先锚定，再扩散」：
---   mem_tok  倒排（中文二元组 + 拉丁词）→ 关键词候选，纯 SQL，不算向量
---   mem_entity / mem_tag  实体词典与实体↔记忆标签 → 名字类查询直接锚定
---   mem_edge 三元组（甲公司关系：妈妈-是-群主）→ 1 跳关系扩散
-CREATE TABLE IF NOT EXISTS mem_tok (
-  scope  TEXT,
-  tok    TEXT,
-  mem_id TEXT,
-  tf     INTEGER DEFAULT 1,
-  PRIMARY KEY(scope, tok, mem_id)
-);
-CREATE INDEX IF NOT EXISTS idx_mem_tok_lookup ON mem_tok(scope, tok);
-
-CREATE TABLE IF NOT EXISTS mem_entity (
-  scope TEXT,
-  name  TEXT,
-  kind  TEXT,
-  ts    INTEGER,
-  hits  INTEGER DEFAULT 0,
-  PRIMARY KEY(scope, name)
-);
-
-CREATE TABLE IF NOT EXISTS mem_tag (
-  scope  TEXT,
-  name   TEXT,
-  mem_id TEXT,
-  PRIMARY KEY(scope, name, mem_id)
-);
-CREATE INDEX IF NOT EXISTS idx_mem_tag_name ON mem_tag(scope, name);
-CREATE INDEX IF NOT EXISTS idx_mem_tag_mem  ON mem_tag(scope, mem_id);
-
--- 三元组（甲-是-群主）→ 关系扩散；带**有效期**，
--- 新事实让旧事实失效而不是删掉（Graphiti/Zep 那套 bi-temporal 思路的精简版）：
---   valid_from / valid_to 是"这件事在现实里成立的时间段"
---   status = 'active' | 'superseded'
---   superseded_by 指向取代它的记忆 id，方便追溯"她为什么改口"
-CREATE TABLE IF NOT EXISTS mem_edge (
-  scope    TEXT,
-  src      TEXT,
-  rel      TEXT,
-  dst      TEXT,
-  mem_id   TEXT,
-  ts       INTEGER,
-  valid_from INTEGER,
-  valid_to   INTEGER,
-  status   TEXT DEFAULT 'active',
-  superseded_by TEXT,
-  src_kind TEXT DEFAULT 'rule',
-  PRIMARY KEY(scope, src, rel, dst, mem_id)
-);
-CREATE INDEX IF NOT EXISTS idx_mem_edge_src ON mem_edge(scope, src);
-CREATE INDEX IF NOT EXISTS idx_mem_edge_dst ON mem_edge(scope, dst);
-`;
+const SCHEMA = promptText('qq/dshqqbot/.qqbot-extensions/lib/memory-db/SCHEMA');
 
 /**
  * schema 版本。加表/加列就 +1。

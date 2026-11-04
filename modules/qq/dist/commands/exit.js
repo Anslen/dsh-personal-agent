@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /**
  * /bot-restart — 通用自重启 dsh 宿主(2026-09-08, 主人定: 通用插件能力)
  *
@@ -60,26 +61,26 @@ export function selfRestart(delayMs = 1600, killWaitMs = 2000) {
 export function botRestartCommand() {
     return {
         name: 'bot-restart',
-        description: '通用自重启 dsh 宿主(动态识别启动命令, 杀旧+自动拉起; 回执后约4秒完成, 期间短暂离线)',
+        description: promptText('qq/commands/exit/bot-restart.description'),
         handler: async () => {
             const ok = selfRestart();
             return ok
                 ? '🔁 dsh web 即将自重启(约4秒, 期间短暂离线)。重启完成后我会回来报到~'
                 : '❌ 自重启触发失败(看宿主日志)';
-        },
+        }
     };
 }
 /** /bot-exit 旧命令兼容: 同样走自重启(杀+拉一条龙) */
 export function botExitCommand() {
     return {
         name: 'bot-exit',
-        description: '(已升级) 结束并自重启 dsh 宿主, 同 /bot-restart',
+        description: promptText('qq/commands/exit/bot-exit.description'),
         handler: async () => {
             const ok = selfRestart();
             return ok
                 ? '👋 即将自重启(约4秒)。此命令已升级为 /bot-restart 同款(动态识别, 杀+自动拉起)。'
                 : '❌ 自重启触发失败';
-        },
+        }
     };
 }
 //# sourceMappingURL=exit.js.map

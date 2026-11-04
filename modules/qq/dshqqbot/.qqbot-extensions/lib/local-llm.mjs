@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * local-llm.mjs — 本地小模型（Ollama）客户端
  *
@@ -276,7 +277,10 @@ export async function chat({ messages, cfg, model, timeoutMs, maxTokens, tempera
       body: JSON.stringify(body),
     }, typeof timeoutMs === 'number' ? timeoutMs : c.timeoutMs);
     if (!res.ok) {
-      const hint = res.status === 404 ? '模型不存在(需要 ollama pull ' + wantModel + ')' : 'HTTP ' + res.status;
+      const hint =
+          res.status === 404
+              ? promptText('qq/dshqqbot/.qqbot-extensions/lib/local-llm/hint') + wantModel + ')'
+              : 'HTTP ' + res.status;
       noteUse('chat', wantModel);
       return { ok: false, error: hint, ms: Date.now() - started, model: wantModel };
     }

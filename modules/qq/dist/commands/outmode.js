@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { normalizeOutboundMode, switchOutboundMode } from '../features/outbound-mode-switch.js';
 import { getScopePeer } from '../shared/index.js';
@@ -47,12 +48,18 @@ async function noteModeChange(manager, cmdCtx, mode) {
 export function outModeCommand({ manager, config }) {
     return {
         name: 'outmode',
-        description: '查看/切换出站模式(用法: /outmode [adaptive|detail|passive|silent|nothink])',
+        description: promptText('qq/commands/outmode/outmode.description'),
         handler: async (cmdCtx) => {
             const args = String((cmdCtx.command?.raw ?? '').trim());
             const cur = currentOf(config);
             if (!args) {
-                const lines = ['### ⇄ 出站模式', '', `**当前: ${cur}**`, '', '可用模式(直接发 `/outmode 模式名` 切换, 立即生效):'];
+                const lines = [
+                    '### ⇄ 出站模式',
+                    '',
+                    `**当前: ${cur}**`,
+                    '',
+                    '可用模式(直接发 `/outmode 模式名` 切换, 立即生效):'
+                ];
                 for (const key of ['adaptive', 'detail', 'passive', 'silent', 'nothink']) {
                     lines.push(`- **${key}** — ${LABEL[key]}`);
                 }
@@ -61,14 +68,14 @@ export function outModeCommand({ manager, config }) {
             const want = normalizeOutboundMode(args.toLowerCase());
             // 多实例修复(2026-09-11): 带当前实例 ns —— 原全局单例 writer 会被多实例互相覆盖,
             // /outmode 在本实例会话执行却切到别的实例的 config(dock 显示与实际不符, nothink 不生效)。
-            const ns = (String(config.settingsNs ?? '').trim() || 'im-qqbot');
+            const ns = String(config.settingsNs ?? '').trim() || 'im-qqbot';
             const r = await switchOutboundMode(want, ns);
             if (r.ok) {
                 // 先回执; 后台等回合结束再通知 AI(回合安全, 不拆 tool_calls)
                 void noteModeChange(manager, cmdCtx, r.mode);
             }
             return r.ok ? `✅ 出站模式已切换: **${r.mode}**\n${LABEL[r.mode] ?? ''}` : `切换失败: ${r.msg}`;
-        },
+        }
     };
 }
 //# sourceMappingURL=outmode.js.map

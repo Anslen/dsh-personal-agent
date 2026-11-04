@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * lib/diary.mjs — 伪日记
  *
@@ -93,13 +94,13 @@ export async function generateDiary(dataRoot, { date = new Date(), scope = '', m
     const h = await llmHealth(lc);
     if (h && h.ok) {
       const r = await llmChat({
-        cfg: lc,
-        messages: [
-          { role: 'system', content: '你是一只住在深海、刚学会用人类网络的鲸鱼娘。写一篇第一人称小日记，80~160字，只写下面素材里真实出现过的事，不要编造人物和地点，不要总结成列表。语气软、口语、可以有一点笨拙。' },
-          { role: 'user', content: `今天是${dateLabel}。素材：\n${material || '（今天没什么特别的）'}` },
-        ],
-        maxTokens: 260,
-        temperature: 0.8,
+          cfg: lc,
+          messages: [
+              { role: 'system', content: promptText('qq/dshqqbot/.qqbot-extensions/lib/diary/content') },
+              { role: 'user', content: `今天是${dateLabel}。素材：\n${material || '（今天没什么特别的）'}` }
+          ],
+          maxTokens: 260,
+          temperature: 0.8
       });
       if (r && r.ok && r.text) { text = r.text.trim().slice(0, maxChars); via = 'local'; }
     }

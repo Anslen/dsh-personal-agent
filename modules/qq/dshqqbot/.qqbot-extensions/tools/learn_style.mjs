@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/learn_style.mjs — 学说话习惯
  *   action=scan 从指定群/最近记忆里提炼（默认）
@@ -10,9 +11,14 @@ export const description =
   '从群聊或导入记录里学说话习惯（短句/口头禅/标点），只学表达方式、不学别人隐私。主人说「学学他们怎么说话」时用。';
 
 export const inputSchema = {
-  action: { type: 'string', required: true, enum: ['scan', 'show'], description: 'scan=学一次；show=看当前学到的' },
-  scope: { type: 'string', description: 'scan 可选：群/私聊 scope，如 group:<gid>；不填用记忆库' },
-  limit: { type: 'number', description: 'scan 采样条数，默认 240' },
+    action: {
+        type: 'string',
+        required: true,
+        enum: ['scan', 'show'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/learn_style/description')
+    },
+    scope: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/learn_style/description.2') },
+    limit: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/learn_style/description.3') }
 };
 
 function dataRootOf(env) {

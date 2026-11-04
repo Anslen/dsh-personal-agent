@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /** Shared tool primitives and schemas for the main and executor Sessions. */
 import { z } from 'zod'
 import { IM_WORDS, wordCount } from '../../infra/text.ts'
@@ -24,12 +25,16 @@ export function readTool(description: string, executor: boolean,
   return tool({
     name: 'orchestrator_read',
     description,
-    schema: z.object({
-      resource: z.string().min(1).describe(`The resource, one of: ${resourceGrammar(executor)}.`),
-      offset: z.number().int().min(0).default(0).describe('Copy next_offset from the previous page; it counts characters of a text and items of a list.'),
-      limit: z.number().int().min(1).max(8000).optional()
-        .describe('Characters of a text, 4000 by default and 8000 at most, or items of a list, 20 by default and 50 at most.'),
-    }).strict(),
-    execute: async (args, signal) => read(args.resource, args.offset, args.limit, signal),
+    schema: z
+      .object({
+        resource: z
+          .string()
+          .min(1)
+          .describe(renderPrompt('superagent/app/tools/tool/resource', { p0: resourceGrammar(executor) })),
+        offset: z.number().int().min(0).default(0).describe(promptText('superagent/app/tools/tool/offset')),
+        limit: z.number().int().min(1).max(8000).optional().describe(promptText('superagent/app/tools/tool/limit'))
+      })
+      .strict(),
+    execute: async (args, signal) => read(args.resource, args.offset, args.limit, signal)
   })
 }

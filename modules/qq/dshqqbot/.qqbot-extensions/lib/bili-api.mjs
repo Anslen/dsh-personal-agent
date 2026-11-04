@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * lib/bili-api.mjs — B 站只读/低风险能力（Cookie + 扫码登录）
  *
@@ -583,14 +584,14 @@ function fmtHit(x, via) {
 }
 
 const COMMENT_CODE_HINT = {
-  '-412': '被 B 站风控拦截（发太快 / 账号风控），隔一会儿再试',
-  '-509': '操作太频繁，被限流了，等几分钟再试',
-  '-400': '请求被拒（参数或风控），换个说法/隔一会儿再试',
-  '-101': '没登录或登录失效，需要重新扫码',
-  '-111': 'csrf 校验失败（cookie 里的 bili_jct 过期），重新扫码',
-  '12002': '这个视频关闭了评论区',
-  '12061': '需要在 B 站 App 里绑定手机/实名后才能评论',
-  '12000': '评论内容被判定为不合适',
+    '-412': promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-412'"),
+    '-509': promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-509'"),
+    '-400': promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-400'"),
+    '-101': promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-101'"),
+    '-111': promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'-111'"),
+    12002: promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'12002'"),
+    12061: promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'12061'"),
+    12000: promptText("qq/dshqqbot/.qqbot-extensions/lib/bili-api/'12000'")
 };
 
 /**

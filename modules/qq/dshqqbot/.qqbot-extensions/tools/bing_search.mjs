@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * bing_search.mjs — 用 Bing 搜网页, 返回 标题 / 链接 / 摘要 / 来源域名
  *
@@ -267,64 +268,85 @@ async function searchSmart(baseQuery, count, mkt) {
 }
 
 export default {
-  name: 'bing_search',
-  /**
-   * 暴露范围(dsh-qqbot 1.8.0+)：'all' = 注册进全部会话, 不止 QQ 通道 ——
-   * web、终端等非 QQ 会话也能拿到本工具; 不写/写 'qq' 就只在 QQ 会话可见。
-   * (注册名会自动带人设归属, 如 bing_search__whale-girl)
-   */
-  expose: 'all',
-  description:
-    '用 Bing 搜网页, 返回标题+链接+摘要+来源域名。查询词已做卫生处理(自动剥掉"是什么/是什么意思"这类长尾巴再搜, 长词形查询不再被切碎); 多词混排导致结果跑偏时会自动回退(加引号/只搜核心词)并注明。查事实/梗/人物/新闻/资料时用它, 比模型记忆可靠。',
-  inputSchema: {
-    query: { type: 'string', required: true, description: '搜索词, 越短越准, 如 "性转马尔福"' },
-    count: { type: 'integer', description: `返回条数, 默认 ${DEFAULT_COUNT}, 上限 ${MAX_COUNT}` },
-    site: { type: 'string', description: '限定站点, 如 zh.moegirl.org.cn(会拼成 site:xxx 前缀)' },
-    quote: { type: 'boolean', description: 'true=直接给查询词加英文双引号做完全匹配' },
-    raw: { type: 'boolean', description: 'true=不做查询词卫生, 原样搜(排查对比用)' },
-    mkt: { type: 'string', description: '市场/语言, 默认 zh-CN, 查英文资料可传 en-US' },
-  },
-  run: async (args) => {
-    const a = args || {};
-    const original = String(a.query ?? '').trim();
-    if (!original) return { ok: false, msg: '缺少 query(要搜什么?)' };
+    name: 'bing_search',
+    /**
+     * 暴露范围(dsh-qqbot 1.8.0+)：'all' = 注册进全部会话, 不止 QQ 通道 ——
+     * web、终端等非 QQ 会话也能拿到本工具; 不写/写 'qq' 就只在 QQ 会话可见。
+     * (注册名会自动带人设归属, 如 bing_search__whale-girl)
+     */
+    expose: 'all',
+    description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description'),
+    inputSchema: {
+        query: {
+            type: 'string',
+            required: true,
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.2')
+        },
+        count: {
+            type: 'integer',
+            description: renderPrompt('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.3', {
+                p0: DEFAULT_COUNT,
+                p1: MAX_COUNT
+            })
+        },
+        site: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.4')
+        },
+        quote: {
+            type: 'boolean',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.5')
+        },
+        raw: {
+            type: 'boolean',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.6')
+        },
+        mkt: {
+            type: 'string',
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/bing_search/bing_search.description.7')
+        }
+    },
+    run: async (args) => {
+        const a = args || {};
+        const original = String(a.query ?? '').trim();
+        if (!original) return { ok: false, msg: '缺少 query(要搜什么?)' };
 
-    let used = a.raw ? original : sanitizeQuery(original);
-    if (!used || used.length < 2) used = original;
-    if (a.site) used = `site:${String(a.site).trim()} ${used}`;
-    if (a.quote && !used.startsWith('"')) used = `"${used}"`;
+        let used = a.raw ? original : sanitizeQuery(original);
+        if (!used || used.length < 2) used = original;
+        if (a.site) used = `site:${String(a.site).trim()} ${used}`;
+        if (a.quote && !used.startsWith('"')) used = `"${used}"`;
 
-    const n = Math.max(1, Math.min(MAX_COUNT, Math.round(Number(a.count) || DEFAULT_COUNT)));
-    const mkt = String(a.mkt || 'zh-CN').trim() || 'zh-CN';
+        const n = Math.max(1, Math.min(MAX_COUNT, Math.round(Number(a.count) || DEFAULT_COUNT)));
+        const mkt = String(a.mkt || 'zh-CN').trim() || 'zh-CN';
 
-    const { best, fallback } = await searchSmart(used, n, mkt);
+        const { best, fallback } = await searchSmart(used, n, mkt);
 
-    if (!best.list.length) {
-      return {
-        ok: false,
-        msg: `Bing 没有可用的结果(查询词: "${used}")。尝试记录: ${best.errors.join('; ') || '无'}\n换个更短的核心词再试一次。`,
-      };
+        if (!best.list.length) {
+            return {
+                ok: false,
+                msg: `Bing 没有可用的结果(查询词: "${used}")。尝试记录: ${best.errors.join('; ') || '无'}\n换个更短的核心词再试一次。`
+            };
+        }
+
+        const notes = [];
+        if (used !== original) notes.push(`卫生处理: "${original}" → "${used}"`);
+        if (fallback) notes.push(`已自动回退, 实际用的是【${best.label}: ${best.query}】`);
+        if (best.rel < REL_FLOOR) {
+            notes.push(
+                fallback
+                    ? `按核心词的相关性约 ${Math.round(best.rel * 100)}%(有些结果没直接提到该词), 自行判断够不够用`
+                    : `相关性偏低(${Math.round(best.rel * 100)}% 命中), 结果可能不沾边, 建议换更短的核心词`
+            );
+        }
+
+        const lines = [
+            `Bing 搜到 ${best.list.length} 条(${notes.length ? notes.join('；') : '主查询直出'}；${(best.endpoint || 'rss').toUpperCase()} 通道):`
+        ];
+        best.list.forEach((r, i) => {
+            lines.push(`${i + 1}. [${r.domain}] ${r.title}`);
+            lines.push(`   ${r.url}`);
+            if (r.snippet) lines.push(`   ${clip(r.snippet, SNIPPET_CHARS)}`);
+        });
+        return { ok: true, msg: lines.join('\n') };
     }
-
-    const notes = [];
-    if (used !== original) notes.push(`卫生处理: "${original}" → "${used}"`);
-    if (fallback) notes.push(`已自动回退, 实际用的是【${best.label}: ${best.query}】`);
-    if (best.rel < REL_FLOOR) {
-      notes.push(
-        fallback
-          ? `按核心词的相关性约 ${Math.round(best.rel * 100)}%(有些结果没直接提到该词), 自行判断够不够用`
-          : `相关性偏低(${Math.round(best.rel * 100)}% 命中), 结果可能不沾边, 建议换更短的核心词`
-      );
-    }
-
-    const lines = [
-      `Bing 搜到 ${best.list.length} 条(${notes.length ? notes.join('；') : '主查询直出'}；${(best.endpoint || 'rss').toUpperCase()} 通道):`,
-    ];
-    best.list.forEach((r, i) => {
-      lines.push(`${i + 1}. [${r.domain}] ${r.title}`);
-      lines.push(`   ${r.url}`);
-      if (r.snippet) lines.push(`   ${clip(r.snippet, SNIPPET_CHARS)}`);
-    });
-    return { ok: true, msg: lines.join('\n') };
-  },
 };

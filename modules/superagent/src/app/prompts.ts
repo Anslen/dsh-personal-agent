@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../prompts/index.mjs";
 /** Manages versioned role prompts, behavioral policies, and operational skills independently of access settings. */
 import { z } from 'zod'
 import { UserError, key } from '../core/index.ts'
@@ -26,15 +27,20 @@ const PART_KEYS = ['runtime/shared', 'runtime/orchestrator', 'runtime/worker', '
   'runtime/policy', 'runtime/policy/none', 'skill/feishu', 'skill/github'] as const
 export type PartKey = typeof PART_KEYS[number]
 /** A team's text for a built-in part, and `base`, the key of the built-in text it was edited from. */
-const OverrideSchema = z.object({ text: z.string(),
-  base: z.string().optional().describe('Key of the built-in text it was edited from; copy as read, or omit.') }).strict()
+const OverrideSchema = z.object({ text: z.string(), base: z.string().optional().describe(promptText('superagent/app/prompts/base')) }).strict()
 /**
  * A configuration, whose overrides may name a part a later version no longer has, which `Prompts.validate` drops when the
  * saved version holds it and refuses otherwise.
  */
-export const PromptConfigSchema = z.object({ communication: z.string(), scope: z.string(), delivery: z.string(),
-  skills: z.record(SkillNameSchema, z.string()), overrides: z.record(z.string(), OverrideSchema).optional()
-    .describe('Text in place of a built-in part, by its key in prompts/defaults; a part not named follows its built-in text.') }).strict()
+export const PromptConfigSchema = z
+  .object({
+    communication: z.string(),
+    scope: z.string(),
+    delivery: z.string(),
+    skills: z.record(SkillNameSchema, z.string()),
+    overrides: z.record(z.string(), OverrideSchema).optional().describe(promptText('superagent/app/prompts/overrides'))
+  })
+  .strict()
 export type PromptConfig = z.infer<typeof PromptConfigSchema>
 export interface PromptVersion { revision: number; previousRevision: number | null; savedAt: string; source: string; config: PromptConfig;
   /** Original unmigrated config preserved when differences cannot be compared across schema versions. */
@@ -42,7 +48,7 @@ export interface PromptVersion { revision: number; previousRevision: number | nu
 export const defaultPrompts = (): PromptConfig => ({ ...teamDefaults, skills: {} })
 
 const ENVIRONMENT_HEADING = 'Execution environment (from this installation\'s settings; it takes precedence over any repository or account named elsewhere in these instructions; an empty value means that part is not configured here). The prepare command of a ticket directory reads the same variables:'
-const POLICY_HEAD = '## Policy\nPolicy version {version}; accept mode {mode}. The accept mode and the rules decide proactive candidates only: an explicit request is routed as dispatch says, in any mode and whatever the rules.'
+const POLICY_HEAD = promptText('superagent/app/prompts/POLICY_HEAD')
 type Role = 'orchestrator' | 'worker'
 /** A built-in part a team may override: the roles that read it, its text, and the placeholders a template's override keeps. */
 interface BuiltInPart { roles: readonly Role[]; text: string; placeholders?: readonly string[] }

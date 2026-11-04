@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * tools/storyboard.mjs — 工具 `storyboard`：多画面「小剧场」→ 一段 mp4
  *
@@ -19,14 +20,21 @@ export const description =
   '把 2~5 个画面串成一小段视频（先出图再拼 mp4）并发到当前会话。只在有人明确要"画个故事/做个视频/来段动画"时用。';
 
 export const inputSchema = {
-  panels: {
-    type: 'array',
-    items: { type: 'string' },
-    required: true,
-    description: '2~5 个画面的描述（中文即可），按顺序播放',
-  },
-  secondsPer: { type: 'number', description: '每个画面停留秒数，默认 1.6' },
-  size: { type: 'string', enum: ['square', 'wide', 'tall'], description: '画幅，默认 square' },
+    panels: {
+        type: 'array',
+        items: { type: 'string' },
+        required: true,
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/storyboard/description')
+    },
+    secondsPer: {
+        type: 'number',
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/storyboard/description.2')
+    },
+    size: {
+        type: 'string',
+        enum: ['square', 'wide', 'tall'],
+        description: promptText('qq/dshqqbot/.qqbot-extensions/tools/storyboard/description.3')
+    }
 };
 
 const SIZES = {

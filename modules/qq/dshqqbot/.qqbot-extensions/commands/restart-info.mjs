@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * restart-info.mjs —— /restart-info 扩展命令（2026-10-29 改名让位）
  *
@@ -9,26 +10,26 @@
  */
 
 export default {
-  name: ['restart-info', '生效规则'],
-  description: '查看本次改动如何生效：哪些 /tools-reload 热刷就行、哪些要重开 DSH Desktop（真重启用官方 /bot-restart）',
-  usage: '/restart-info',
+    name: ['restart-info', '生效规则'],
+    description: promptText('qq/dshqqbot/.qqbot-extensions/commands/restart-info/description'),
+    usage: '/restart-info',
 
-  async handler(ctx) {
-    const lines = [
-      '🛠 生效规则速查（2026-10-28 核对过宿主）：',
-      '',
-      '① 改了 tools/lib、tools/*、outbound/*（比如记忆分身、视频管线）',
-      '   → 发 /tools-reload 热刷，立即生效',
-      '',
-      '② 改了浮窗宿主（settings-host / client）或宿主本体',
-      '   → 只能重开 DSH Desktop（关掉再开）',
-      '',
-      '③ 要重启机器人/宿主本体',
-      '   → 用官方 /bot-restart（1.10.39 内置，会真重启宿主）',
-      '',
-      '④ 浮窗界面看起来还是旧的',
-      '   → 重启后在浮窗里 Ctrl+F5，右上角版本戳对上了就是新版',
-    ];
-    return { kind: 'text', content: lines.join('\n') };
-  },
+    async handler(ctx) {
+        const lines = [
+            '🛠 生效规则速查（2026-10-28 核对过宿主）：',
+            '',
+            '① 改了 tools/lib、tools/*、outbound/*（比如记忆分身、视频管线）',
+            '   → 发 /tools-reload 热刷，立即生效',
+            '',
+            '② 改了浮窗宿主（settings-host / client）或宿主本体',
+            '   → 只能重开 DSH Desktop（关掉再开）',
+            '',
+            '③ 要重启机器人/宿主本体',
+            '   → 用官方 /bot-restart（1.10.39 内置，会真重启宿主）',
+            '',
+            '④ 浮窗界面看起来还是旧的',
+            '   → 重启后在浮窗里 Ctrl+F5，右上角版本戳对上了就是新版'
+        ];
+        return { kind: 'text', content: lines.join('\n') };
+    }
 };

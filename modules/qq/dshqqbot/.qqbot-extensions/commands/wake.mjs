@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 /**
  * 唤醒.mjs —— /唤醒 扩展命令：手动叫醒鲸鱼娘（2026-10-16 主人需求）
  *
@@ -35,37 +36,39 @@ const WAKE_PREFIX = '[用户呼唤]';
 const DEFAULT_SAY = '用户在呼唤你';
 
 export default {
-  name: ['唤醒', 'wake', 'huanxing'],
-  description: '强制唤醒: /唤醒 [要说的话] —— 把这句话当作"用户在呼唤你"送进会话（私聊没有 @，用它代替）',
-  usage: '/唤醒 [要说的话]',
+    name: ['唤醒', 'wake', 'huanxing'],
+    description: promptText('qq/dshqqbot/.qqbot-extensions/commands/wake/description'),
+    usage: '/唤醒 [要说的话]',
 
-  async handler(ctx) {
-    // raw 可能是「/唤醒 在吗」也可能是「在吗」→ 两种都吃掉
-    let say = String(ctx?.command?.raw ?? '').trim();
-    say = say.replace(/^\/?\s*(唤醒|wake|huanxing)\s*/i, '').trim();
-    if (!say) say = DEFAULT_SAY;
+    async handler(ctx) {
+        // raw 可能是「/唤醒 在吗」也可能是「在吗」→ 两种都吃掉
+        let say = String(ctx?.command?.raw ?? '').trim();
+        say = say.replace(/^\/?\s*(唤醒|wake|huanxing)\s*/i, '').trim();
+        if (!say) say = DEFAULT_SAY;
 
-    const isGroup = String(ctx?.message?.kind ?? '') === 'group';
-    const who = String(ctx?.message?.senderName ?? '').trim() || (isGroup ? '群友' : '主人');
-    const where = isGroup ? '群里' : '私聊里';
-    const text = `${WAKE_PREFIX} ${who} 在${where}呼唤你：${say}`;
-    const receipt = `🔔 叫醒她啦～「${say.slice(0, 40)}」`;
+        const isGroup = String(ctx?.message?.kind ?? '') === 'group';
+        const who = String(ctx?.message?.senderName ?? '').trim() || (isGroup ? '群友' : '主人');
+        const where = isGroup ? '群里' : '私聊里';
+        const text = `${WAKE_PREFIX} ${who} 在${where}呼唤你：${say}`;
+        const receipt = `🔔 叫醒她啦～「${say.slice(0, 40)}」`;
 
-    // ── 首选：caps.appendWake（= 工具侧 env.appendWake：直接 agent.followup 开新回合）──
-    const caps = ctx?.caps ?? ctx ?? {};
-    const appendWake = caps.appendWake ?? ctx?.appendWake;
-    if (typeof appendWake === 'function') {
-      try {
-        const ok = await appendWake(text);
-        if (ok !== false) return { kind: 'text', content: receipt };
-      } catch { /* 落到下面的聚合层兜底 */ }
+        // ── 首选：caps.appendWake（= 工具侧 env.appendWake：直接 agent.followup 开新回合）──
+        const caps = ctx?.caps ?? ctx ?? {};
+        const appendWake = caps.appendWake ?? ctx?.appendWake;
+        if (typeof appendWake === 'function') {
+            try {
+                const ok = await appendWake(text);
+                if (ok !== false) return { kind: 'text', content: receipt };
+            } catch {
+                /* 落到下面的聚合层兜底 */
+            }
+        }
+
+        // ── 兜底：交给聚合层的合成消息通道（middleware-setup 里的 injectSynthetic）──
+        return {
+            kind: 'text',
+            content: receipt,
+            wake: { content: text, senderName: who }
+        };
     }
-
-    // ── 兜底：交给聚合层的合成消息通道（middleware-setup 里的 injectSynthetic）──
-    return {
-      kind: 'text',
-      content: receipt,
-      wake: { content: text, senderName: who },
-    };
-  },
 };

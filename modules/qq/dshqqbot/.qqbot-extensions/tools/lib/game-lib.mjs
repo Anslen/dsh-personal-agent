@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../../prompts/index.mjs";
 /**
  * game-lib.mjs — 聊天小游戏引擎 + 会话存档（2026-10-25）
  *
@@ -72,10 +73,18 @@ const TRUTH_POOL = [
 ];
 /** 大冒险任务（线上可完成版） */
 const DARE_POOL = [
-  '用一句话夸下一位发言的人', '接下来一分钟，说话都带上「喵」结尾', '发一个你最近输入法记住的词（不解释）',
-  '用表情包形容你现在的心情', '用唱歌的调子念出你上一条消息', '给群里随机第三个人发一句早安（现在几点都得发）',
-  '接下来三句话里必须有一个成语', '用最正经的语气说一句特别无聊的事', '把你的微信步数报出来',
-  '用一种动物的叫声回应下一条@你的消息', '现在做个深呼吸，然后说「满血复活！」', '说一句绕口令（比如：红鲤鱼与绿鲤鱼与驴）',
+    '用一句话夸下一位发言的人',
+    '接下来一分钟，说话都带上「喵」结尾',
+    '发一个你最近输入法记住的词（不解释）',
+    '用表情包形容你现在的心情',
+    '用唱歌的调子念出你上一条消息',
+    '给群里随机第三个人发一句早安（现在几点都得发）',
+    promptText('qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib/DARE_POOL'),
+    '用最正经的语气说一句特别无聊的事',
+    '把你的微信步数报出来',
+    '用一种动物的叫声回应下一条@你的消息',
+    '现在做个深呼吸，然后说「满血复活！」',
+    '说一句绕口令（比如：红鲤鱼与绿鲤鱼与驴）'
 ];
 
 // ── 存档 ─────────────────────────────────────────────────────────────
@@ -225,9 +234,9 @@ function quizOk(j) {
 }
 
 async function nextQuiz(dataRoot) {
-  const raw = await askBrain(dataRoot,
-    '你是出题人。出一道中文冷知识单选题式问答题（有唯一确定答案的事实题，不要考诗词出处、不要问"有多少座"这类含糊题）。题干 12~30 字、以问号结尾；答案 2~15 字。严格只输出一行 JSON：{"q":"题干","a":"答案"}',
-    { maxTokens: 120 });
+  const raw = await askBrain(dataRoot, promptText('qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib/raw'), {
+      maxTokens: 120
+  });
   try {
     const m = raw.match(/\{[\s\S]*\}/);
     if (m) {
@@ -372,9 +381,9 @@ const ENGINES = {
     title: '海龟汤',
     needsLlm: true,
     async start() {
-      const raw = await askBrain(dataRootFor(),
-        '你出一道经典的中文海龟汤（情境推理谜题）：汤面要有一个明显反常、需要解释的场景（15~50 字），汤底一句话说清真相（10~60 字）。不要出现"海龟汤"三个字，不要把答案写进汤面。严格只输出一行 JSON：{"puzzle":"汤面","answer":"汤底"}',
-        { maxTokens: 200 });
+      const raw = await askBrain(dataRootFor(), promptText('qq/dshqqbot/.qqbot-extensions/tools/lib/game-lib/raw.2'), {
+          maxTokens: 200
+      });
       let pz = null;
       try {
         const m = raw.match(/\{[\s\S]*\}/);

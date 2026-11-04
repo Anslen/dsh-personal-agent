@@ -1,3 +1,4 @@
+import { promptText, renderPrompt } from "../../../../../prompts/index.mjs";
 import { join } from 'node:path';
 import { readdirSync, readFileSync } from 'node:fs';
 
@@ -388,159 +389,181 @@ async function finish(env, v, byWhom, byName) {
 }
 
 export default {
-  name: TOOL,
-  description: '群投票（可多选）：start=发起 / add=中途加选项 / status=看票数 / end=结束结算；卡片最后一行自带「结束投票」按钮；支持多投票并存、最多 20 个选项、可设定时结束；结束时结果会通知 AI。',
-  inputSchema: {
-    action: { type: 'string', required: true, description: 'start=发起投票；add=加选项；status=查票数；end=结束并结算' },
-    topic: { type: 'string', description: 'start 必填：投票题目' },
-    options: { type: 'string', description: 'start/add 必填：选项，用 | 分隔（每条建议 ≤12 字，合计最多 20 条）' },
-    voteId: { type: 'string', description: 'add/status/end 必填：投票号（start 时返回，如 V1）' },
-    minutes: { type: 'number', description: '可选（仅 start）：多少分钟后自动结束；不填 = 手动/点结束按钮' },
-  },
+    name: TOOL,
+    description: promptText('qq/dshqqbot/.qqbot-extensions/tools/vote/description'),
+    inputSchema: {
+        action: {
+            type: 'string',
+            required: true,
+            description: promptText('qq/dshqqbot/.qqbot-extensions/tools/vote/description.2')
+        },
+        topic: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/vote/description.3') },
+        options: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/vote/description.4') },
+        voteId: { type: 'string', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/vote/description.5') },
+        minutes: { type: 'number', description: promptText('qq/dshqqbot/.qqbot-extensions/tools/vote/description.6') }
+    },
 
-  async run(args, env) {
-    const action = String(args?.action ?? 'start').trim().toLowerCase();
-    const all = loadAll(env);
-    all.votes = all.votes && typeof all.votes === 'object' ? all.votes : {};
-    all.seq = Number(all.seq) || 0;
+    async run(args, env) {
+        const action = String(args?.action ?? 'start')
+            .trim()
+            .toLowerCase();
+        const all = loadAll(env);
+        all.votes = all.votes && typeof all.votes === 'object' ? all.votes : {};
+        all.seq = Number(all.seq) || 0;
 
-    // ── 发起 ─────────────────────────────────────────────
-    if (action === 'start') {
-      const topic = String(args?.topic ?? '').trim();
-      const options = String(args?.options ?? '').split(SEP).map((s) => s.trim()).filter(Boolean);
-      if (!topic) return { ok: false, msg: '缺 topic（投票题目）' };
-      if (options.length < 2) return { ok: false, msg: '至少 2 个选项（用 | 分隔）' };
-      if (options.length > MAX_OPTIONS) return { ok: false, msg: `选项太多：最多 ${MAX_OPTIONS} 个（卡片 4 行 × 5 列，第 5 行留给结束按钮）` };
+        // ── 发起 ─────────────────────────────────────────────
+        if (action === 'start') {
+            const topic = String(args?.topic ?? '').trim();
+            const options = String(args?.options ?? '')
+                .split(SEP)
+                .map((s) => s.trim())
+                .filter(Boolean);
+            if (!topic) return { ok: false, msg: '缺 topic（投票题目）' };
+            if (options.length < 2) return { ok: false, msg: '至少 2 个选项（用 | 分隔）' };
+            if (options.length > MAX_OPTIONS)
+                return { ok: false, msg: `选项太多：最多 ${MAX_OPTIONS} 个（卡片 4 行 × 5 列，第 5 行留给结束按钮）` };
 
-      all.seq += 1;
-      const id = `V${all.seq}`;
-      const minutes = Number(args?.minutes);
-      const v = {
-        id,
-        topic,
-        options,
-        votes: {},
-        createdAt: Date.now(),
-        ...(Number.isFinite(minutes) && minutes > 0 ? { endsAt: Date.now() + minutes * 60_000 } : {}),
-      };
-      all.votes[id] = v;
-      saveAll(env, all);
+            all.seq += 1;
+            const id = `V${all.seq}`;
+            const minutes = Number(args?.minutes);
+            const v = {
+                id,
+                topic,
+                options,
+                votes: {},
+                createdAt: Date.now(),
+                ...(Number.isFinite(minutes) && minutes > 0 ? { endsAt: Date.now() + minutes * 60_000 } : {})
+            };
+            all.votes[id] = v;
+            saveAll(env, all);
 
-      const ok = typeof env.registerInteractionCard === 'function'
-        ? env.registerInteractionCard({
-          cardId: id,
-          // ★ 结束按钮也要登记，否则点了没人认
-          buttonIds: [...options.slice(0, MAX_OPTIONS).map((_, i) => String(i)), END_BTN],
-          expireAt: Date.now() + (v.endsAt ? Math.max(24 * 3600_000, v.endsAt - Date.now() + 86400_000) : 3 * 86400_000),
-        })
-        : false;
-      const sent = await sendCard(env, v);
-      return {
-        ok: !!sent,
-        msg: sent
-          ? `投票已发起：${id}「${topic}」，${options.length} 个选项${v.endsAt ? `，${minutes} 分钟后自动结束` : '（结束时点卡片上的「✋ 结束投票」，或 action=end）'}${ok ? '' : '；⚠️ 卡片登记失败，按钮可能点不动'}`
-          : '发卡失败（确认在 QQ 会话里）',
-      };
+            const ok =
+                typeof env.registerInteractionCard === 'function'
+                    ? env.registerInteractionCard({
+                          cardId: id,
+                          // ★ 结束按钮也要登记，否则点了没人认
+                          buttonIds: [...options.slice(0, MAX_OPTIONS).map((_, i) => String(i)), END_BTN],
+                          expireAt:
+                              Date.now() +
+                              (v.endsAt ? Math.max(24 * 3600_000, v.endsAt - Date.now() + 86400_000) : 3 * 86400_000)
+                      })
+                    : false;
+            const sent = await sendCard(env, v);
+            return {
+                ok: !!sent,
+                msg: sent
+                    ? `投票已发起：${id}「${topic}」，${options.length} 个选项${v.endsAt ? `，${minutes} 分钟后自动结束` : '（结束时点卡片上的「✋ 结束投票」，或 action=end）'}${ok ? '' : '；⚠️ 卡片登记失败，按钮可能点不动'}`
+                    : '发卡失败（确认在 QQ 会话里）'
+            };
+        }
+
+        // ── 中途加选项 ───────────────────────────────────────
+        if (action === 'add') {
+            const v = pick(all, args?.voteId);
+            if (!v) return { ok: false, msg: `没找到投票 ${args?.voteId}` };
+            if (v.closed) return { ok: false, msg: `投票 ${v.id} 已经结束了，不能再加选项` };
+            const added = String(args?.options ?? '')
+                .split(SEP)
+                .map((s) => s.trim())
+                .filter(Boolean);
+            if (added.length === 0) return { ok: false, msg: '要加什么选项？（options 用 | 分隔）' };
+            if (v.options.length + added.length > MAX_OPTIONS) {
+                return { ok: false, msg: `加不下：还余 ${MAX_OPTIONS - v.options.length} 个位（含结束按钮共 5 行）` };
+            }
+            const startIdx = v.options.length;
+            v.options.push(...added);
+            saveAll(env, all);
+            if (typeof env.registerInteractionCard === 'function') {
+                env.registerInteractionCard({
+                    cardId: v.id,
+                    buttonIds: [...v.options.map((_, i) => String(i)), END_BTN],
+                    expireAt: Date.now() + 3 * 86400_000
+                });
+            }
+            const newOnes = added.map((a, k) => `**${LETTERS[startIdx + k]}**. ${a}`).join('、');
+            const sent = await sendCard(env, v, `🆕 新增选项：${newOnes}（旧卡片上的按钮同样有效）`);
+            return { ok: !!sent, msg: `已给 ${v.id} 加上：${added.join('、')}（现共 ${v.options.length} 个选项）` };
+        }
+
+        // ── 查票数 ───────────────────────────────────────────
+        if (action === 'status') {
+            const v = pick(all, args?.voteId);
+            if (!v) return { ok: false, msg: `没找到投票 ${args?.voteId}` };
+            saveAll(env, all);
+            return {
+                ok: true,
+                msg: `${v.closed ? '【已结束】' : '【进行中】'}${v.id}「${v.topic}」\n${tallyBlock(v)}`
+            };
+        }
+
+        // ── 结束并结算（AI 手动）────────────────────────────
+        if (action === 'end') {
+            const v = pick(all, args?.voteId);
+            if (!v) return { ok: false, msg: `没找到投票 ${args?.voteId}` };
+            const { first, block } = await finish(env, v, '');
+            saveAll(env, all);
+            return {
+                ok: true,
+                msg: `${first ? '已结束并结算' : '该投票此前已结束，重新结算'}：${v.id}「${v.topic}」\n\n${block}`
+            };
+        }
+
+        return { ok: false, msg: `未知 action：${action}（可用：start / add / status / end）` };
+    },
+
+    async onInteraction(ctx, info) {
+        const openid = String(ctx?.performer?.openid ?? '');
+        if (!openid) return '拿不到你的身份，稍后再试~';
+
+        const all = loadAll(ctx);
+        const v = pick(all, info.cardId);
+        if (!v) return '这次投票不存在或已被清理。';
+
+        // ★ 2026-10-16：取点击者真实昵称
+        //   官方 ctx.user.name → QQ 官方接口(只要 openid 就能查真名) → 群成员台账 → msg-index → openid 前缀
+        const names = loadNames(ctx);
+        const name = await resolveName(ctx, ctx, openid, names);
+        const who = `${name}(${openid.slice(0, 6)}…)`;
+
+        // ★ 2026-10-16 主人要求：投票一旦结束，任何人再点**都不回执**（静默吞掉）。
+        //   契约：onInteraction 返回空串 = 不发回执（见 ext-tool-interaction.js: `if (text) sendReceipt(...)`）。
+        if (v.closed) {
+            ctx.log?.(`[vote] ${v.id} 已结束，忽略 ${who} 的点击（静默）`);
+            return '';
+        }
+
+        // ── 结束按钮 ─────────────────────────────────────────
+        if (String(info.buttonId) === END_BTN) {
+            // ★ 2026-10-16 主人要求：只有主人的 openid 能结束；别人点了不结算
+            if (!canEnd(openid)) {
+                ctx.log?.(`[vote] ${v.id} 结束按钮被非主人点击：${who}（已拒绝）`);
+                return '这个按钮只有主人能点哦～想结算的话叫一声早饭哥哥。';
+            }
+            const { woke, block } = await finish(ctx, v, openid, name);
+            saveAll(ctx, all);
+            ctx.log?.(`[vote] ${v.id} 由 ${who} 点结束按钮 woke=${woke}`);
+            // ★ 2026-10-16 主人澄清：「结束统计的回执本身是要的」——
+            //   所以这里把结算表**作为回执**发给点击者（只有点的人看得到，不刷群）。
+            return `✅ 已结束，结算如下：\n\n${block}`;
+        }
+
+        const idx = Number(String(info.buttonId ?? ''));
+        if (!Number.isInteger(idx) || idx < 0 || idx >= v.options.length) return '这个选项不认识…';
+
+        // 同一按钮只能投一次（但**可以**继续投别的选项 = 多选）
+        if (hasChosen(v, openid, idx)) {
+            return `你已经投过「${LETTERS[idx]}. ${v.options[idx]}」了（不过还能投别的选项）`;
+        }
+        const mine = choicesOf(v, openid);
+        mine.push(idx);
+        v.votes[openid] = mine;
+        // ★ 记下这个人叫什么（结算表里要写"谁投了什么"）
+        v.names = { ...(v.names ?? {}), [openid]: name };
+        saveAll(ctx, all);
+
+        const cnt = Object.values(v.votes).filter((c) => (Array.isArray(c) ? c : [c]).includes(idx)).length;
+        ctx.log?.(`[vote] ${v.id} by=${who} → ${LETTERS[idx]}（该项第 ${cnt} 票）`);
+        // ★ 中途回执只报这一票（主人要求：别甩整张表，完整结算只在结束时给）
+        return `✅ ${name} 「${LETTERS[idx]}. ${v.options[idx]}」+1 票（当前 ${cnt} 票）`;
     }
-
-    // ── 中途加选项 ───────────────────────────────────────
-    if (action === 'add') {
-      const v = pick(all, args?.voteId);
-      if (!v) return { ok: false, msg: `没找到投票 ${args?.voteId}` };
-      if (v.closed) return { ok: false, msg: `投票 ${v.id} 已经结束了，不能再加选项` };
-      const added = String(args?.options ?? '').split(SEP).map((s) => s.trim()).filter(Boolean);
-      if (added.length === 0) return { ok: false, msg: '要加什么选项？（options 用 | 分隔）' };
-      if (v.options.length + added.length > MAX_OPTIONS) {
-        return { ok: false, msg: `加不下：还余 ${MAX_OPTIONS - v.options.length} 个位（含结束按钮共 5 行）` };
-      }
-      const startIdx = v.options.length;
-      v.options.push(...added);
-      saveAll(env, all);
-      if (typeof env.registerInteractionCard === 'function') {
-        env.registerInteractionCard({
-          cardId: v.id,
-          buttonIds: [...v.options.map((_, i) => String(i)), END_BTN],
-          expireAt: Date.now() + 3 * 86400_000,
-        });
-      }
-      const newOnes = added.map((a, k) => `**${LETTERS[startIdx + k]}**. ${a}`).join('、');
-      const sent = await sendCard(env, v, `🆕 新增选项：${newOnes}（旧卡片上的按钮同样有效）`);
-      return { ok: !!sent, msg: `已给 ${v.id} 加上：${added.join('、')}（现共 ${v.options.length} 个选项）` };
-    }
-
-    // ── 查票数 ───────────────────────────────────────────
-    if (action === 'status') {
-      const v = pick(all, args?.voteId);
-      if (!v) return { ok: false, msg: `没找到投票 ${args?.voteId}` };
-      saveAll(env, all);
-      return { ok: true, msg: `${v.closed ? '【已结束】' : '【进行中】'}${v.id}「${v.topic}」\n${tallyBlock(v)}` };
-    }
-
-    // ── 结束并结算（AI 手动）────────────────────────────
-    if (action === 'end') {
-      const v = pick(all, args?.voteId);
-      if (!v) return { ok: false, msg: `没找到投票 ${args?.voteId}` };
-      const { first, block } = await finish(env, v, '');
-      saveAll(env, all);
-      return { ok: true, msg: `${first ? '已结束并结算' : '该投票此前已结束，重新结算'}：${v.id}「${v.topic}」\n\n${block}` };
-    }
-
-    return { ok: false, msg: `未知 action：${action}（可用：start / add / status / end）` };
-  },
-
-  async onInteraction(ctx, info) {
-    const openid = String(ctx?.performer?.openid ?? '');
-    if (!openid) return '拿不到你的身份，稍后再试~';
-
-    const all = loadAll(ctx);
-    const v = pick(all, info.cardId);
-    if (!v) return '这次投票不存在或已被清理。';
-
-    // ★ 2026-10-16：取点击者真实昵称
-    //   官方 ctx.user.name → QQ 官方接口(只要 openid 就能查真名) → 群成员台账 → msg-index → openid 前缀
-    const names = loadNames(ctx);
-    const name = await resolveName(ctx, ctx, openid, names);
-    const who = `${name}(${openid.slice(0, 6)}…)`;
-
-    // ★ 2026-10-16 主人要求：投票一旦结束，任何人再点**都不回执**（静默吞掉）。
-    //   契约：onInteraction 返回空串 = 不发回执（见 ext-tool-interaction.js: `if (text) sendReceipt(...)`）。
-    if (v.closed) {
-      ctx.log?.(`[vote] ${v.id} 已结束，忽略 ${who} 的点击（静默）`);
-      return '';
-    }
-
-    // ── 结束按钮 ─────────────────────────────────────────
-    if (String(info.buttonId) === END_BTN) {
-      // ★ 2026-10-16 主人要求：只有主人的 openid 能结束；别人点了不结算
-      if (!canEnd(openid)) {
-        ctx.log?.(`[vote] ${v.id} 结束按钮被非主人点击：${who}（已拒绝）`);
-        return '这个按钮只有主人能点哦～想结算的话叫一声早饭哥哥。';
-      }
-      const { woke, block } = await finish(ctx, v, openid, name);
-      saveAll(ctx, all);
-      ctx.log?.(`[vote] ${v.id} 由 ${who} 点结束按钮 woke=${woke}`);
-      // ★ 2026-10-16 主人澄清：「结束统计的回执本身是要的」——
-      //   所以这里把结算表**作为回执**发给点击者（只有点的人看得到，不刷群）。
-      return `✅ 已结束，结算如下：\n\n${block}`;
-    }
-
-    const idx = Number(String(info.buttonId ?? ''));
-    if (!Number.isInteger(idx) || idx < 0 || idx >= v.options.length) return '这个选项不认识…';
-
-    // 同一按钮只能投一次（但**可以**继续投别的选项 = 多选）
-    if (hasChosen(v, openid, idx)) {
-      return `你已经投过「${LETTERS[idx]}. ${v.options[idx]}」了（不过还能投别的选项）`;
-    }
-    const mine = choicesOf(v, openid);
-    mine.push(idx);
-    v.votes[openid] = mine;
-    // ★ 记下这个人叫什么（结算表里要写"谁投了什么"）
-    v.names = { ...(v.names ?? {}), [openid]: name };
-    saveAll(ctx, all);
-
-    const cnt = Object.values(v.votes).filter((c) => (Array.isArray(c) ? c : [c]).includes(idx)).length;
-    ctx.log?.(`[vote] ${v.id} by=${who} → ${LETTERS[idx]}（该项第 ${cnt} 票）`);
-    // ★ 中途回执只报这一票（主人要求：别甩整张表，完整结算只在结束时给）
-    return `✅ ${name} 「${LETTERS[idx]}. ${v.options[idx]}」+1 票（当前 ${cnt} 票）`;
-  },
 };
