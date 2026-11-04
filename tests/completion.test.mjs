@@ -1,6 +1,69 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Stickers } from "../lib/index.mjs";
+test("自主收藏从授权会话消息取图并异步排队，完成后默认静默入库", async () => {
+  const values = new Map(),
+    relays = [];
+  const trigger = {
+    human: true,
+    channel: { address: { botId: "a", scope: "group", peerId: "group" } },
+  };
+  const runtime = {
+    store: {
+      get: (k) => values.get(k),
+      set: (k, v) => values.set(k, v),
+      keys: (f) => [...values.keys()].filter((k) => k.startsWith(f.prefix)),
+      triggers: { get: () => trigger },
+      read: { threadPage: () => [] },
+    },
+    sessions: { relay: (...args) => relays.push(args) },
+  };
+  values.set("personal:history:group:group", [
+    {
+      id: "image-message",
+      from: "other",
+      at: new Date().toISOString(),
+      text: "",
+      attachments: [{ url: "https://example.com/meme.png" }],
+    },
+  ]);
+  const stickers = new Stickers(
+    runtime,
+    { id: "a", allowedGroups: ["group"], allowedUsers: [] },
+    "/tmp/unused",
+  );
+  let action, payload;
+  stickers.request = async (a, p) => {
+    action = a;
+    payload = p;
+    return { job: { id: "import-job", state: "queued" } };
+  };
+  const tool = stickers
+    .tools({ session: { id: "session" } })
+    .find((t) => t.name === "sticker_save");
+  const result = await tool.execute(
+    tool.schema.parse({ trigger_id: "t", message_id: "image-message" }),
+  );
+  assert.equal(result.usable, false);
+  assert.equal(action, "import");
+  assert.equal(payload.payload.imageURL, "https://example.com/meme.png");
+  await assert.rejects(
+    tool.execute(tool.schema.parse({ trigger_id: "t", message_id: "unknown" })),
+  );
+  stickers.request = async () => ({
+    job: {
+      id: "import-job",
+      state: "done",
+      result: { results: [{ state: "approved", id: "shared:example" }] },
+    },
+  });
+  await stickers.relay();
+  assert.equal(relays.length, 0);
+  assert.equal(
+    [...values.values()].find((x) => x.jobId === "import-job").delivered,
+    true,
+  );
+});
 test("同一搜索任务的不同会话订阅分别唤醒主控，持久化去重且取消任务不唤醒", async () => {
   const values = new Map([
       ["personal:sticker:job:a", { jobId: "job", ticketId: "a" }],

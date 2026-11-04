@@ -2,6 +2,12 @@
 
 基于 DeepSeek Harness 的多 QQ Bot 个人助手插件。每个 Bot 有独立的 Super-agent 主控、任务与 Worker、数据库、人设和表情库；共用一个 DSH 宿主。
 
+共享表情库默认位于 `stateDir/shared/stickers`，可通过顶层 `sharedStickersDirectory` 指定位置，或设 `sharedStickersEnabled: false` 关闭。`sticker_search` 默认同时搜索角色库与共享库，`library` 可指定 `personal` 或 `shared`；共享素材以 `shared:` 前缀区分，角色身份要求只作用于角色专属库。`sticker_request_search` 支持选择图库，定期检索和任务重试复用同一基建。
+
+阅读会话历史时，Agent 可自主使用 `sticker_save` 提交消息 ID 和附件序号；后台下载、去重、实际看图、打标并决定采纳后才进入共享库。自主收藏默认静默完成，`notify: true` 才通过持久化 relay 唤醒主控交付结果。`sticker_tag` 支持看图后修正正式素材的标签。待处理与拒绝素材不向检索、发送工具开放。
+
+获准入站的私聊或群内 @ 消息先持久化并发送即时确认，再进入模型处理；普通群消息仍只归档。每个 Bot 的 `acknowledgement` 可配置确认文案。主控与执行器都能查询历史，由 Agent 自主选择直接处理或通过 Super-agent 分派后台任务；长任务完成后主动交付。外部主控不等待旧插件的延迟聚合窗口。
+
 整体采用 GPL-3.0-or-later，上游代码保留 MIT 声明，详见 NOTICE、LICENSES 和 UPSTREAM.json。
 
 ## 组成

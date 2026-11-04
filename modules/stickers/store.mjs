@@ -15,6 +15,8 @@ export function assertRole(role) {
   return role;
 }
 export function roleDir(role) {
+  if (config.roles[assertRole(role)].sharedDirectory)
+    return resolve(config.roles[role].sharedDirectory);
   return join(ROOT, "roles", assertRole(role), "stickers");
 }
 export function fingerprint(role) {
@@ -62,7 +64,45 @@ export function jobsDB(path = join(ROOT, "jobs.db")) {
     created INTEGER NOT NULL, updated INTEGER NOT NULL, result TEXT, error TEXT);
     CREATE INDEX IF NOT EXISTS pending_jobs ON jobs(state,available);
     CREATE TABLE IF NOT EXISTS schedule(role TEXT PRIMARY KEY, next_run INTEGER NOT NULL, cursor INTEGER DEFAULT 0);`);
+  const columns = db
+    .prepare("PRAGMA table_info(jobs)")
+    .all()
+    .map((r) => r.name);
+  if (!columns.includes("kind"))
+    db.exec("ALTER TABLE jobs ADD COLUMN kind TEXT NOT NULL DEFAULT 'search'");
+  if (!columns.includes("payload"))
+    db.exec("ALTER TABLE jobs ADD COLUMN payload TEXT");
   return db;
+}
+// 会话图片只排队，后台完成看图和打标前不会出现在正式检索中。
+export function enqueueImport(db, role, payload) {
+  assertRole(role);
+  const dedup = createHash("sha256")
+    .update(JSON.stringify([role, payload.source, payload.imageURL]))
+    .digest("hex");
+  const prior = db
+    .prepare(
+      "SELECT id,state FROM jobs WHERE dedup=? AND kind='import' AND state NOT IN ('failed','cancelled') ORDER BY created DESC LIMIT 1",
+    )
+    .get(dedup);
+  if (prior) return { ...prior, deduplicated: true };
+  const id = randomUUID(),
+    now = Date.now();
+  db.prepare(
+    "INSERT INTO jobs(id,role,query,dedup,state,available,created,updated,kind,payload) VALUES(?,?,?,?,?,?,?,?,?,?)",
+  ).run(
+    id,
+    role,
+    String(payload.query || "收藏会话表情"),
+    dedup,
+    "queued",
+    now,
+    now,
+    now,
+    "import",
+    JSON.stringify(payload),
+  );
+  return { id, state: "queued" };
 }
 export function enqueue(db, role, query) {
   assertRole(role);
@@ -168,6 +208,7 @@ export function search(db, role, query, peer, limit = 3, ids = []) {
       tags: it.meta.tags,
       text: it.meta.text,
       description: it.meta.description,
+      score: it.score,
     };
   });
 }

@@ -455,7 +455,9 @@ export async function setupMiddlewares(
     }
     return next();
   });
-  bot.use(debounceLayer(config, manager, logger, lastDispatchAt));
+  // 外部主控自行调度任务，入站确认不能等待旧插件聚合窗口或旧Agent空闲。
+  if (!config.externalDriver)
+    bot.use(debounceLayer(config, manager, logger, lastDispatchAt));
   // 8. 斜杠命令（在 concurrencyGuard 之前，命令匹配后不排队直接响应）
   //    基础命令 + 用户扩展命令(P4.1)已在上方合并为 cmdList/cmdMap(同时供历史缓冲跳过命令);
   //    群聊放开"必须 @bot"限制(SDK 硬性要求 @ 才触发, 导致直发 /cmd 变文本):

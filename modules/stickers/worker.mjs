@@ -19,6 +19,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { modelTask } from "./model.mjs";
 import { assess, approvedReview, REVIEW_VERSION } from "./review.mjs";
+import lockfile from "proper-lockfile";
 
 const sourcesSchema = z.object({ pages: z.array(z.string().url()).max(8) });
 export async function discover(role, query, round = 1) {
@@ -32,6 +33,22 @@ export async function discover(role, query, round = 1) {
   return result.pages;
 }
 export async function ingest(role, imageURL, source, query) {
+  if (!config.roles[role].sharedDirectory)
+    return ingestUnlocked(role, imageURL, source, query);
+  // 多Bot共用一份图库，跨进程串行写入同一素材，避免重复复核和文件竞争。
+  const init = library(role);
+  init.close();
+  const release = await lockfile.lock(roleDir(role), {
+    stale: 180000,
+    retries: { retries: 2, minTimeout: 500 },
+  });
+  try {
+    return await ingestUnlocked(role, imageURL, source, query);
+  } finally {
+    await release();
+  }
+}
+async function ingestUnlocked(role, imageURL, source, query) {
   const db = library(role),
     policy = fingerprint(role);
   let id;
@@ -206,6 +223,16 @@ export async function sourceImages(page) {
   return images;
 }
 export async function processJob(job) {
+  if (job.kind === "import") {
+    const payload = JSON.parse(job.payload);
+    const result = await ingest(
+      job.role,
+      payload.imageURL,
+      payload.source,
+      payload.query,
+    );
+    return { results: [result], errors: [], counts: { [result.state]: 1 } };
+  }
   const pages = [
       ...new Set([
         ...(await discover(job.role, job.query, job.attempts)),
@@ -288,6 +315,7 @@ export async function processJob(job) {
 }
 export function schedule(db) {
   for (const role of roles) {
+    if (!config.roles[role].queries?.length) continue;
     const row = db.prepare("SELECT * FROM schedule WHERE role=?").get(role);
     if (row && row.next_run > Date.now()) continue;
     const cursor = row?.cursor || 0,
@@ -312,7 +340,7 @@ export async function tick(db, runJob = processJob) {
       "cancelled"
     )
       return true;
-    if (!result.counts.approved) {
+    if (!result.counts.approved && job.kind !== "import") {
       db.prepare(
         "UPDATE jobs SET state='retry',result=?,error=?,available=?,updated=? WHERE id=?",
       ).run(
@@ -341,7 +369,7 @@ export async function tick(db, runJob = processJob) {
       "cancelled"
     )
       return true;
-    const retry = true; // 用户补库任务持续保留，成功拿到素材才完成。
+    const retry = job.kind !== "import" || job.attempts < 3; // 会话收藏有限重试；联网补库持续保留。
     db.prepare(
       "UPDATE jobs SET state=?,error=?,available=?,updated=? WHERE id=?",
     ).run(

@@ -144,6 +144,7 @@ export function readHistory(
     .slice(0, maxRows);
   const rows = archived.filter(
     (r: any) =>
+      (!options.message_id || r.id === options.message_id) &&
       (start === undefined || Date.parse(r.at) >= start) &&
       (end === undefined || Date.parse(r.at) <= end) &&
       (!options.sender ||

@@ -31,10 +31,16 @@ export async function assess(role, preview, query = "") {
     board = await comparisonBoard(preview, references);
   // 脚本已完成文字、标签和对比信息整理，模型只读取一张合成对照图并复核采纳。
   const reviewed = await modelTask(
-    `用read_image查看对照图 ${JSON.stringify(board)}：按从左到右、从上到下，第一格是候选，其余各格是角色参考。检索描述：${JSON.stringify(query)}。角色视觉描述：${JSON.stringify(role.mode === "search" ? "通用表情搜索，结合检索描述判断素材用途" : role.identityDescription || "以参考图识别角色")}。脚本结果：${JSON.stringify(script)}。特征距离仅是视觉相似性线索。复核脚本结果是否准确并决定是否采纳入库；${role.mode === "search" ? "" : "角色素材须与参考身份一致，"}通用素材是否采纳由你判断。仅返回最简JSON {"approved":true或false}；需要修正脚本文案或标签时再附text、tags。`,
+    `用read_image查看对照图 ${JSON.stringify(board)}：按从左到右、从上到下，第一格是候选，其余各格是角色参考。检索描述：${JSON.stringify(query)}。角色视觉描述：${JSON.stringify(role.mode === "search" ? "通用表情搜索，结合检索描述判断素材用途" : role.identityDescription || "以参考图识别角色")}。脚本结果：${JSON.stringify(script)}。特征距离仅是视觉相似性线索。复核脚本结果是否准确并决定是否采纳入库；${role.mode === "search" ? "" : "角色素材须与参考身份一致，"}通用素材是否采纳由你判断。${role.sharedDirectory ? "必须返回tags（至少一个有意义的检索标签）、description和text（图中文字，没有则空字符串），并决定approved；" : ""}仅返回最简JSON {"approved":true或false}；需要修正脚本文案或标签时再附text、tags。`,
     { image: board, timeout: 60000 },
   );
   const checked = reviewSchema.parse(reviewed);
+  if (
+    role.sharedDirectory &&
+    checked.approved &&
+    (!checked.tags?.some((tag) => tag.trim()) || !checked.description?.trim())
+  )
+    throw Error("共享素材入库必须完成模型看图和打标");
   const result = {
     ...script,
     ...checked,

@@ -12,6 +12,8 @@ import {
   roleDir,
   search,
   authorizeSend,
+  enqueueImport,
+  fingerprint,
 } from "./store.mjs";
 import { cancelModels } from "./model.mjs";
 import { tick, recover } from "./worker.mjs";
@@ -19,10 +21,12 @@ import { tick, recover } from "./worker.mjs";
 const jobs = jobsDB(),
   libs = new Map(roles.map((r) => [r, library(r)]));
 const tokens = new Map(
-  roles.map((role) => [
-    role,
-    readFileSync(join(roleDir(role), ".token"), "utf8").trim(),
-  ]),
+  roles
+    .filter((role) => !config.roles[role].sharedDirectory)
+    .map((role) => [
+      role,
+      readFileSync(join(roleDir(role), ".token"), "utf8").trim(),
+    ]),
 );
 function auth(req) {
   const raw = String(req.headers.authorization || "").replace(/^Bearer /, "");
@@ -40,7 +44,54 @@ function inside(file, root) {
   return p.startsWith(r + sep);
 }
 export function handle(role, action, args, db = libs.get(role)) {
+  const shared = roles.find((r) => config.roles[r].sharedDirectory);
+  if (
+    ["status", "cancel"].includes(action) &&
+    args.id &&
+    shared &&
+    jobs.prepare("SELECT role FROM jobs WHERE id=?").get(args.id)?.role ===
+      shared
+  )
+    args = { ...args, library: "shared" };
+  if (action === "search" && !args.library && shared) {
+    const own = handle(role, action, { ...args, library: "personal" });
+    const common = handle(role, action, { ...args, library: "shared" });
+    return {
+      ok: true,
+      items: [...own.items, ...common.items]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Number(args.limit) || 3),
+    };
+  }
+  if (![undefined, "personal", "shared"].includes(args.library))
+    throw Error("未知图库");
+  const sharedId = String(args.id || "").startsWith("shared:");
+  if (args.library === "shared" || sharedId || action === "import") {
+    if (!shared) throw Error("共享图库未启用");
+    const owner = role;
+    role = shared;
+    db = libs.get(shared);
+    args = {
+      ...args,
+      id: sharedId ? args.id.slice(7) : args.id,
+      peer: owner + ":" + String(args.peer || ""),
+    };
+  }
   const peer = String(args.peer || "");
+  const publicId = (id) => (role === shared ? "shared:" + id : id);
+  if (action === "search" && args.ids?.length) {
+    const ids = args.ids
+      .filter((id) =>
+        role === shared
+          ? String(id).startsWith("shared:")
+          : !String(id).startsWith("shared:"),
+      )
+      .map((id) => (role === shared ? id.slice(7) : id));
+    if (!ids.length) return { ok: true, items: [] };
+    args = { ...args, ids };
+  }
+  if (action === "import")
+    return { ok: true, job: enqueueImport(jobs, role, args.payload) };
   if (action === "search")
     return {
       ok: true,
@@ -51,7 +102,11 @@ export function handle(role, action, args, db = libs.get(role)) {
         peer,
         Number(args.limit) || 3,
         Array.isArray(args.ids) ? args.ids.slice(0, 20) : [],
-      ),
+      ).map((it) => ({
+        ...it,
+        id: publicId(it.id),
+        library: role === shared ? "shared" : "personal",
+      })),
     };
   if (action === "request")
     return { ok: true, job: enqueue(jobs, role, args.query) };
@@ -79,7 +134,21 @@ export function handle(role, action, args, db = libs.get(role)) {
       role,
       stats,
       job: job
-        ? { ...job, result: job.result ? JSON.parse(job.result) : null }
+        ? {
+            ...job,
+            result: job.result
+              ? (() => {
+                  const result = JSON.parse(job.result);
+                  return {
+                    ...result,
+                    results: (result.results || []).map((it) => ({
+                      ...it,
+                      id: publicId(it.id),
+                    })),
+                  };
+                })()
+              : null,
+          }
         : null,
       recent: jobs
         .prepare(
@@ -102,10 +171,33 @@ export function handle(role, action, args, db = libs.get(role)) {
     )
       throw new Error("图片文件不在当前角色的正式图库");
     if (action === "inspect")
-      return { ok: true, id: row.id, path: row.path, preview: row.preview };
+      return {
+        ok: true,
+        id: publicId(row.id),
+        path: row.path,
+        preview: row.preview,
+      };
     // 授权凭据一次性使用；发送失败可以重新检索领取，避免重复并发发送。
     db.prepare("DELETE FROM tickets WHERE token=?").run(row.selectionToken);
-    return { ok: true, id: row.id, path: row.path };
+    return { ok: true, id: publicId(row.id), path: row.path };
+  }
+  if (action === "tag") {
+    const row = db
+      .prepare(
+        "SELECT meta FROM assets WHERE id=? AND state='approved' AND policy=?",
+      )
+      .get(args.id, fingerprint(role));
+    if (!row) throw Error("仅可修改已入库素材标签");
+    const meta = JSON.parse(row.meta);
+    db.prepare("UPDATE assets SET meta=? WHERE id=?").run(
+      JSON.stringify({
+        ...meta,
+        tags: [...new Set(args.tags)],
+        ...(args.description ? { description: args.description } : {}),
+      }),
+      args.id,
+    );
+    return { ok: true, id: publicId(args.id) };
   }
   if (action === "sent") {
     const row = db
@@ -160,7 +252,7 @@ async function loop() {
 recover(jobs);
 server.listen(config.port, "127.0.0.1", () => {
   console.log(JSON.stringify({ event: "ready", port: server.address().port }));
-  loop();
+  if (config.workerEnabled !== false) loop();
 });
 for (const signal of ["SIGTERM", "SIGINT"])
   process.on(signal, () => {

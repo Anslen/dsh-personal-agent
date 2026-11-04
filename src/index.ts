@@ -8,13 +8,13 @@ import { Store } from "../modules/superagent/src/app/store.ts";
 import { Stickers } from "./stickers.ts";
 import * as qqPlugin from "../modules/qq/dist/index.js";
 import { qqSource, qqTrigger } from "./qq-source.ts";
-import { registerDriver } from "./qq-transport.mjs";
+import { registerDriver, send } from "./qq-transport.mjs";
 
 import { bindExecution, routeSubprocess } from "./execution-scope.ts";
 import { sameOrigin } from "../modules/superagent/src/app/http.ts";
 import { Inbox } from "./inbox.ts";
 import { channelTools } from "./channel-tools.ts";
-import { stickerPolicy, historyPolicy } from "./sticker-policy.ts";
+import { stickerPolicy, historyPolicy, taskPolicy } from "./sticker-policy.ts";
 import { recordHistory, readHistory } from "./qq-history.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
@@ -33,6 +33,8 @@ export const inject = [
 ];
 export const Config = s.object({
   stateDir: s.string().required(),
+  sharedStickersEnabled: s.boolean().default(true),
+  sharedStickersDirectory: s.string(),
   bots: s
     .array(
       s.object({
@@ -41,6 +43,7 @@ export const Config = s.object({
         appId: s.string().required(),
         secretEnv: s.string().required(),
         personaFile: s.string().required(),
+        acknowledgement: s.string().default("收到，我来处理。"),
         repository: s.string().required(),
         tts: s.object({
           endpoint: s.string().required(),
@@ -87,6 +90,7 @@ export async function apply(ctx: Context, config: any) {
   const ids = new Set<string>(),
     apps = new Set<string>();
   for (const bot of config.bots) {
+    if (bot.id === "shared") throw Error("shared是保留的图库标识");
     if (
       !/^[a-z][a-z0-9-]*$/.test(bot.id) ||
       ids.has(bot.id) ||
@@ -152,8 +156,23 @@ export async function apply(ctx: Context, config: any) {
     );
     ctx.effect(() => () => runtime.stop());
     child.effect(() => runtime.sources.register(qqSource(bot, runtime)));
-    const inbox = new Inbox(runtime, (error) =>
-      ctx.logger.error(String(error)),
+    const inbox = new Inbox(
+      runtime,
+      (error) => ctx.logger.error(String(error)),
+      async (trigger) => {
+        const address = trigger.channel.address;
+        // 收到后立即确认，独立于主控排队和任何模型/工具调用。
+        await send(
+          bot.id,
+          "text",
+          {
+            scope: address.scope,
+            targetId: address.peerId,
+            msgId: address.msgId,
+          },
+          bot.acknowledgement || "收到，我来处理。",
+        );
+      },
     );
     inbox.start();
     ctx.effect(() => () => inbox.stop());
@@ -204,14 +223,27 @@ export async function apply(ctx: Context, config: any) {
       "\n" +
       stickerPolicy +
       "\n" +
-      historyPolicy;
+      historyPolicy +
+      "\n" +
+      taskPolicy;
     if (communication !== current.config.communication)
       runtime.prompts.save(
         { ...current.config, communication },
         current.revision,
         "deployment",
       );
-    stickers = new Stickers(runtime, bot, stateDir, ctx.attachments);
+    stickers = new Stickers(
+      runtime,
+      bot,
+      stateDir,
+      ctx.attachments,
+      config.sharedStickersEnabled === false
+        ? undefined
+        : resolve(
+            config.sharedStickersDirectory ||
+              join(config.stateDir, "shared", "stickers"),
+          ),
+    );
     ctx.effect(() => () => stickers.stop());
     await stickers.start();
     await runtime.ready;

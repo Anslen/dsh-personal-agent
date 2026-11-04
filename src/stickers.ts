@@ -6,6 +6,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { channelTarget } from "./channel-tools.ts";
+import { readHistory } from "./qq-history.ts";
 import { family } from "../modules/superagent/src/kv.ts";
 import { tool } from "../modules/superagent/src/app/tools/tool.ts";
 import { packageRoot } from "../modules/superagent/src/infra/paths.ts";
@@ -24,6 +25,7 @@ export class Stickers {
     private bot: any,
     private stateDir: string,
     private attachments?: any,
+    private sharedDirectory?: string,
   ) {}
   async start() {
     const root = join(this.stateDir, "media");
@@ -41,6 +43,17 @@ export class Stickers {
       maxCandidates: this.bot.stickers.maxCandidates ?? 6,
       maxAttempts: this.bot.stickers.maxAttempts ?? 3,
       roles: {
+        ...(this.sharedDirectory
+          ? {
+              shared: {
+                mode: "search",
+                queries: [],
+                seedSources: [],
+                referenceImages: [],
+                sharedDirectory: this.sharedDirectory,
+              },
+            }
+          : {}),
         [this.bot.id]: {
           name: this.bot.id,
           mode: this.bot.stickers.mode,
@@ -154,7 +167,10 @@ export class Stickers {
         });
         continue;
       }
-      const value = await this.request("status", { id: sub.jobId });
+      const value = await this.request("status", {
+        id: sub.jobId,
+        ...(sub.library ? { library: sub.library } : {}),
+      });
       if (value.job?.state === "cancelled") {
         this.runtime.store.set(key, {
           ...sub,
@@ -164,6 +180,15 @@ export class Stickers {
         continue;
       }
       if (!["done", "failed"].includes(value.job?.state)) continue;
+      if (sub.silent) {
+        // 自主收藏默认静默完成，仅更新共享库，不唤醒聊天或向用户汇报补库进度。
+        this.runtime.store.set(key, {
+          ...sub,
+          delivered: true,
+          result: value.job,
+        });
+        continue;
+      }
       // 同一任务恢复搜索后，新的完成结果需要独立投递版本。
       const version =
         value.job.updated ||
@@ -181,12 +206,17 @@ export class Stickers {
             ":" +
             version,
           JSON.stringify({
-            event: "sticker_search_finished",
+            event:
+              sub.kind === "collection"
+                ? "sticker_collection_finished"
+                : "sticker_search_finished",
             job: value.job,
             ticketId: sub.ticketId,
             triggerId: sub.triggerId,
             instruction:
-              "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。结果中的approved素材已入库；将其id列表传给sticker_search的ids参数，再sticker_view查看并sticker_send发送，避免关键词漏检。",
+              sub.kind === "collection"
+                ? "这是用户要求反馈的收藏任务完成事件。根据done/failed及approved/rejected/duplicate结果回复原会话；仅approved素材或已有正式素材可检索、看图后发送。"
+                : "这是此前任务的异步完成事件。判断是否需要通过orchestrator回复原会话；不要重复搜索。结果中的approved素材已入库；将其id列表传给sticker_search的ids参数，再sticker_view查看并sticker_send发送，避免关键词漏检。",
           }),
         );
         this.runtime.store.set(key, { ...sub, delivered: true });
@@ -217,11 +247,15 @@ export class Stickers {
         schema: z.object({
           query: z.string().min(1).max(160),
           trigger_id: z.string().optional(),
+          library: z.enum(["personal", "shared"]).default("personal"),
         }),
         execute: async (args: any) => {
           channelTarget(this.runtime, this.bot, args, ticket);
           const triggerId = ticket?.origin.triggerId || args.trigger_id;
-          const result = await this.request("request", { query: args.query });
+          const result = await this.request("request", {
+            query: args.query,
+            library: args.library,
+          });
           this.runtime.store.set(
             subscriptions(result.job.id + ":" + (ticket?.id || triggerId)),
             {
@@ -229,6 +263,7 @@ export class Stickers {
               ticketId: ticket?.id,
               triggerId,
               delivered: false,
+              library: args.library,
             },
           );
           return {
@@ -246,9 +281,105 @@ export class Stickers {
           query: z.string().default(""),
           ids: z.array(z.string()).max(20).optional(),
           limit: z.number().int().min(1).max(5).default(3),
+          library: z
+            .enum(["personal", "shared"])
+            .optional()
+            .describe("省略时同时检索角色库和共享库"),
         }),
         execute: async (args: any) =>
           this.request("search", { ...args, peer: agent.session.id }),
+      }),
+      tool({
+        name: "sticker_save",
+        description:
+          "异步评估并收藏当前会话历史或当前消息中的图片到共享库。传消息id和附件序号；后台模型实际看图、打标并决定采纳后才可检索发送。立即返回排队状态，默认静默完成。",
+        schema: z.object({
+          trigger_id: z.string().optional(),
+          message_id: z.string().min(1),
+          index: z.number().int().min(0).default(0),
+          source: z.enum(["message", "reply"]).default("message"),
+          reason: z.string().max(600).default("适合作为聊天表情"),
+          notify: z.boolean().default(false),
+        }),
+        execute: async (args: any) => {
+          const target = channelTarget(this.runtime, this.bot, args, ticket);
+          const row = readHistory(
+            this.runtime,
+            this.bot,
+            target.scope,
+            target.targetId,
+            { message_id: args.message_id, limit: 1 },
+          ).messages[0];
+          if (!row) throw Error("该会话历史中没有此消息");
+          const image = (
+            args.source === "reply" ? row.reply?.attachments : row.attachments
+          )?.[args.index];
+          if (!image?.url || !/^https?:\/\//.test(image.url))
+            throw Error("消息中没有可收藏的图片");
+          const result = await this.request("import", {
+            library: "shared",
+            payload: {
+              imageURL: image.url,
+              source:
+                "qq:" +
+                this.bot.id +
+                ":" +
+                target.scope +
+                ":" +
+                target.targetId +
+                ":" +
+                row.id,
+              query: args.reason,
+            },
+          });
+          const triggerId = ticket?.origin.triggerId || args.trigger_id;
+          this.runtime.store.set(
+            subscriptions(result.job.id + ":" + (ticket?.id || triggerId)),
+            {
+              jobId: result.job.id,
+              ticketId: ticket?.id,
+              triggerId,
+              library: "shared",
+              silent: !args.notify,
+              kind: "collection",
+              delivered: false,
+            },
+          );
+          return {
+            status: "queued",
+            jobId: result.job.id,
+            usable: false,
+            completion: args.notify
+              ? "完成后回到原会话"
+              : "完成后静默更新共享库",
+          };
+        },
+      }),
+      tool({
+        name: "sticker_tag",
+        description:
+          "看图后修改已入库表情的检索标签和描述，支持角色库与共享库。",
+        schema: z.object({
+          id: z.string(),
+          tags: z.array(z.string().min(1).max(40)).min(1).max(20),
+          description: z.string().max(600).optional(),
+        }),
+        execute: async (args: any) => {
+          const item = await this.request("inspect", {
+            id: args.id,
+            peer: agent.session.id,
+          });
+          const { assertViewed } = await import(
+            "../modules/stickers/evidence.mjs"
+          );
+          assertViewed(
+            agent.session.snapshotEvents(),
+            item.preview,
+            Date.now(),
+            args.id,
+          );
+          return this.request("tag", args);
+        },
       }),
       tool({
         name: "sticker_input_view",
