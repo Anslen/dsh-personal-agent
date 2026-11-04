@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { channelTarget } from "./channel-tools.ts";
@@ -164,10 +164,22 @@ export class Stickers {
         continue;
       }
       if (!["done", "failed"].includes(value.job?.state)) continue;
+      // 同一任务恢复搜索后，新的完成结果需要独立投递版本。
+      const version =
+        value.job.updated ||
+        createHash("sha256")
+          .update(JSON.stringify(value.job))
+          .digest("hex")
+          .slice(0, 16);
       // 与原型Effects共用事务；relay会唤醒主控，notify仅注入，不能代替relay。
       this.runtime.store.atomic(() => {
         this.runtime.sessions.relay(
-          "sticker:" + sub.jobId + ":" + (sub.ticketId || sub.triggerId),
+          "sticker:" +
+            sub.jobId +
+            ":" +
+            (sub.ticketId || sub.triggerId) +
+            ":" +
+            version,
           JSON.stringify({
             event: "sticker_search_finished",
             job: value.job,

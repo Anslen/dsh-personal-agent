@@ -67,7 +67,7 @@ export function handle(role, action, args, db = libs.get(role)) {
     const job = args.id
       ? jobs
           .prepare(
-            "SELECT id,role,query,state,attempts,result,error FROM jobs WHERE id=? AND role=?",
+            "SELECT id,role,query,state,attempts,result,error,updated FROM jobs WHERE id=? AND role=?",
           )
           .get(args.id, role)
       : null;
