@@ -9,6 +9,7 @@ import {
   roles,
   roleDir,
   library,
+  jobsDB,
   fingerprint,
   enqueue,
   claim,
