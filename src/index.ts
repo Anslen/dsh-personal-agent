@@ -8,7 +8,7 @@ import { Store } from "../modules/superagent/src/app/store.ts";
 import { Stickers } from "./stickers.ts";
 import * as qqPlugin from "../modules/qq/dist/index.js";
 import { qqSource, qqTrigger } from "./qq-source.ts";
-import { registerDriver, send } from "./qq-transport.mjs";
+import { registerDriver } from "./qq-transport.mjs";
 
 import { bindExecution, routeSubprocess } from "./execution-scope.ts";
 import { sameOrigin } from "../modules/superagent/src/app/http.ts";
@@ -43,7 +43,6 @@ export const Config = s.object({
         appId: s.string().required(),
         secretEnv: s.string().required(),
         personaFile: s.string().required(),
-        acknowledgement: s.string().default("收到，我来处理。"),
         repository: s.string().required(),
         tts: s.object({
           endpoint: s.string().required(),
@@ -156,23 +155,8 @@ export async function apply(ctx: Context, config: any) {
     );
     ctx.effect(() => () => runtime.stop());
     child.effect(() => runtime.sources.register(qqSource(bot, runtime)));
-    const inbox = new Inbox(
-      runtime,
-      (error) => ctx.logger.error(String(error)),
-      async (trigger) => {
-        const address = trigger.channel.address;
-        // 收到后立即确认，独立于主控排队和任何模型/工具调用。
-        await send(
-          bot.id,
-          "text",
-          {
-            scope: address.scope,
-            targetId: address.peerId,
-            msgId: address.msgId,
-          },
-          bot.acknowledgement || "收到，我来处理。",
-        );
-      },
+    const inbox = new Inbox(runtime, (error) =>
+      ctx.logger.error(String(error)),
     );
     inbox.start();
     ctx.effect(() => () => inbox.stop());
