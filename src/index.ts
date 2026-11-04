@@ -15,7 +15,7 @@ import { sameOrigin } from "../modules/superagent/src/app/http.ts";
 import { Inbox } from "./inbox.ts";
 import { channelTools } from "./channel-tools.ts";
 import { stickerPolicy, historyPolicy } from "./sticker-policy.ts";
-import { recordHistory } from "./qq-history.ts";
+import { recordHistory, readHistory } from "./qq-history.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
   "agents",
@@ -163,7 +163,15 @@ export async function apply(ctx: Context, config: any) {
           recordHistory(runtime, bot, message, state),
         receive: async (message: any, state: any) => {
           const row = recordHistory(runtime, bot, message, state);
-          await inbox.receive(qqTrigger(bot.id, message, state, row?.reply));
+          const scope = message.kind === "group" ? "group" : "c2c";
+          const peer =
+            message.groupOpenid || message.peerId || message.senderId;
+          const { snapshot } = readHistory(runtime, bot, scope, peer, {
+            limit: 1,
+          });
+          await inbox.receive(
+            qqTrigger(bot.id, message, state, row?.reply, snapshot),
+          );
         },
       }),
     );

@@ -134,33 +134,39 @@ export function readHistory(
     if (!Number.isFinite(Date.parse(cursor.at)))
       throw Error("历史游标时间无效");
   }
-  const rows: any[] = [...combined.values()]
+  const archived: any[] = [...combined.values()]
     .filter((r: any) => Date.parse(r.at) > Date.now() - keepMs)
     .sort(
       (a: any, b: any) =>
         Date.parse(b.at) - Date.parse(a.at) ||
         String(b.id).localeCompare(String(a.id)),
     )
-    .slice(0, maxRows)
-    .filter(
-      (r: any) =>
-        (start === undefined || Date.parse(r.at) >= start) &&
-        (end === undefined || Date.parse(r.at) <= end) &&
-        (!options.sender ||
-          options.sender === "*" ||
-          r.from === options.sender ||
-          r.name === options.sender) &&
-        (!cursor ||
-          Date.parse(r.at) < Date.parse(cursor.at) ||
-          (r.at === cursor.at &&
-            cursor.id &&
-            String(r.id).localeCompare(String(cursor.id)) < 0)) &&
-        (!options.keyword ||
-          r.text.toLowerCase().includes(options.keyword.toLowerCase())),
-    );
+    .slice(0, maxRows);
+  const rows = archived.filter(
+    (r: any) =>
+      (start === undefined || Date.parse(r.at) >= start) &&
+      (end === undefined || Date.parse(r.at) <= end) &&
+      (!options.sender ||
+        options.sender === "*" ||
+        r.from === options.sender ||
+        r.name === options.sender) &&
+      (!cursor ||
+        Date.parse(r.at) < Date.parse(cursor.at) ||
+        (r.at === cursor.at &&
+          cursor.id &&
+          String(r.id).localeCompare(String(cursor.id)) < 0)) &&
+      (!options.keyword ||
+        r.text.toLowerCase().includes(options.keyword.toLowerCase())),
+  );
   const messages = rows.slice(0, options.limit || 50);
   return {
     messages,
+    snapshot: {
+      queried_at: new Date().toISOString(),
+      total_messages: archived.length,
+      latest_message_at: archived[0]?.at || null,
+      matched_messages: rows.length,
+    },
     filters: {
       sender: options.sender || "*",
       start_time: options.start_time,

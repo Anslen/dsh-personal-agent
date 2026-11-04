@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { recordHistory, readHistory } from "../src/qq-history.ts";
-import { qqTrigger } from "../src/qq-source.ts";
+import { qqSource, qqTrigger } from "../src/qq-source.ts";
+import { historyPolicy } from "../src/sticker-policy.ts";
 import { archiveAndMentionOnly } from "../src/qq-inbound-policy.mjs";
 import { quoteRef } from "@tencent-connect/qqbot-nodejs";
 function fixture(id = "one") {
@@ -18,6 +19,49 @@ function fixture(id = "one") {
     },
   };
 }
+test("重新查询返回最新普通聊天和时效快照，默认上下文仅带归档状态", async () => {
+  const { runtime, bot } = fixture();
+  const message = {
+    kind: "group",
+    groupOpenid: "group",
+    senderId: "member",
+    messageId: "old",
+    timestamp: new Date(Date.now() - 1000).toISOString(),
+    content: "旧消息",
+  };
+  recordHistory(runtime, bot, message);
+  const first = readHistory(runtime, bot, "group", "group");
+  recordHistory(runtime, bot, {
+    ...message,
+    messageId: "new",
+    timestamp: new Date().toISOString(),
+    content: "普通群聊的新安排",
+  });
+  const next = readHistory(runtime, bot, "group", "group");
+  assert.equal(first.snapshot.total_messages, 1);
+  assert.equal(next.snapshot.total_messages, 2);
+  assert.equal(next.snapshot.matched_messages, 2);
+  assert.equal(next.messages[0].text, "普通群聊的新安排");
+  assert.equal(next.snapshot.latest_message_at, next.messages[0].at);
+  const trigger = qqTrigger(
+    bot.id,
+    { ...message, messageId: "question", content: "总结历史" },
+    {},
+    undefined,
+    next.snapshot,
+  );
+  assert.equal(trigger.meta.history.total_messages, 2);
+  assert.match(trigger.text, /qq_history重新查询/);
+  assert.doesNotMatch(trigger.text, /普通群聊的新安排/);
+  const page = await qqSource(bot, runtime).threadContext.read(
+    {},
+    trigger,
+    "",
+    undefined,
+  );
+  assert.equal(page.messages.length, 0);
+  assert.match(historyPolicy, /本轮必须重新调用qq_history/);
+});
 test("历史工具按时间、发送人ID或昵称筛选，所有人支持分页，拒绝无时区和倒序范围", async () => {
   const { runtime, bot } = fixture();
   const base = Date.now() - 60000;

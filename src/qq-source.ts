@@ -115,6 +115,7 @@ export function qqTrigger(
   message: any,
   state?: any,
   reply?: any,
+  history?: any,
 ): Trigger {
   const scope = message.kind === "group" ? "group" : "c2c";
   const peerId = scope === "group" ? message.groupOpenid : message.senderId;
@@ -140,7 +141,12 @@ export function qqTrigger(
           message.attachments.length +
           "个附件，可用sticker_input_view查看图片参考]"
         : "") +
-      replyText(reply),
+      replyText(reply) +
+      (history
+        ? "\n[历史归档状态 " +
+          JSON.stringify(history) +
+          "；这只是条数与更新时间，需要历史内容时调用qq_history重新查询]"
+        : ""),
     channel: {
       source: "qq",
       thread: `qq:${thread}`,
@@ -154,6 +160,7 @@ export function qqTrigger(
       messageId: message.messageId,
       attachments: message.attachments || [],
       ...(reply ? { reply } : {}),
+      ...(history ? { history } : {}),
     },
   };
 }
