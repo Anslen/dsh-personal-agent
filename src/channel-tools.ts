@@ -88,7 +88,7 @@ export function channelTools(
       description: promptText("agent/channel-tools/qq_send_media.description"),
       schema: z.object({
         ...context,
-        kind: z.enum(["voice", "video", "file"]),
+        kind: z.enum(["image", "voice", "video", "file"]),
         local_path: z.string(),
       }),
       execute: async (args) => {

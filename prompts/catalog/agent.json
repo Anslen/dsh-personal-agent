@@ -4,7 +4,7 @@
   "agent/channel-tools/start_time": "起始时间，含时区，包含该时刻",
   "agent/channel-tools/end_time": "结束时间，含时区，包含该时刻",
   "agent/channel-tools/sender": "发送人ID或精确昵称；*表示所有人；self表示机器人",
-  "agent/channel-tools/qq_send_media.description": "向原始授权QQ会话发送本地文件或媒体。不可用于绕过sticker_send的已审核表情发送流程。主控指定原trigger_id或task_id，执行器固定当前任务。",
+  "agent/channel-tools/qq_send_media.description": "向原始授权QQ会话发送本地图片、语音、视频或文件。普通图片（包括生成的图片、截图、图表）使用kind=image，在聊天中直接显示；需要作为可下载附件发送时使用kind=file。图库内的表情仍使用sticker_view和sticker_send，不可通过本工具绕过表情发送校验。主控指定原trigger_id或task_id，执行器固定当前任务。",
   "agent/channel-tools/qq_voice.description": "使用部署配置的音色合成并发送中文语音。主控指定原trigger_id或task_id；角色和服务地址由配置固定。",
   "agent/qq-source/zh": "QQ私聊与群聊",
   "agent/qq-source/en": "QQ messages",
