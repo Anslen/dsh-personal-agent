@@ -17,7 +17,7 @@ import { Inbox } from "./inbox.ts";
 import { channelTools } from "./channel-tools.ts";
 import { stickerPolicy, historyPolicy, taskPolicy } from "./sticker-policy.ts";
 import { recordHistory, readHistory } from "./qq-history.ts";
-import { bindResponsiveness } from "./responsiveness.ts";
+import { bindResponsiveness, responseInstructions } from "./responsiveness.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
   "agents",
@@ -158,6 +158,7 @@ export async function apply(ctx: Context, config: any) {
         masterSessionGeneration: "chat-dispatch-v2",
         isolatedEnvironment: true,
         inheritedTools: bot.inheritedTools,
+        promptSuffix: (agent: any) => responseInstructions(runtime, agent.id),
         bindAgent: (agent: any) => {
           const execution = bindExecution(
             agent,

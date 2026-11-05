@@ -4,6 +4,7 @@ import {
   bindResponsiveness,
   firstReplyGuard,
   firstReplyKey,
+  responseInstructions,
 } from "../src/responsiveness.ts";
 import { qqSource } from "../src/qq-source.ts";
 import { registerTransport } from "../src/qq-transport.mjs";
@@ -78,7 +79,7 @@ test("主控先自然回应再执行工具，仍可自主建后台任务，回�
     },
   };
   assert.match(firstReplyGuard(runtime, "qq_history", {}), /a/);
-  assert.match(firstReplyGuard(runtime, "sticker_input_view", {}), /首条回应/);
+  assert.match(firstReplyGuard(runtime, "sticker_input_view", {}), /首次回应/);
   assert.equal(
     firstReplyGuard(runtime, "orchestrator_reply", { trigger_id: "a" }),
     undefined,
@@ -105,17 +106,11 @@ test("主控先自然回应再执行工具，仍可自主建后台任务，回�
 
 test("部署配置固定每次实际请求为low，主控和执行器均不继承宿主high", async () => {
   for (const id of ["main", "worker"]) {
-    let request, guard, section;
+    let request, guard;
     let disposed = 0;
     const agent = {
       id,
       ctx: {
-        systemPrompt: {
-          section: (value) => {
-            section = value;
-            return () => disposed++;
-          },
-        },
         tools: {
           guard: (fn) => {
             guard = fn;
@@ -135,7 +130,12 @@ test("部署配置固定每次实际请求为low，主控和执行器均不继�
       "low",
     );
     assert.equal(guard({ name: "qq_history", arguments: {} }), undefined);
-    assert.equal(section.text(), "");
+    const instructions = responseInstructions(
+      { masterId: "main", store: { threads: { active: () => [] } } },
+      id,
+    );
+    if (id === "main") assert.match(instructions, /主控工作方式/);
+    else assert.equal(instructions, "");
     for (let i = 0; i < 2; i++)
       assert.deepEqual(
         await request({}, async () => ({
@@ -150,6 +150,6 @@ test("部署配置固定每次实际请求为low，主控和执行器均不继�
         },
       );
     release();
-    assert.equal(disposed, 3);
+    assert.equal(disposed, 2);
   }
 });

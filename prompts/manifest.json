@@ -4482,5 +4482,10 @@
         "expression": "pending.join(\", \")"
       }
     ]
+  },
+  {
+    "key": "agent/responsiveness/taskDispatch",
+    "source": "src/responsiveness.ts",
+    "parameters": []
   }
 ]

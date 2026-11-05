@@ -1,8 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { ReasoningEffortId } from "@deepseek-ai/dsh-llm";
-import { renderPrompt } from "../prompts/index.mjs";
+import { promptText, renderPrompt } from "../prompts/index.mjs";
 
 export const firstReplyKey = (id: string) => "personal:first-reply:" + id;
+
+/** 通过完整提示装配入口持续提供主控分派知识，执行器不重复接收主控职责。 */
+export function responseInstructions(runtime: any, agentId: string): string {
+  return agentId === runtime.masterId
+    ? [
+        firstReplyGuard(runtime, "request", {}),
+        promptText("agent/responsiveness/taskDispatch"),
+      ]
+        .filter(Boolean)
+        .join("\n\n")
+    : "";
+}
 
 /** 只约束首次回应顺序，主控回应后仍可自主使用工具或分派后台任务。 */
 export function firstReplyGuard(runtime: any, name: string, args: any) {
@@ -43,18 +55,6 @@ export function bindResponsiveness(
       const host = runtime();
       if (agent.id === host.masterId)
         return firstReplyGuard(host, execution.name, execution.arguments);
-    }),
-    // 每次组装请求时明确当前待回应对象，减少先试工具再被拦截的一轮往返。
-    agent.ctx.systemPrompt.section({
-      name: "personal-first-reply",
-      order: 10000,
-      interpolate: false,
-      text: () => {
-        const host = runtime();
-        return agent.id === host.masterId
-          ? firstReplyGuard(host, "request", {}) || ""
-          : "";
-      },
     }),
   ];
   if (effort)

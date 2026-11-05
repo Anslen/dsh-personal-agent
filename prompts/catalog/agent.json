@@ -1,5 +1,5 @@
 {
-  "agent/responsiveness/firstReply": "这些请求尚未得到首次回应：{{p0}}。请先用 orchestrator_reply 按原 trigger_id 给出自然、简短且贴合请求的回复；需要后台持续执行时，也可以用 orchestrator_route accept 自行拟定 acknowledgement 并交给执行器。首条回应无需等待最终结果。完成回应后仍可自主直接处理或分派后台，所有查询工具继续可用。",
+  "agent/responsiveness/firstReply": "这些请求尚未得到首次回应：{{p0}}。先判断能否立即完成：简短交流用 orchestrator_reply 自然回复；需要排队、等待外部计算或服务、多步处理的任务，用 orchestrator_route accept，填写贴合原请求的 acknowledgement，受理回复和后台分派一次完成，然后结束当前回合。同步工具会占用调用它的会话直至结果返回，即使只调用一次也应将等待型工作交给后台执行器。用户无需明确说“后台”。若已经先发首条回复，仍须继续完成长任务分派，再结束回合。所有查询工具继续可用，按任务耗时自主选择处理方式。",
   "agent/channel-tools/qq_history.description": "实时查询当前QQ群/私聊归档，包含未@机器人的普通聊天。结果仅供紧接查询后的当前处理使用；后续每次模型调用均假定可能已有新消息，需要历史信息就主动重新查，无需用户明确要求。snapshot给出查询时刻、总数和筛选数量，next_before表示仍有下一页。支持起止时间、发送人ID或昵称（*代表所有人）、关键词和分页。reply附引用关系及可用原文。主控传当前trigger_id，执行器自动使用任务原会话。",
   "agent/channel-tools/start_time": "起始时间，含时区，包含该时刻",
   "agent/channel-tools/end_time": "结束时间，含时区，包含该时刻",
@@ -21,5 +21,6 @@
   "agent/stickers/sticker_input_view.description": "查看用户消息或其引用原消息中的图片。传原trigger_id和图片序号index（从0开始），source=reply查看引用图片，无需搜索历史。",
   "agent/stickers/sticker_view.description": "查看已检索候选的实际图片。返回图片本身，确认合适后用sticker_send发送同一id。",
   "agent/stickers/sticker_send.description": "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。 执行器可指定已交付本任务的trigger_id，回复对应消息的发送人。",
-  "agent/index/apply": "Bot标识和AppID必须唯一"
+  "agent/index/apply": "Bot标识和AppID必须唯一",
+  "agent/responsiveness/taskDispatch": "【主控工作方式】\n你的当前会话负责对话与任务调度，后台执行器是独立会话，可以使用同样的执行工具并等待同步调用完成。\n收到请求先分流：能用现有信息立即回答的交流、一次简短的只读查询，由你直接完成；需要调用执行工具产出结果、外部计算、排队等待、持续推进或多步操作的请求，建立后台任务。即使工具一次就能完成、预计仅几秒，也按完整的执行链分派。用户不必说“后台”。\n对这类工作，下一步调用 orchestrator_route，decisions 中填写 kind=accept、原 trigger_id、概括用户目标的 title、短英文 worktree_name 和自然的 acknowledgement；调用成功即结束当前回合。已发送首条回复也继续分派。执行器负责准备、执行、等待、取回结果及收尾，完成报告自动唤醒主控，再交付原会话。工具的同步属性表示由执行器等待，不影响后台分派。"
 }

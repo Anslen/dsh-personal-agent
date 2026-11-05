@@ -1566,6 +1566,20 @@ it('refuses an ended ticket\'s worker its tools, and restricts the main Session 
   expect(restricts.get(sessionId)).toEqual([{ allow: ['read', 'read_image', 'grep', 'bash', 'job_output', 'job_list', 'job_kill', 'web_search', 'skill'] }])
 })
 
+it('完整提示保留部署追加指令并按当前会话生成', async () => {
+  const machine = runtime.machine as Machine & {
+    promptSuffix?: (agent: { id: string }) => string
+  }
+  machine.promptSuffix = (agent) =>
+    agent.id === runtime.masterId ? '主控分派知识 {{literal}}' : ''
+  const { sessionId } = await acceptedTicket()
+  expect(sections.get(runtime.masterId)!.complete).toBe(true)
+  expect(sections.get(runtime.masterId)!.text({})).toMatch(
+    /主控分派知识 {{literal}}$/,
+  )
+  expect(sections.get(sessionId)!.text({})).not.toContain('主控分派知识')
+})
+
 it('按部署配置向主控和执行器开放已注册的宿主工具', async () => {
   await (
     await restart(

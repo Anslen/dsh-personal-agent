@@ -39,6 +39,8 @@ export interface SessionsHost {
   bindAgent?(agent: Agent): (() => void) | undefined;
   /** 部署显式开放的宿主工具；仅继承当前作用域已注册的工具。 */
   inheritedTools?: readonly string[];
+  /** 附加到完整系统提示末尾的部署指令，避免被 complete 模式丢弃。 */
+  promptSuffix?(agent: Agent): string;
 }
 
 /**
@@ -448,7 +450,7 @@ export class Sessions {
             master ? "orchestrator" : "worker",
             current ? host.environment(current) : undefined,
           );
-          return `[dsh-superagent prompt revision ${version.revision}]\n${composed}\n${current ? mandateInstructions(current.mandate) : ""}`;
+          return `[dsh-superagent prompt revision ${version.revision}]\n${composed}\n${current ? mandateInstructions(current.mandate) : ""}\n${host.promptSuffix?.(agent) ?? ""}`;
         },
         ...(master ? { complete: true } : {}),
       }),
