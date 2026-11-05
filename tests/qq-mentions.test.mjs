@@ -10,6 +10,10 @@ test("群回复@原请求人，保留正文中其他成员，不重复@，私聊
       sent.push({ target, text });
       return { id: "sent" };
     },
+    sendMarkdown: async (target, text) => {
+      sent.push({ target, text, kind: "markdown" });
+      return { id: "mention" };
+    },
     sendMedia: async (target, kind, content) => {
       sent.push({ target, kind, content });
       return { id: "media" };
@@ -59,7 +63,31 @@ test("群回复@原请求人，保留正文中其他成员，不重复@，私聊
       { scope: "group", targetId: "group", senderId: "asker" },
       { localPath: "/tmp/image.png" },
     );
-    assert.equal(sent.at(-1).content.content, "<@asker>");
+    assert.equal(sent.at(-2).kind, "markdown");
+    assert.equal(sent.at(-2).text, "<@asker>");
+    assert.deepEqual(sent.at(-1).content, { localPath: "/tmp/image.png" });
+    await send(
+      "mentions",
+      "video",
+      { scope: "group", targetId: "group", senderId: "asker" },
+      { url: "https://example.com/video.mp4", content: "给你看看" },
+    );
+    assert.equal(sent.at(-2).text, "<@asker> 给你看看");
+    assert.deepEqual(sent.at(-1).content, {
+      url: "https://example.com/video.mp4",
+    });
+    const count = sent.length;
+    await send(
+      "mentions",
+      "image",
+      { scope: "c2c", targetId: "asker", senderId: "asker" },
+      { localPath: "/tmp/image.png", content: "图片说明" },
+    );
+    assert.equal(sent.length, count + 1);
+    assert.deepEqual(sent.at(-1).content, {
+      localPath: "/tmp/image.png",
+      content: "图片说明",
+    });
     await send(
       "mentions",
       "text",
