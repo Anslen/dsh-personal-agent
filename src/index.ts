@@ -8,7 +8,7 @@ import { Runtime } from "../modules/superagent/src/app/runtime.ts";
 import { Store } from "../modules/superagent/src/app/store.ts";
 import { Stickers } from "./stickers.ts";
 import * as qqPlugin from "../modules/qq/dist/index.js";
-import { qqSource, qqTrigger } from "./qq-source.ts";
+import { qqSource, qqTrigger, qqGroupPolicy } from "./qq-source.ts";
 import { registerDriver } from "./qq-transport.mjs";
 
 import { bindExecution, routeSubprocess } from "./execution-scope.ts";
@@ -129,6 +129,20 @@ export async function apply(ctx: Context, config: any) {
           sources: {
             qq: { allowed: bot.allowedUsers.map((id: string) => ({ id })) },
           },
+        },
+      });
+    // 配置新增白名单群时同步主控准入，避免只允许私聊名单中的成员发起群请求。
+    const settings = seed.settings();
+    const qqPolicy = qqGroupPolicy(
+      settings.policy.sources.qq || { allowed: [], admission: {} },
+      bot.allowedGroups,
+    );
+    if (JSON.stringify(qqPolicy) !== JSON.stringify(settings.policy.sources.qq))
+      seed.saveSettings({
+        ...settings,
+        policy: {
+          ...settings.policy,
+          sources: { ...settings.policy.sources, qq: qqPolicy },
         },
       });
     seed.close();

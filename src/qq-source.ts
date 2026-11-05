@@ -5,6 +5,30 @@ import type { SourceKind } from "../modules/superagent/src/sources/kind.ts";
 import type { Trigger } from "../modules/superagent/src/core/index.ts";
 import { recordHistory } from "./qq-history.ts";
 import { send } from "./qq-transport.mjs";
+import type { SourcePolicy } from "../modules/superagent/src/policy.ts";
+
+// 群白名单同时授权该群成员的明确提及，私聊名单仍按原配置独立生效。
+export function qqGroupPolicy(
+  policy: SourcePolicy,
+  groups: string[],
+): SourcePolicy {
+  return {
+    ...policy,
+    admission: {
+      ...policy.admission,
+      ...Object.fromEntries(
+        groups.map((id) => [
+          id,
+          {
+            unlistedAddressed: "explicit",
+            unlistedUnaddressed: "ignore",
+            listedUnaddressed: "ignore",
+          },
+        ]),
+      ),
+    },
+  };
+}
 
 // 每个角色的Runtime单独注册同名Source；Bot身份不由模型传入。
 export function qqSource(
