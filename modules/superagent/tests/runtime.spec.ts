@@ -165,7 +165,7 @@ beforeEach(async () => {
       const agentCtx = new Context()
       const preset = {}
       const inherited = ['bash', 'read', 'read_image', 'skill', 'job_output', 'job_list', 'job_kill', 'grep', 'web_search',
-        'ask_user_question', 'plugin_manager', 'schedule_create', 'schedule_list', 'schedule_update', 'schedule_delete', 'create_goal', 'session_create', 'session_send_message', 'feishu_doc_edit']
+        'mcp__draw__generate', 'mcp__draw__search_loras', 'ask_user_question', 'plugin_manager', 'schedule_create', 'schedule_list', 'schedule_update', 'schedule_delete', 'create_goal', 'session_create', 'session_send_message', 'feishu_doc_edit']
       const sessionTools = new Map<string, RegisteredTool>()
       tools.set(sessionId, sessionTools)
       agentCtx.reflect.provide('tools', { register: (tool: RegisteredTool) => { sessionTools.set(tool.name,
@@ -1564,6 +1564,39 @@ it('refuses an ended ticket\'s worker its tools, and restricts the main Session 
   // A worker keeps only the profile's work tools: none that ask a person, change the profile, schedule or start work outside
   // the worker slots, reach other Sessions or edit documents, whenever they were registered.
   expect(restricts.get(sessionId)).toEqual([{ allow: ['read', 'read_image', 'grep', 'bash', 'job_output', 'job_list', 'job_kill', 'web_search', 'skill'] }])
+})
+
+it('按部署配置向主控和执行器开放已注册的宿主工具', async () => {
+  await (
+    await restart(
+      {
+        inheritedTools: [
+          'mcp__draw__generate',
+          'mcp__draw__search_loras',
+          'not_installed',
+          'mcp__draw__generate',
+        ],
+      },
+      {
+        feishu: {
+          chats: [{ chatId: CHAT, listen: 'all' }],
+          directMessages: true,
+        },
+      },
+    )
+  ).ready
+  runtime.sources.register(feishuKind)
+  runtime.sources.register(githubKind)
+  const { sessionId } = await acceptedTicket()
+  for (const id of [runtime.masterId, sessionId]) {
+    const names = restricts.get(id)!.flatMap((rule) => rule.allow)
+    expect(names).toContain('mcp__draw__generate')
+    expect(names).toContain('mcp__draw__search_loras')
+    expect(names).not.toContain('not_installed')
+    expect(names.filter((name) => name === 'mcp__draw__generate')).toHaveLength(
+      1,
+    )
+  }
 })
 
 it('gives an explicit ticket\'s worker a prompt without the limits of an inferred Mandate', async () => {

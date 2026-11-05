@@ -237,6 +237,7 @@ export class Runtime extends Service implements SourceHost {
         closing: () => this.closing(),
         environment,
         bindAgent: (agent) => (machine as any).bindAgent?.(agent),
+        inheritedTools: machine.inheritedTools,
         tools: (agent, ticket) => [
           ...(ticket
             ? executorTools(this.toolHost, ticket)

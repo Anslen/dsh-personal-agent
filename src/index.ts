@@ -66,6 +66,7 @@ export const Config = s.object({
         allowedUsers: s.array(s.string()).default([]),
         allowedGroups: s.array(s.string()).default([]),
         reasoningEffort: s.string(),
+        inheritedTools: s.array(s.string()).default([]),
       }),
     )
     .required(),
@@ -156,6 +157,7 @@ export async function apply(ctx: Context, config: any) {
         stateDir,
         masterSessionGeneration: "chat-dispatch-v2",
         isolatedEnvironment: true,
+        inheritedTools: bot.inheritedTools,
         bindAgent: (agent: any) => {
           const execution = bindExecution(
             agent,

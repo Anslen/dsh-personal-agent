@@ -37,6 +37,8 @@ export interface SessionsHost {
   /** Tools to register on the main Session (`ticket === undefined`) or on `ticket`'s worker Session. */
   tools(agent: Agent, ticket?: Ticket): Tool[];
   bindAgent?(agent: Agent): (() => void) | undefined;
+  /** 部署显式开放的宿主工具；仅继承当前作用域已注册的工具。 */
+  inheritedTools?: readonly string[];
 }
 
 /**
@@ -486,6 +488,7 @@ export class Sessions {
             "schedule_list",
             "schedule_update",
             "schedule_delete",
+            ...this.inheritedTools(agent),
           ],
         }),
         agent.ctx.tools.guard((execution) =>
@@ -527,9 +530,9 @@ export class Sessions {
   private workOnly(agent: Agent, ticketId: string): (() => void)[] {
     const store = this.host.store;
     const parent = scopeParentOf(agent);
-    const allow = WORK_TOOLS.filter((name) =>
-      agent.ctx.tools.get(name, parent),
-    );
+    const allow = [
+      ...new Set([...WORK_TOOLS, ...(this.host.inheritedTools ?? [])]),
+    ].filter((name) => agent.ctx.tools.get(name, parent));
     return [
       agent.ctx.tools.restrict({ allow }),
       agent.ctx.tools.guard(() => {
@@ -539,6 +542,12 @@ export class Sessions {
           : undefined;
       }),
     ];
+  }
+  private inheritedTools(agent: Agent): string[] {
+    const parent = scopeParentOf(agent);
+    return [...new Set(this.host.inheritedTools ?? [])].filter((name) =>
+      agent.ctx.tools.get(name, parent),
+    );
   }
   /**
    * A subagent of an Executor Session, or of one of its subagents, which runs under DSH's `standard` preset with the worker's

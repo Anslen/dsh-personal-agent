@@ -23,6 +23,8 @@ export const Config = s.object({
 })
 export type DeploymentConfig = ReturnType<typeof Config>
 export interface Machine {
+  /** 部署额外开放给主控与执行器的宿主工具名称。 */
+  inheritedTools?: readonly string[]
   stateDir: string
   promptMaxChars: Volatile<number>
   admissionContextMaxPages: Volatile<number>
