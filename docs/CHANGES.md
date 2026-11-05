@@ -5,6 +5,8 @@
 - managementPath：每个 Bot 单独的管理接口前缀。
 - extraTools：主控与执行器可挂载表情工具。
 - packaged paths：单仓库构建后仍定位到原始 prompts 和 skills。
+- 聊天发送成功后释放对应请求的评估位置，同批其余请求继续评估；原请求仍可自主分派后台任务。
+- Bot独立的reasoningEffort应用到主控和执行器的每次请求；首次自然回应检查与每轮动态提示不限制回应后的工具使用范围。
 - 其余 Engine、事务、Effects 和任务生命周期保留上游实现。
 
 ## QQ

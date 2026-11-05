@@ -1,4 +1,5 @@
 {
+  "agent/responsiveness/firstReply": "这些请求尚未得到首次回应：{{p0}}。请先用 orchestrator_reply 按原 trigger_id 给出自然、简短且贴合请求的回复；需要后台持续执行时，也可以用 orchestrator_route accept 自行拟定 acknowledgement 并交给执行器。首条回应无需等待最终结果。完成回应后仍可自主直接处理或分派后台，所有查询工具继续可用。",
   "agent/channel-tools/qq_history.description": "实时查询当前QQ群/私聊归档，包含未@机器人的普通聊天。结果仅供紧接查询后的当前处理使用；后续每次模型调用均假定可能已有新消息，需要历史信息就主动重新查，无需用户明确要求。snapshot给出查询时刻、总数和筛选数量，next_before表示仍有下一页。支持起止时间、发送人ID或昵称（*代表所有人）、关键词和分页。reply附引用关系及可用原文。主控传当前trigger_id，执行器自动使用任务原会话。",
   "agent/channel-tools/start_time": "起始时间，含时区，包含该时刻",
   "agent/channel-tools/end_time": "结束时间，含时区，包含该时刻",

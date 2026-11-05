@@ -5,6 +5,7 @@ import type { SourceKind } from "../modules/superagent/src/sources/kind.ts";
 import type { Trigger } from "../modules/superagent/src/core/index.ts";
 import { recordHistory } from "./qq-history.ts";
 import { send } from "./qq-transport.mjs";
+import { firstReplyKey } from "./responsiveness.ts";
 import type { SourcePolicy } from "../modules/superagent/src/policy.ts";
 
 // 群白名单同时授权该群成员的明确提及，私聊名单仍按原配置独立生效。
@@ -77,7 +78,19 @@ export function qqSource(
         const address = message.channel.address;
         if (address.botId !== bot.id) throw new Error("跨Bot发送被拒绝");
         const receipt = "personal:qq-receipt:" + message.id;
-        if (runtime?.store.get(receipt)) return "sent";
+        const responded = () => {
+          const triggerId = `qq:${bot.id}:${address.msgId}`;
+          if (!runtime?.store.triggers.get(triggerId)) return;
+          runtime.store.set(firstReplyKey(triggerId), true);
+          runtime.engine?.chatResponded(triggerId);
+          runtime
+            .pump?.()
+            .catch((error: unknown) => console.error("聊天调度失败", error));
+        };
+        if (runtime?.store.get(receipt)) {
+          responded();
+          return "sent";
+        }
         const result = await send(
           bot.id,
           "text",
@@ -107,6 +120,7 @@ export function qqSource(
             sentAt: new Date().toISOString(),
             receipt: result,
           });
+        responded();
         return "sent";
       },
       link: () => ({ url: "", label: { zh: "QQ会话", en: "QQ conversation" } }),

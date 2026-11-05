@@ -4472,5 +4472,15 @@
     "key": "qq/dshqqbot/.qqbot-extensions/lib/profile-digest/p0",
     "source": "modules/qq/dshqqbot/.qqbot-extensions/lib/profile-digest.mjs",
     "parameters": []
+  },
+  {
+    "key": "agent/responsiveness/firstReply",
+    "source": "src/responsiveness.ts",
+    "parameters": [
+      {
+        "name": "p0",
+        "expression": "pending.join(\", \")"
+      }
+    ]
   }
 ]

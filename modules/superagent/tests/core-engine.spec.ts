@@ -71,6 +71,56 @@ function accepted(h: ReturnType<typeof harness>, id = '1', thread = 't1') {
   return decision
 }
 
+describe("聊天回执释放评估位置", () => {
+  it("回复成功后立即评估同群新请求，原请求仍可自主分派后台任务", () => {
+    const h = harness();
+    h.engine.receive(trigger("1", { dispatch: "orchestrator" }));
+    h.pump();
+    h.engine.receive(trigger("2", { dispatch: "orchestrator" }));
+    h.pump();
+    expect(h.requests).toHaveLength(1);
+    h.engine.chatResponded("1");
+    h.pump();
+    expect(h.engine.candidate("1")).toBeUndefined();
+    expect(h.engine.candidate("2")?.triggers.map((t) => t.id)).toEqual(["2"]);
+    const result = h.engine.decide("1", {
+      kind: "accept",
+      title: "后台查询",
+      scope: "查询",
+      reason: "requested",
+      acknowledgement: "正在查询",
+    });
+    expect(result.ticketId).toBeDefined();
+    expect(h.engine.candidate("2")).toBeDefined();
+    h.engine.chatResponded("1");
+    expect(h.engine.candidate("2")).toBeDefined();
+  });
+
+  it("同批其他请求继续待处理，实际回复哪条就只释放哪条", () => {
+    const h = harness();
+    h.engine.receive(trigger("1", { dispatch: "orchestrator" }));
+    h.engine.receive(trigger("2", { dispatch: "orchestrator" }));
+    h.pump();
+    h.engine.chatResponded("1");
+    h.pump();
+    expect(h.engine.candidate("2")?.triggers.map((t) => t.id)).toEqual(["2"]);
+    expect(h.repo.triggers.disposition("2")?.decisionId).toBeUndefined();
+    expect(
+      h.repo.decisions
+        .byThread("chat:t1")
+        .find((d) => d.reason[0]?.code === "chat_responded")?.triggerIds,
+    ).toEqual(["1"]);
+  });
+
+  it("其他来源的评估生命周期保持原样", () => {
+    const h = harness();
+    h.engine.receive(trigger("1"));
+    h.pump();
+    h.engine.chatResponded("1");
+    expect(h.engine.candidate("1")).toBeDefined();
+  });
+});
+
 describe('intake', () => {
   it('聊天先交主控，不广播给旧任务；主控仍可自主关联任务并先回应', () => {
     const h = harness()

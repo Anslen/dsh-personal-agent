@@ -133,6 +133,12 @@ export class Engine {
    * is not ready, completed, merged, or dropped.
    */
   reply(request: ReplyRequest): Reply { return this.repo.atomic(() => this.replies.reply(request)) }
+  /** 由渠道成功发送回执推进聊天评估，建票与任务分派仍由Agent决定。 */
+  chatResponded(triggerId: string): void {
+    this.repo.atomic(() => this.evals.responded(triggerId));
+  }
+
+  // People, through the panel or the main Session
 
   // People, through the panel or the main Session
 

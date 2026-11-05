@@ -122,6 +122,34 @@ export class Evals extends EnginePart {
     const thread = this.holding(triggerId)
     return thread && this.candidateOf(thread)
   }
+  /** 聊天已实际回复时释放其评估位置，剩余消息可立即进入下一轮评估。 */
+  responded(triggerId: string): void {
+    const trigger = this.repo.triggers.get(triggerId);
+    if (!trigger?.human || trigger.dispatch !== "orchestrator") return;
+    const thread = this.holding(triggerId);
+    if (!thread?.evaluating) return;
+    const current = thread.evaluating;
+    this.record(
+      thread,
+      {
+        ...current,
+        id: key("responded", current.id, triggerId),
+        triggerIds: [triggerId],
+        primary: triggerId,
+      },
+      { kind: "ignore", reason: [{ code: "chat_responded" }] },
+    );
+    // 同批其他请求重新评估，不能因为其中一条收到回复就一起结束。
+    const remaining = current.triggerIds.filter((id) => id !== triggerId);
+    delete thread.evaluating;
+    delete thread.expired;
+    thread.pending = [
+      ...remaining,
+      ...thread.pending.filter((id) => !remaining.includes(id)),
+    ];
+    this.repo.threads.save(thread);
+    this.options.assessor.release?.(current.id);
+  }
   /**
    * Decide a Trigger: the Eval that holds it, or a direct Eval of it alone when none does.
    * @throws UserError when the Trigger is unknown or not admissible, `outcome.evalId` names an Eval that has finished, a

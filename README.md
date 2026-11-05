@@ -41,6 +41,8 @@ dsh plugin --profile web add /absolute/path/to/dsh-personal-agent
 
 可选 `tts: { endpoint, voice, apiKeyEnv }` 连接 OpenAI 兼容语音合成服务，音色由部署配置固定。`qq_voice`、媒体发送和表情发送的目的地从原始授权消息推导。
 
+可选 Bot 配置 `reasoningEffort: low` 固定该 Bot 主控和执行器每次模型请求的思考深度；省略时沿用宿主选择。聊天主控先自然回应或用自主拟定的确认受理后台任务，再继续查询和处理；实际发送成功的回执会释放聊天评估位置，后续消息无需等待评估超时。回应后的主控查询工具仍可用。
+
 权限和验证边界见 [docs/VALIDATION.md](docs/VALIDATION.md)。
 
 表情审核配置使用 `referenceImages`（2–6 张），建议提供清晰全身、正面及多视角图片。`identityDescription` 描述正向视觉特征；脚本整理OCR、标签和视觉对比信息，模型读取一张对照图，简短复核是否采纳。macOS 使用系统 Vision；其他平台需安装 `tesseract` 及 `chi_sim`、`eng` 语言数据，或配置 `STICKER_OCR_COMMAND`。参考图内容改变会使旧审核结果失效，需复核后重新使用。

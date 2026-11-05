@@ -17,6 +17,7 @@ import { Inbox } from "./inbox.ts";
 import { channelTools } from "./channel-tools.ts";
 import { stickerPolicy, historyPolicy, taskPolicy } from "./sticker-policy.ts";
 import { recordHistory, readHistory } from "./qq-history.ts";
+import { bindResponsiveness } from "./responsiveness.ts";
 export const name = "dsh-personal-agent";
 export const inject = [
   "agents",
@@ -64,6 +65,7 @@ export const Config = s.object({
           .required(),
         allowedUsers: s.array(s.string()).default([]),
         allowedGroups: s.array(s.string()).default([]),
+        reasoningEffort: s.string(),
       }),
     )
     .required(),
@@ -154,8 +156,22 @@ export async function apply(ctx: Context, config: any) {
         stateDir,
         masterSessionGeneration: "chat-dispatch-v2",
         isolatedEnvironment: true,
-        bindAgent: (agent: any) =>
-          bindExecution(agent, stateDir, process.env.PATH || ""),
+        bindAgent: (agent: any) => {
+          const execution = bindExecution(
+            agent,
+            stateDir,
+            process.env.PATH || "",
+          );
+          const responsiveness = bindResponsiveness(
+            agent,
+            () => runtime,
+            bot.reasoningEffort,
+          );
+          return () => {
+            responsiveness();
+            execution();
+          };
+        },
         managementPath: `/personal-agent/${bot.id}`,
         extraTools: (agent: any, ticket: any) => [
           ...(stickers?.tools(agent, ticket) || []),
