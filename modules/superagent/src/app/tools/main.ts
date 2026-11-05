@@ -15,6 +15,31 @@ import type { Settings } from '../settings.ts'
 import type { Store } from '../store.ts'
 import { AcknowledgementSchema, readTool, tool, type Tool } from './tool.ts'
 
+/** 从宿主的定时投递消息取得稳定轮次，避免相同提醒文本被历史去重吞掉。 */
+export function scheduledReplyId(
+  agent: { session: { snapshotEvents(): readonly any[] } },
+  triggerId?: string,
+): string | undefined {
+  if (!triggerId) return;
+  const events = agent.session.snapshotEvents();
+  for (let index = events.length - 1; index >= 0; index--) {
+    const event = events[index];
+    if (event.type !== "user/message" || event.data.source?.kind !== "schedule")
+      continue;
+    const text =
+      event.data.content
+        ?.filter((block: any) => block.type === "text")
+        .map((block: any) => block.text)
+        .join("\n") ?? "";
+    if (
+      [...text.matchAll(/trigger_id:\s*([^\s"\\]+)/g)].some(
+        (match) => match[1] === triggerId,
+      )
+    )
+      return event.data.id;
+  }
+}
+
 const RoutingNoteSchema = z
   .string()
   .trim()
@@ -265,8 +290,10 @@ export function mainTools(host: MainToolsHost, agent: Agent): Tool[] {
         })
         .strict(),
       execute: async (args) => {
+        const deliveryId = scheduledReplyId(agent, args.trigger_id)
         const reply = host.engine.reply({
           purpose: args.purpose,
+          ...(deliveryId ? { deliveryId } : {}),
           text: args.text,
           ...(args.trigger_id ? { triggerId: args.trigger_id } : {}),
           ...(args.ticket_id ? { ticketId: args.ticket_id } : {}),

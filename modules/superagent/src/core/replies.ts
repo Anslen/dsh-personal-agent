@@ -13,7 +13,7 @@ import { EnginePart } from './part.ts'
  */
 export type ReplyRequest =
   | { purpose: 'acknowledgement'; ticketId: string; triggerId: string; text: string }
-  | { purpose: 'answer' | 'result' | 'attention'; ticketId?: string; triggerId?: string; question?: string; text: string }
+  | { purpose: 'answer' | 'result' | 'attention'; ticketId?: string; triggerId?: string; question?: string; text: string; deliveryId?: string }
 /** A queued message: its id, whether it went out, and whether an earlier request had queued it already. */
 export interface Reply { id: string; status: ReplyStatus; reused: boolean }
 
@@ -76,7 +76,10 @@ export class Replies extends EnginePart {
     // Attention replies must match the ticket's currently open question text.
     if (request.purpose === 'attention' && (!attention || attention.question !== request.question)) throw new UserError('notAttention')
     if (request.purpose === 'answer' && !trigger?.human) throw new UserError('notQuestion')
-    const id = attention ? key('attention-reply', attention.id) : key('reply', trigger?.id ?? ticket?.id ?? '', request.text)
+    // 周期提醒每次到期独立去重；同次到期重试仍保留同一个消息标识。
+    const id = attention ? key('attention-reply', attention.id) : request.deliveryId
+      ? key('reply', trigger?.id ?? ticket?.id ?? '', request.text, request.deliveryId)
+      : key('reply', trigger?.id ?? ticket?.id ?? '', request.text)
     const existing = this.options.outbox.status(id)
     // 主控可对聊天消息先自然回应；任务结果仍通过result的就绪校验。
     const directChat = trigger?.dispatch === 'orchestrator' && !request.ticketId

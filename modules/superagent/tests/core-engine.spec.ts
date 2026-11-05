@@ -119,6 +119,23 @@ describe("聊天回执释放评估位置", () => {
     h.engine.chatResponded("1");
     expect(h.engine.candidate("1")).toBeDefined();
   });
+  it("周期提醒的相同文字在不同轮次可发送，同一轮重试保持幂等", () => {
+    const h = harness();
+    h.engine.receive(trigger("1", { dispatch: "orchestrator" }));
+    h.pump();
+    const reply = {
+      purpose: "answer" as const,
+      triggerId: "1",
+      text: "该休息一下了",
+    };
+    const first = h.engine.reply({ ...reply, deliveryId: "occurrence-1" });
+    const retry = h.engine.reply({ ...reply, deliveryId: "occurrence-1" });
+    const second = h.engine.reply({ ...reply, deliveryId: "occurrence-2" });
+    expect(retry.id).toBe(first.id);
+    expect(retry.reused).toBe(true);
+    expect(second.id).not.toBe(first.id);
+    expect(h.outbox).toHaveLength(2);
+  });
 });
 
 describe('intake', () => {

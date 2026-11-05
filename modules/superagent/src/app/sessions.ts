@@ -482,6 +482,10 @@ export class Sessions {
             "job_output",
             "job_list",
             "job_kill",
+            "schedule_create",
+            "schedule_list",
+            "schedule_update",
+            "schedule_delete",
           ],
         }),
         agent.ctx.tools.guard((execution) =>

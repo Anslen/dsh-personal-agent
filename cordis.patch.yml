@@ -107,7 +107,7 @@
               searchTimeoutMs: 60000
     # The agent preset of the main Session (ROUTER_PRESET in src/app/sessions.ts). The worker's 5-second shell and job waits, so a command or a wait does not hold back the next candidates, and
     # only what the main Session uses: no subagents, web, file search or writes, todo list, questions to a person, presenting,
-    # plan mode, plugin manager, scheduling, goals or workflows. No persona: the main Session's prompt is complete, so it has
+    # plan mode, plugin manager, goals or workflows. No persona: the main Session's prompt is complete, so it has
     # no other section.
     - id: dsh-superagent-router-preset
       name: "@deepseek-ai/dsh-agent-preset"
@@ -117,6 +117,9 @@
         description: dsh-superagent 的主 Session 专用，不供手动选择。前台命令和任务等待超 5 秒转入后台，只含路由所需的工具。
         order: 91
         plugins:
+          # 定时任务由宿主服务持久化，并唤醒创建任务的主控会话。
+          - id: tool-schedule
+            name: "@deepseek-ai/dsh-tool-schedule"
           - id: agent-instructions
             name: "@deepseek-ai/dsh-agent-instructions"
             config:
