@@ -57,24 +57,26 @@ test("群回复@原请求人，保留正文中其他成员，不重复@，私聊
       "<@asker> 已收到",
     );
     assert.equal(sent.at(-1).text, "<@asker> 已收到");
+    const beforeImage = sent.length;
     await send(
       "mentions",
       "image",
       { scope: "group", targetId: "group", senderId: "asker" },
       { localPath: "/tmp/image.png" },
     );
-    assert.equal(sent.at(-2).kind, "markdown");
-    assert.equal(sent.at(-2).text, "<@asker>");
+    assert.equal(sent.length, beforeImage + 1);
     assert.deepEqual(sent.at(-1).content, { localPath: "/tmp/image.png" });
+    const beforeVideo = sent.length;
     await send(
       "mentions",
       "video",
       { scope: "group", targetId: "group", senderId: "asker" },
-      { url: "https://example.com/video.mp4", content: "给你看看" },
+      { url: "https://example.com/video.mp4", content: "<@asker> 给你看看" },
     );
-    assert.equal(sent.at(-2).text, "<@asker> 给你看看");
+    assert.equal(sent.length, beforeVideo + 1);
     assert.deepEqual(sent.at(-1).content, {
       url: "https://example.com/video.mp4",
+      content: "给你看看",
     });
     const count = sent.length;
     await send(

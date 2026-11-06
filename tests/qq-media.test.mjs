@@ -52,10 +52,10 @@ test("普通本地图片允许以image发送，群聊走图片通道，file附�
     assert.deepEqual(await tool.execute(args, new AbortController().signal), {
       sent: true,
     });
-    assert.equal(sent[0].text, "<@requester>");
-    assert.equal(sent[1].kind, "image");
-    assert.deepEqual(sent[1].content, { localPath: "/tmp/generated.png" });
-    assert.equal(sent[1].target.scope, "group");
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].kind, "image");
+    assert.deepEqual(sent[0].content, { localPath: "/tmp/generated.png" });
+    assert.equal(sent[0].target.scope, "group");
     await tool.execute(
       tool.schema.parse({
         kind: "file",

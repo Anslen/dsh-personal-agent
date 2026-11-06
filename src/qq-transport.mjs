@@ -33,14 +33,14 @@ export async function send(id, kind, target, content) {
   if (target.scope === "group") {
     if (kind === "text" || kind === "markdown")
       content = groupReplyText(content, target.senderId);
-    else if ((kind === "image" || kind === "video") && target.senderId) {
-      // QQ媒体说明不解析@标签，使用独立Markdown消息点名，避免直接显示OpenID。
-      await sender.sendMarkdown(
-        target,
-        groupReplyText(content.content || "", target.senderId),
-      );
-      const { content: caption, ...media } = content;
-      content = media;
+    else if ((kind === "image" || kind === "video") && content.content) {
+      // 媒体只发送本体与普通说明，去掉提及标签，避免额外点名消息占用额度。
+      content = {
+        ...content,
+        content: content.content
+          .replace(/<@!?[^>]+>|<qqbot-at-user\s+id=["'][^"']+["']\s*\/>/g, "")
+          .trim(),
+      };
     }
   }
   if (kind === "text") return sender.sendText(target, content);

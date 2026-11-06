@@ -4,7 +4,7 @@
   "agent/channel-tools/start_time": "起始时间，含时区，包含该时刻",
   "agent/channel-tools/end_time": "结束时间，含时区，包含该时刻",
   "agent/channel-tools/sender": "发送人ID或精确昵称；*表示所有人；self表示机器人",
-  "agent/channel-tools/qq_send_media.description": "向原始授权QQ会话发送本地图片、语音、视频或文件。普通图片（包括生成的图片、截图、图表）使用kind=image，在聊天中直接显示；需要作为可下载附件发送时使用kind=file。图库内的表情仍使用sticker_view和sticker_send，不可通过本工具绕过表情发送校验。主控指定原trigger_id或task_id，执行器固定当前任务。",
+  "agent/channel-tools/qq_send_media.description": "向原始授权QQ会话发送本地图片、语音、视频或文件。普通图片（包括生成的图片、截图、图表）使用kind=image，在聊天中直接显示；需要作为可下载附件发送时使用kind=file。图库内的表情仍使用sticker_view和sticker_send，不可通过本工具绕过表情发送校验。主控指定原trigger_id或task_id，执行器固定当前任务。 媒体直接发送，不附加@，不另外发送点名消息；需要文字回复时再由文字消息@回复对象。",
   "agent/channel-tools/qq_voice.description": "使用部署配置的音色合成并发送中文语音。主控指定原trigger_id或task_id；角色和服务地址由配置固定。",
   "agent/qq-source/zh": "QQ私聊与群聊",
   "agent/qq-source/en": "QQ messages",
@@ -20,7 +20,7 @@
   "agent/stickers/sticker_tag.description": "看图后修改已入库表情的检索标签和描述，支持角色库与共享库。",
   "agent/stickers/sticker_input_view.description": "查看用户消息或其引用原消息中的图片。传原trigger_id和图片序号index（从0开始），source=reply查看引用图片，无需搜索历史。",
   "agent/stickers/sticker_view.description": "查看已检索候选的实际图片。返回图片本身，确认合适后用sticker_send发送同一id。",
-  "agent/stickers/sticker_send.description": "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。 执行器可指定已交付本任务的trigger_id，回复对应消息的发送人。",
+  "agent/stickers/sticker_send.description": "将已用sticker_view查看的表情发送至原QQ会话。只传候选id；主控还需原trigger_id或task_id，检索授权由后台管理。 执行器可指定已交付本任务的trigger_id，回复对应消息的发送人。 媒体直接发送，不附加@，不另外发送点名消息；需要文字回复时再由文字消息@回复对象。",
   "agent/index/apply": "Bot标识和AppID必须唯一",
   "agent/responsiveness/taskDispatch": "【主控工作方式】\n你的当前会话负责对话与任务调度，后台执行器是独立会话，可以使用同样的执行工具并等待同步调用完成。\n收到请求先分流：能用现有信息立即回答的交流、一次简短的只读查询，由你直接完成；需要调用执行工具产出结果、外部计算、排队等待、持续推进或多步操作的请求，建立后台任务。即使工具一次就能完成、预计仅几秒，也按完整的执行链分派。用户不必说“后台”。\n对这类工作，下一步调用 orchestrator_route，decisions 中填写 kind=accept、原 trigger_id、概括用户目标的 title、短英文 worktree_name 和自然的 acknowledgement；调用成功即结束当前回合。已发送首条回复也继续分派。执行器负责准备、执行、等待、取回结果及收尾，完成报告自动唤醒主控，再交付原会话。工具的同步属性表示由执行器等待，不影响后台分派。"
 }
